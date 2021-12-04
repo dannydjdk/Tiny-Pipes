@@ -1,0 +1,191 @@
+package com.dannyandson.tinypipes.components;
+
+import com.dannyandson.tinypipes.gui.ItemFilterContainerMenu;
+import com.dannyandson.tinyredstone.blocks.PanelCellPos;
+import com.dannyandson.tinyredstone.blocks.PanelCellSegment;
+import com.dannyandson.tinyredstone.blocks.Side;
+import com.dannyandson.tinyredstone.setup.Registration;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Container;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.fmllegacy.network.NetworkHooks;
+
+import javax.annotation.Nullable;
+import java.util.Arrays;
+import java.util.List;
+
+public class ItemFilterPipe extends ItemPipe implements Container {
+
+    boolean changed = false;
+
+    //saved fields
+    private static int filterSlots = 18;
+    private String[] filters = new String[filterSlots];
+    boolean blacklist = false;
+
+    @Override
+    public boolean onPlace(PanelCellPos cellPos, Player player) {
+        ItemStack stack = ItemStack.EMPTY;
+        if (player.getUsedItemHand() != null)
+            stack = player.getItemInHand(player.getUsedItemHand());
+        if (stack == ItemStack.EMPTY)
+            stack = player.getMainHandItem();
+        if (stack.hasTag()) {
+            CompoundTag itemNBT = stack.getTag();
+            String filterString = itemNBT.getString("filters");
+            filters = Arrays.copyOf(filterString.split("\n",filterSlots),filterSlots);
+        }
+
+        return super.onPlace(cellPos, player);
+    }
+
+    @Override
+    protected void populatePushWrapper(PanelCellPos cellPos, @Nullable Side side, ItemStack itemStack, PushWrapper pushWrapper, int distance) {
+        ResourceLocation itemReg = itemStack.getItem().getRegistryName();
+        boolean hasItem = itemReg != null && hasItem(itemReg.toString());
+        if ((!blacklist && !hasItem) || (blacklist && hasItem)) {
+            return;
+        }
+        super.populatePushWrapper(cellPos, side, itemStack, pushWrapper, distance);
+    }
+
+    public boolean hasItem(String itemRegistryName){
+        for (String filter : filters) {
+            if(filter!=null && filter.equals(itemRegistryName))
+                return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean hasActivation(Player player) {
+        return true;
+    }
+
+    @Override
+    public boolean onBlockActivated(PanelCellPos cellPos, PanelCellSegment segmentClicked, Player player) {
+        if (player.getMainHandItem().getItem() == Registration.REDSTONE_WRENCH.get())
+            return super.onBlockActivated(cellPos, segmentClicked, player);
+
+        if (player instanceof ServerPlayer serverPlayer) {
+            NetworkHooks.openGui(serverPlayer,new ItemFilterContainerMenu.Provider(this));
+        }
+        return false;
+    }
+
+    @Override
+    public boolean tick(PanelCellPos cellPos) {
+        if (changed){
+            cellPos.getPanelTile().sync();
+        }
+        return super.tick(cellPos);
+    }
+
+    @Override
+    public CompoundTag writeNBT() {
+        CompoundTag nbt = super.writeNBT();
+        String filterString = "";
+        for (String filter : filters){
+            filterString = ((filterString.length()>0)?filterString+"\n":"") + filter;
+        }
+        nbt.putString("filters",filterString);
+
+        return nbt;
+    }
+
+    @Override
+    public void readNBT(CompoundTag compoundTag) {
+        super.readNBT(compoundTag);
+        String filterString = compoundTag.getString("filters");
+        filters = Arrays.copyOf(filterString.split("\n",filterSlots),filterSlots);
+    }
+
+    @Override
+    public CompoundTag getItemTag() {
+        boolean empty = true;
+        CompoundTag nbt = new CompoundTag();
+        String filterString = "";
+        for (String filter : filters){
+            filterString = ((filterString.length()>0)?filterString+"\n":"") + filter;
+            if (filter!=null && !filter.equals("null") && filter.length()>0)
+                empty=false;
+        }
+        if (empty)return null;
+
+        nbt.putString("filters",filterString);
+        return nbt;
+    }
+
+    //Container Implementation
+
+
+    public List<String> getFilters() {
+        return Arrays.stream(filters).toList();
+    }
+
+    @Override
+    public int getContainerSize() {
+        return filterSlots;
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return false;
+    }
+
+    @Override
+    public ItemStack getItem(int slot) {
+        if (slot<filters.length && filters[slot]!=null && !filters[slot].equals("null") && !filters[slot].isEmpty()) {
+            CompoundTag itemNbt = new CompoundTag();
+            itemNbt.putString("id", filters[slot]);
+            itemNbt.putInt("Count",1);
+            return ItemStack.of(itemNbt);
+        }
+        return ItemStack.EMPTY;
+    }
+
+    @Override
+    public ItemStack removeItem(int slot, int p_18943_) {
+        return removeItemNoUpdate(slot);
+    }
+
+    @Override
+    public ItemStack removeItemNoUpdate(int slot) {
+        if (slot<filters.length)
+            filters[slot]="";
+        setChanged();
+        return ItemStack.EMPTY;
+    }
+
+    @Override
+    public void setItem(int slot, ItemStack itemStack) {
+        if (slot<filters.length && itemStack.getItem().getRegistryName()!=null) {
+            String itemName = itemStack.getItem().getRegistryName().toString();
+            if(hasItem(itemName))
+                return;
+            filters[slot] = itemStack.getItem().getRegistryName().toString();
+        }
+        setChanged();
+    }
+
+    @Override
+    public void setChanged() {
+        this.changed=true;
+    }
+
+    @Override
+    public boolean stillValid(Player p_18946_) {
+        return true;
+    }
+
+    @Override
+    public void clearContent() {
+        filters=new String[filterSlots];
+        setChanged();
+    }
+
+    //End Container Implementation
+}

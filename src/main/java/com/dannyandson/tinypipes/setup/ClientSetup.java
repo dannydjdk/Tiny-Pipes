@@ -2,6 +2,7 @@ package com.dannyandson.tinypipes.setup;
 
 import com.dannyandson.tinypipes.TinyPipes;
 import com.dannyandson.tinypipes.components.EnergyPipe;
+import com.dannyandson.tinypipes.components.ItemFilterPipe;
 import com.dannyandson.tinypipes.components.ItemPipe;
 import com.dannyandson.tinypipes.components.RedstonePipe;
 import com.dannyandson.tinypipes.gui.ItemFilterGUI;
@@ -32,6 +33,7 @@ public class ClientSetup {
         event.addSprite(PIPE_TEXTURE);
         event.addSprite(EnergyPipe.ENERGY_PIPE_TEXTURE);
         event.addSprite(ItemPipe.ITEM_PIPE_TEXTURE);
+        event.addSprite(ItemFilterPipe.ITEM_FILTER_PIPE_TEXTURE);
         event.addSprite(RedstonePipe.REDSTONE_PIPE_TEXTURE);
     }
 

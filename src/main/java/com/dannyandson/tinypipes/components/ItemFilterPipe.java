@@ -1,10 +1,12 @@
 package com.dannyandson.tinypipes.components;
 
+import com.dannyandson.tinypipes.TinyPipes;
 import com.dannyandson.tinypipes.gui.ItemFilterContainerMenu;
 import com.dannyandson.tinyredstone.blocks.PanelCellPos;
 import com.dannyandson.tinyredstone.blocks.PanelCellSegment;
 import com.dannyandson.tinyredstone.blocks.Side;
 import com.dannyandson.tinyredstone.setup.Registration;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -15,7 +17,6 @@ import net.minecraftforge.fmllegacy.network.NetworkHooks;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
-import java.util.List;
 
 public class ItemFilterPipe extends ItemPipe implements Container {
 
@@ -25,6 +26,17 @@ public class ItemFilterPipe extends ItemPipe implements Container {
     private static int filterSlots = 18;
     private String[] filters = new String[filterSlots];
     boolean blacklist = false;
+
+    public static final ResourceLocation ITEM_FILTER_PIPE_TEXTURE = new ResourceLocation(TinyPipes.MODID, "block/item_filter_pipe");
+    private static TextureAtlasSprite sprite = null;
+
+    @Override
+    protected TextureAtlasSprite getSprite() {
+        if (sprite == null)
+            sprite = com.dannyandson.tinyredstone.blocks.RenderHelper.getSprite(ITEM_FILTER_PIPE_TEXTURE);
+        return sprite;
+    }
+
 
     @Override
     public boolean onPlace(PanelCellPos cellPos, Player player) {
@@ -60,6 +72,15 @@ public class ItemFilterPipe extends ItemPipe implements Container {
         return false;
     }
 
+    public boolean getBlackList(){
+        return blacklist;
+    }
+
+    public void serverSetBlacklist(boolean blacklist) {
+        this.blacklist = blacklist;
+        setChanged();
+    }
+
     @Override
     public boolean hasActivation(Player player) {
         return true;
@@ -80,6 +101,7 @@ public class ItemFilterPipe extends ItemPipe implements Container {
     public boolean tick(PanelCellPos cellPos) {
         if (changed){
             cellPos.getPanelTile().sync();
+            changed=false;
         }
         return super.tick(cellPos);
     }
@@ -92,6 +114,7 @@ public class ItemFilterPipe extends ItemPipe implements Container {
             filterString = ((filterString.length()>0)?filterString+"\n":"") + filter;
         }
         nbt.putString("filters",filterString);
+        nbt.putBoolean("blacklist",blacklist);
 
         return nbt;
     }
@@ -101,6 +124,7 @@ public class ItemFilterPipe extends ItemPipe implements Container {
         super.readNBT(compoundTag);
         String filterString = compoundTag.getString("filters");
         filters = Arrays.copyOf(filterString.split("\n",filterSlots),filterSlots);
+        blacklist = compoundTag.getBoolean("blacklist");
     }
 
     @Override
@@ -120,11 +144,6 @@ public class ItemFilterPipe extends ItemPipe implements Container {
     }
 
     //Container Implementation
-
-
-    public List<String> getFilters() {
-        return Arrays.stream(filters).toList();
-    }
 
     @Override
     public int getContainerSize() {

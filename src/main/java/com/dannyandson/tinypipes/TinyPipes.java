@@ -1,5 +1,6 @@
 package com.dannyandson.tinypipes;
 
+import com.dannyandson.tinypipes.network.ModNetworkHandler;
 import com.dannyandson.tinypipes.setup.ClientSetup;
 import com.dannyandson.tinypipes.setup.Registration;
 import net.minecraft.world.item.CreativeModeTab;
@@ -38,6 +39,7 @@ public class TinyPipes
 
     private void setup(final FMLCommonSetupEvent event)
     {
+        ModNetworkHandler.registerMessages();
         Registration.registerPanelCells();
     }
 

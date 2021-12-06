@@ -198,6 +198,25 @@ public abstract class AbstractTinyPipe implements IPanelCell {
         if (relY<0)relY=1+relY;
         if (relZ<0)relZ=1+relZ;
 
+        //prioritize pullSides
+        for (Side side : pullSides) {
+            if (side == Side.TOP) {
+                if (relY > c2) return side;
+            } else if (side == Side.BOTTOM) {
+                if (relY < c1) return side;
+            }
+            else{
+                if (relX>c2 && side == panelTile.getPanelCellSide(cellPos,panelTile.getSideFromDirection(Direction.EAST)))
+                    return side;
+                if (relX<c1 && side == panelTile.getPanelCellSide(cellPos,panelTile.getSideFromDirection(Direction.WEST)))
+                    return side;
+                if (relZ>c2 && side == panelTile.getPanelCellSide(cellPos,panelTile.getSideFromDirection(Direction.SOUTH)))
+                    return side;
+                if (relZ<c1 && side == panelTile.getPanelCellSide(cellPos,panelTile.getSideFromDirection(Direction.NORTH)))
+                    return side;
+            }
+        }
+
         if (relX>c2) return panelTile.getPanelCellSide(cellPos,panelTile.getSideFromDirection(Direction.EAST));
         if (relX<c1) return panelTile.getPanelCellSide(cellPos,panelTile.getSideFromDirection(Direction.WEST));
         if (relY>c2) return Side.TOP;
@@ -295,8 +314,8 @@ public abstract class AbstractTinyPipe implements IPanelCell {
                 ));
             else if (connectedSides.contains(panelTile.getPanelCellSide(cellPos,Side.BACK)))
                 shapes.add(new PanelCellVoxelShape(
-                        new Vector3d(s1, s1, c2),
-                        new Vector3d(s2, s2, s3)
+                        new Vector3d(c1, c1, c2),
+                        new Vector3d(c2, c2, s3)
                 ));
             if (pullSides.contains(panelTile.getPanelCellSide(cellPos,Side.FRONT)))
                 shapes.add(new PanelCellVoxelShape(
@@ -305,8 +324,8 @@ public abstract class AbstractTinyPipe implements IPanelCell {
                 ));
             else if (connectedSides.contains(panelTile.getPanelCellSide(cellPos,Side.FRONT)))
                 shapes.add(new PanelCellVoxelShape(
-                        new Vector3d(s1, s1, s0),
-                        new Vector3d(s2, s2, c1)
+                        new Vector3d(c1, c1, s0),
+                        new Vector3d(c2, c2, c1)
                 ));
             if (pullSides.contains(panelTile.getPanelCellSide(cellPos,Side.RIGHT)))
                 shapes.add(new PanelCellVoxelShape(
@@ -315,8 +334,8 @@ public abstract class AbstractTinyPipe implements IPanelCell {
                 ));
             else if (connectedSides.contains(panelTile.getPanelCellSide(cellPos,Side.RIGHT)))
                 shapes.add(new PanelCellVoxelShape(
-                        new Vector3d(c2, s1, s1),
-                        new Vector3d(s3, s2, s2)
+                        new Vector3d(c2, c1, c1),
+                        new Vector3d(s3, c2, c2)
                 ));
             if (pullSides.contains(panelTile.getPanelCellSide(cellPos,Side.LEFT)))
                 shapes.add(new PanelCellVoxelShape(
@@ -325,8 +344,8 @@ public abstract class AbstractTinyPipe implements IPanelCell {
                 ));
             else if (connectedSides.contains(panelTile.getPanelCellSide(cellPos,Side.LEFT)))
                 shapes.add(new PanelCellVoxelShape(
-                        new Vector3d(s0, s1, s1),
-                        new Vector3d(c1, s2, s2)
+                        new Vector3d(s0, c1, c1),
+                        new Vector3d(c1, c2, c2)
                 ));
             if (pullSides.contains(Side.TOP))
                 shapes.add(new PanelCellVoxelShape(
@@ -335,8 +354,8 @@ public abstract class AbstractTinyPipe implements IPanelCell {
                 ));
             else if (connectedSides.contains(Side.TOP))
                 shapes.add(new PanelCellVoxelShape(
-                        new Vector3d(s1, c2, s1),
-                        new Vector3d(s2, s3, s2)
+                        new Vector3d(c1, c2, c1),
+                        new Vector3d(c2, s3, c2)
                 ));
             if (pullSides.contains(Side.BOTTOM))
                 shapes.add(new PanelCellVoxelShape(
@@ -345,8 +364,8 @@ public abstract class AbstractTinyPipe implements IPanelCell {
                 ));
             else if (connectedSides.contains(Side.BOTTOM))
                 shapes.add(new PanelCellVoxelShape(
-                        new Vector3d(s1, s0, s1),
-                        new Vector3d(s2, c1, s2)
+                        new Vector3d(c1, s0, c1),
+                        new Vector3d(c2, c1, c2)
                 ));
         }
 

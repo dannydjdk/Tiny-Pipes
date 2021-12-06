@@ -87,7 +87,7 @@ public class FluidPipe  extends AbstractTinyPipe {
         for (Side side : pullSides) {
             //if set to pull, check for connected neighbor with item capabilities
             PanelCellNeighbor extractNeighbor = cellPos.getNeighbor(side);
-            BlockPos neighborBlockPos = extractNeighbor.getBlockPos();
+            BlockPos neighborBlockPos = (extractNeighbor==null)?null:extractNeighbor.getBlockPos();
 
             if (neighborBlockPos != null) {
                 BlockEntity neighborBlockEntity = cellPos.getPanelTile().getLevel().getBlockEntity(neighborBlockPos);

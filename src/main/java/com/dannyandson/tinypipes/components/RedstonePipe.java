@@ -6,16 +6,16 @@ import com.dannyandson.tinyredstone.api.IOverlayBlockInfo;
 import com.dannyandson.tinyredstone.api.IPanelCellInfoProvider;
 import com.dannyandson.tinyredstone.blocks.*;
 import com.dannyandson.tinyredstone.setup.Registration;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.renderer.MultiBufferSource;
+import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.IVertexBuilder;
+import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.DyeColor;
-import net.minecraft.world.item.DyeItem;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.DyeColor;
+import net.minecraft.item.DyeItem;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.util.ResourceLocation;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -40,13 +40,12 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
     private boolean updateFlag = false;
 
     @Override
-    public void render(PoseStack poseStack, MultiBufferSource buffer, int combinedLight, int combinedOverlay, float alpha) {
-
+    public void render(MatrixStack poseStack, IRenderTypeBuffer buffer, int combinedLight, int combinedOverlay, float alpha) {
         TextureAtlasSprite sprite = getSprite();
         if (sprite_color == null)
             sprite_color = com.dannyandson.tinyredstone.blocks.RenderHelper.getSprite(ClientSetup.PIPE_TEXTURE);
 
-        VertexConsumer builder = buffer.getBuffer((alpha == 1.0) ? RenderType.solid() : RenderType.translucent());
+        IVertexBuilder builder = buffer.getBuffer((alpha == 1.0) ? RenderType.solid() : RenderType.translucent());
 
         RenderHelper.drawCube(poseStack, builder, sprite, c1, c2, c1, c2, c1, c2, combinedLight, 0xFFFFFFFF, alpha);
 
@@ -88,7 +87,7 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
     }
 
     @Override
-    public boolean onPlace(PanelCellPos cellPos, Player player) {
+    public boolean onPlace(PanelCellPos cellPos, PlayerEntity player) {
         super.onPlace(cellPos, player);
 
         updateInputSignal(cellPos);
@@ -118,7 +117,7 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
 
         for (Side pullSide : pullSides) {
             PanelCellNeighbor neighbor = cellPos.getNeighbor(pullSide);
-            if (neighbor != null) {
+            if (neighbor != null && !(neighbor.getNeighborIPanelCell() instanceof RedstonePipe)) {
                 int signal = neighbor.getStrongRsOutputForWire();
                 int frequency = frequencies.getOrDefault(pullSide, defaultFrequency);
                 if (signal > 0) {
@@ -147,11 +146,12 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
         //if checks pass, add id to list
         pushIds.add(queryId);
 
-        Map<Integer, Integer> rsOutputs = this.inputSignals;
+        Map<Integer, Integer> rsOutputs = new HashMap<>(this.inputSignals);
 
         for (Side connectedSide : connectedSides) {
             PanelCellNeighbor neighbor = cellPos.getNeighbor(connectedSide);
-            if (neighbor != null && neighbor.getNeighborIPanelCell() instanceof RedstonePipe neighborPipe) {
+            if (neighbor != null && neighbor.getNeighborIPanelCell() instanceof RedstonePipe) {
+                RedstonePipe neighborPipe = (RedstonePipe) neighbor.getNeighborIPanelCell();
                 Map<Integer, Integer> p = neighborPipe.getNetworkRsOutput(neighbor.getCellPos(), neighbor.getNeighborsSide(), queryId);
                 for (Map.Entry<Integer, Integer> entry : p.entrySet()) {
                     if (!rsOutputs.containsKey(entry.getKey()) || entry.getValue() > rsOutputs.get(entry.getKey()))
@@ -175,13 +175,13 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
 
         if (!this.outputSignals.equals(rsOutputs)) {
             this.outputSignals = rsOutputs;
+            updateFlag=true;
 
             for (Side connectedSide : connectedSides) {
                 PanelCellNeighbor neighbor = cellPos.getNeighbor(connectedSide);
-                if (neighbor!=null && neighbor.getNeighborIPanelCell() instanceof RedstonePipe neighborPipe) {
+                if (neighbor!=null && neighbor.getNeighborIPanelCell() instanceof RedstonePipe) {
+                    RedstonePipe neighborPipe = (RedstonePipe) neighbor.getNeighborIPanelCell();
                     neighborPipe.updateNetwork(neighbor.getCellPos(), neighbor.getNeighborsSide(), rsOutputs, queryId);
-                }else{
-                    updateFlag=true;
                 }
             }
 
@@ -209,12 +209,12 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
     }
 
     @Override
-    public boolean hasActivation(Player player) {
+    public boolean hasActivation(PlayerEntity player) {
         return player.getMainHandItem().getItem() == Registration.REDSTONE_WRENCH.get() || player.getMainHandItem().getItem() instanceof DyeItem;
     }
 
     @Override
-    public boolean onBlockActivated(PanelCellPos cellPos, PanelCellSegment segmentClicked, Player player) {
+    public boolean onBlockActivated(PanelCellPos cellPos, PanelCellSegment segmentClicked, PlayerEntity player) {
         if (player.getMainHandItem().getItem()== Registration.REDSTONE_WRENCH.get())
         {
             Side sideOfCell = getClickedSide(cellPos,player);
@@ -234,19 +234,24 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
                 updateNetwork(cellPos, null, outputs, getNextId());
             }
             return true;
-        } else if (player.getMainHandItem().getItem() instanceof DyeItem dyeItem) {
+        } else if (player.getMainHandItem().getItem() instanceof DyeItem) {
+            DyeItem dyeItem = (DyeItem) player.getMainHandItem().getItem();
             Side sideClicked = getClickedSide(cellPos, player);
             DyeColor dyeColor = dyeItem.getDyeColor();
             if (dyeColor == DyeColor.RED)
                 frequencies.remove(sideClicked);
             else
                 frequencies.put(sideClicked, dyeItem.getDyeColor().getId());
+            if (pullSides.contains(sideClicked))
+                neighborChanged(cellPos);
+            else if (connectedSides.contains(sideClicked))
+                updateFlag=true;
         }
         return false;
     }
 
     @Override
-    public void readNBT(CompoundTag compoundTag) {
+    public void readNBT(CompoundNBT compoundTag) {
         super.readNBT(compoundTag);
         if (compoundTag.contains("outputs")) {
             for (String frequency : compoundTag.getCompound("outputs").getAllKeys()) {
@@ -266,24 +271,24 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
     }
 
     @Override
-    public CompoundTag writeNBT() {
-        CompoundTag nbt = super.writeNBT();
+    public CompoundNBT writeNBT() {
+        CompoundNBT nbt = super.writeNBT();
         if (!inputSignals.isEmpty()) {
-            CompoundTag inputNBT = new CompoundTag();
+            CompoundNBT inputNBT = new CompoundNBT();
             for (Map.Entry<Integer, Integer> set : inputSignals.entrySet())
                 if (set.getKey() != null)
                     inputNBT.putInt(set.getKey().toString(), set.getValue());
             nbt.put("inputs", inputNBT);
         }
         if (!outputSignals.isEmpty()) {
-            CompoundTag outputNBT = new CompoundTag();
+            CompoundNBT outputNBT = new CompoundNBT();
             for (Map.Entry<Integer, Integer> set : outputSignals.entrySet())
                 if (set.getKey() != null)
                     outputNBT.putInt(set.getKey().toString(), set.getValue());
             nbt.put("outputs", outputNBT);
         }
         if (!frequencies.isEmpty()) {
-            CompoundTag frequenciesNBT = new CompoundTag();
+            CompoundNBT frequenciesNBT = new CompoundNBT();
             for (Map.Entry<Side, Integer> set : frequencies.entrySet())
                 if (set.getKey() != null)
                     frequenciesNBT.putInt(set.getKey().name(), set.getValue());

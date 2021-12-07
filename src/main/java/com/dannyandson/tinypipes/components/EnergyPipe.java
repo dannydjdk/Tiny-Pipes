@@ -3,15 +3,16 @@ package com.dannyandson.tinypipes.components;
 import com.dannyandson.tinypipes.TinyPipes;
 import com.dannyandson.tinyredstone.blocks.*;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.Direction;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityManager;
-import net.minecraftforge.common.capabilities.CapabilityToken;
+import net.minecraftforge.energy.CapabilityEnergy;
 import net.minecraftforge.energy.IEnergyStorage;
+import net.minecraftforge.items.CapabilityItemHandler;
 
 import javax.annotation.Nullable;
 
@@ -73,10 +74,8 @@ public class EnergyPipe extends AbstractTinyPipe {
             BlockPos neighborBlockPos = (extractNeighbor==null)?null:extractNeighbor.getBlockPos();
 
             if (neighborBlockPos != null) {
-                BlockEntity neighborBlockEntity = cellPos.getPanelTile().getLevel().getBlockEntity(neighborBlockPos);
+                TileEntity neighborBlockEntity = cellPos.getPanelTile().getLevel().getBlockEntity(neighborBlockPos);
                 if (neighborBlockEntity != null) {
-                    Capability<IEnergyStorage> iEnergyStorageCapability = CapabilityManager.get(new CapabilityToken<>() {
-                    });
                     BlockPos panelBlockPos = cellPos.getPanelTile().getBlockPos();
                     Direction neighborSide =
                             (neighborBlockPos.relative(Direction.NORTH).equals(panelBlockPos)) ? Direction.NORTH :
@@ -86,7 +85,7 @@ public class EnergyPipe extends AbstractTinyPipe {
                                                             (neighborBlockPos.relative(Direction.UP).equals(panelBlockPos)) ? Direction.UP :
                                                                     Direction.DOWN;
 
-                    IEnergyStorage iEnergyStorage = neighborBlockEntity.getCapability(iEnergyStorageCapability, neighborSide).orElse(null);
+                    IEnergyStorage iEnergyStorage = neighborBlockEntity.getCapability(CapabilityEnergy.ENERGY, neighborSide).orElse(null);
                     if (iEnergyStorage != null) {
                         int toExtract = 20;
                         int energy = iEnergyStorage.extractEnergy(toExtract, true);
@@ -139,13 +138,14 @@ public class EnergyPipe extends AbstractTinyPipe {
         for (Side connectedSide : connectedSides) {
             if (!pullSides.contains(connectedSide)) {
                 PanelCellNeighbor pushToNeighbor = cellPos.getNeighbor(connectedSide);
-                if (pushToNeighbor != null && pushToNeighbor.getNeighborIPanelCell() instanceof EnergyPipe neighborPipe) {
+                if (pushToNeighbor != null && pushToNeighbor.getNeighborIPanelCell() instanceof EnergyPipe) {
+                    EnergyPipe neighborPipe = (EnergyPipe) pushToNeighbor.getNeighborIPanelCell();
                     //check the next cell
                     neighborPipe.populatePushWrapper(pushToNeighbor.getCellPos(), pushToNeighbor.getNeighborsSide(), power, pushWrapper, distance + 1);
                 } else if (pushToNeighbor != null && pushToNeighbor.getBlockPos() != null) {
                     //edge of tile found, check for a neighboring tile entity
                     BlockPos neighborBlockPos = pushToNeighbor.getBlockPos();
-                    BlockEntity neighborBlockEntity = cellPos.getPanelTile().getLevel().getBlockEntity(neighborBlockPos);
+                    TileEntity neighborBlockEntity = cellPos.getPanelTile().getLevel().getBlockEntity(neighborBlockPos);
                     if (neighborBlockEntity != null) {
                         BlockPos panelBlockPos = cellPos.getPanelTile().getBlockPos();
                         Direction neighborSide =
@@ -164,14 +164,14 @@ public class EnergyPipe extends AbstractTinyPipe {
     }
 
     @Override
-    public CompoundTag writeNBT() {
-        CompoundTag nbt = super.writeNBT();
+    public CompoundNBT writeNBT() {
+        CompoundNBT nbt = super.writeNBT();
         nbt.putBoolean("disabled", disabled);
         return nbt;
     }
 
     @Override
-    public void readNBT(CompoundTag compoundTag) {
+    public void readNBT(CompoundNBT compoundTag) {
         super.readNBT(compoundTag);
         disabled = compoundTag.getBoolean("disabled");
     }

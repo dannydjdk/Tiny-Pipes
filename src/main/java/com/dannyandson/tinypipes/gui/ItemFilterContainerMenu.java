@@ -2,33 +2,39 @@ package com.dannyandson.tinypipes.gui;
 
 import com.dannyandson.tinypipes.components.ItemFilterPipe;
 import com.dannyandson.tinypipes.setup.Registration;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
-import net.minecraft.world.Container;
-import net.minecraft.world.MenuProvider;
-import net.minecraft.world.SimpleContainer;
-import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.inventory.IInventory;
+import net.minecraft.inventory.Inventory;
+import net.minecraft.inventory.container.ClickType;
+import net.minecraft.inventory.container.Container;
+import net.minecraft.inventory.container.INamedContainerProvider;
+import net.minecraft.inventory.container.Slot;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TextComponent;
+import net.minecraft.util.text.TranslationTextComponent;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.Arrays;
 
-public class ItemFilterContainerMenu extends AbstractContainerMenu {
+public class ItemFilterContainerMenu extends Container {
 
     //factories
-    public static ItemFilterContainerMenu createMenu(int containerId, Inventory playerInventory) {
-        return new ItemFilterContainerMenu(containerId,playerInventory,new SimpleContainer(18));
+    public static ItemFilterContainerMenu createMenu(int containerId, PlayerInventory playerInventory) {
+        return new ItemFilterContainerMenu(containerId,playerInventory,new Inventory(18));
     }
-    public static ItemFilterContainerMenu createMenu(int containerId, Inventory playerInventory, Container container) {
+    public static ItemFilterContainerMenu createMenu(int containerId, PlayerInventory playerInventory, IInventory container) {
         return new ItemFilterContainerMenu(containerId,playerInventory,container);
     }
 
-    private final Container container;
+    private final IInventory container;
 
-    protected ItemFilterContainerMenu(int containerId, Inventory playerInventory, Container container) {
+    protected ItemFilterContainerMenu(int containerId, PlayerInventory playerInventory, IInventory container) {
         super(Registration.ITEM_FILTER_MENU_TYPE.get(),containerId);
         this.container=container;
 
@@ -55,56 +61,94 @@ public class ItemFilterContainerMenu extends AbstractContainerMenu {
     }
 
     @Override
-    public void slotsChanged(Container p_38868_) {
+    public void slotsChanged(IInventory p_38868_) {
         container.setChanged();
         super.slotsChanged(p_38868_);
     }
 
     @Override
-    public boolean stillValid(Player p_38874_) {
+    public boolean stillValid(PlayerEntity p_38874_) {
         return this.container.stillValid(p_38874_);
     }
 
     @CheckForNull
     public ItemFilterPipe getItemFilterPipe(){
-        if (this.container instanceof ItemFilterPipe itemFilterPipe)
-            return itemFilterPipe;
+        if (this.container instanceof ItemFilterPipe)
+            return (ItemFilterPipe) this.container;
         return null;
     }
+
     @Override
-    public ItemStack quickMoveStack(Player player, int index) {
+    public ItemStack clicked(int slot, int button, ClickType clickType, PlayerEntity player) {
+        if (slot>=0 && slot<container.getContainerSize()) {
+            ItemStack carriedStack = player.inventory.getCarried();
+            if (carriedStack!=null && !carriedStack.getItem().equals(Items.AIR) && !carriedStack.equals(ItemStack.EMPTY)) {
+                boolean exists = false;
+                for(int i = 0 ; i<container.getContainerSize() ; i++) {
+                    if (container.getItem(i).getItem().equals(carriedStack.getItem())) {
+                        exists = true;
+                        break;
+                    }
+                }
+                if (!exists) {
+                    ItemStack filterStack = carriedStack.copy();
+                    filterStack.setCount(1);
+                    container.setItem(slot, filterStack);
+                }
+            }else
+            {
+                container.removeItemNoUpdate(slot);
+            }
+            return carriedStack;
+        }
+
+        return super.clicked(slot, button, clickType, player);
+    }
+
+    @Override
+    public ItemStack quickMoveStack(PlayerEntity player, int index) {
         Slot slot = this.slots.get(index);
         if (slot != null && !(slot instanceof ItemFilterSlot) && slot.hasItem()) {
             ItemStack itemstack1 = slot.getItem();
-
+            boolean exists = false;
             for (int i = 0; i < container.getContainerSize(); i++) {
-                if (container.getItem(i).equals(ItemStack.EMPTY)) {
-                    container.setItem(i, itemstack1);
+                if (container.getItem(i).getItem().equals(itemstack1.getItem())) {
+                    exists = true;
                     break;
                 }
             }
+
+            if (!exists)
+                for (int i = 0; i < container.getContainerSize(); i++) {
+                    if (container.getItem(i).equals(ItemStack.EMPTY)) {
+                        ItemStack filterStack = itemstack1.copy();
+                        filterStack.setCount(1);
+                        container.setItem(i, filterStack);
+                        break;
+                    }
+                }
         }
 
         return ItemStack.EMPTY;
     }
 
 
-    public static class Provider implements MenuProvider{
-        private Container container;
-        private static Component displayNameComponent = new TranslatableComponent("tinypipes:item_filter");
+    public static class Provider implements INamedContainerProvider {
+        private IInventory container;
+        private static TextComponent displayNameComponent = new TranslationTextComponent("tinypipes:item_filter");
 
-        public Provider(Container container){
+        public Provider(IInventory container){
             this.container=container;
         }
 
         @Override
-        public Component getDisplayName() {
+        public ITextComponent getDisplayName() {
             return displayNameComponent;
         }
 
         @Nullable
         @Override
-        public AbstractContainerMenu createMenu(int containerId, Inventory inventory, Player player) {
+        public Container createMenu(int containerId, PlayerInventory inventory, PlayerEntity player) {
             return ItemFilterContainerMenu.createMenu(containerId,inventory,container);
         }
     }

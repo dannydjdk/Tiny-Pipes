@@ -3,15 +3,13 @@ package com.dannyandson.tinypipes.components;
 import com.dannyandson.tinypipes.TinyPipes;
 import com.dannyandson.tinyredstone.blocks.*;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.CapabilityManager;
-import net.minecraftforge.common.capabilities.CapabilityToken;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.Direction;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.BlockPos;
+import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 
 import javax.annotation.Nullable;
@@ -86,10 +84,8 @@ public class ItemPipe extends AbstractTinyPipe {
             BlockPos neighborBlockPos = (extractNeighbor==null)?null:extractNeighbor.getBlockPos();
 
             if (neighborBlockPos != null) {
-                BlockEntity neighborBlockEntity = cellPos.getPanelTile().getLevel().getBlockEntity(neighborBlockPos);
+                TileEntity neighborBlockEntity = cellPos.getPanelTile().getLevel().getBlockEntity(neighborBlockPos);
                 if (neighborBlockEntity != null) {
-                    Capability<IItemHandler> iItemHandlerCapability = CapabilityManager.get(new CapabilityToken<>() {
-                    });
                     BlockPos panelBlockPos = cellPos.getPanelTile().getBlockPos();
                     Direction neighborSide =
                             (neighborBlockPos.relative(Direction.NORTH).equals(panelBlockPos)) ? Direction.NORTH :
@@ -99,7 +95,7 @@ public class ItemPipe extends AbstractTinyPipe {
                                                             (neighborBlockPos.relative(Direction.UP).equals(panelBlockPos)) ? Direction.UP :
                                                                     Direction.DOWN;
 
-                    IItemHandler iItemHandler = neighborBlockEntity.getCapability(iItemHandlerCapability, neighborSide).orElse(null);
+                    IItemHandler iItemHandler = neighborBlockEntity.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, neighborSide).orElse(null);
                     if (iItemHandler != null) {
                         boolean itemMoved = false;
                         for (int slot = 0; slot < iItemHandler.getSlots() && !itemMoved; slot++) {
@@ -160,13 +156,14 @@ public class ItemPipe extends AbstractTinyPipe {
         for (Side connectedSide : connectedSides) {
             if (!pullSides.contains(connectedSide)) {
                 PanelCellNeighbor pushToNeighbor = cellPos.getNeighbor(connectedSide);
-                if (pushToNeighbor != null && pushToNeighbor.getNeighborIPanelCell() instanceof ItemPipe neighborPipe) {
+                if (pushToNeighbor != null && pushToNeighbor.getNeighborIPanelCell() instanceof ItemPipe) {
+                    ItemPipe neighborPipe = (ItemPipe)pushToNeighbor.getNeighborIPanelCell();
                     //check the next cell
                     neighborPipe.populatePushWrapper(pushToNeighbor.getCellPos(), pushToNeighbor.getNeighborsSide(), itemStack, pushWrapper, distance + 1);
                 } else if (pushToNeighbor != null && pushToNeighbor.getBlockPos() != null) {
                     //edge of tile found, check for a neighboring tile entity
                     BlockPos neighborBlockPos = pushToNeighbor.getBlockPos();
-                    BlockEntity neighborBlockEntity = cellPos.getPanelTile().getLevel().getBlockEntity(neighborBlockPos);
+                    TileEntity neighborBlockEntity = cellPos.getPanelTile().getLevel().getBlockEntity(neighborBlockPos);
                     if (neighborBlockEntity != null) {
                         BlockPos panelBlockPos = cellPos.getPanelTile().getBlockPos();
                         Direction neighborSide =
@@ -185,14 +182,14 @@ public class ItemPipe extends AbstractTinyPipe {
     }
 
     @Override
-    public CompoundTag writeNBT() {
-        CompoundTag nbt = super.writeNBT();
+    public CompoundNBT writeNBT() {
+        CompoundNBT nbt = super.writeNBT();
         nbt.putBoolean("disabled", disabled);
         return nbt;
     }
 
     @Override
-    public void readNBT(CompoundTag compoundTag) {
+    public void readNBT(CompoundNBT compoundTag) {
         super.readNBT(compoundTag);
         disabled = compoundTag.getBoolean("disabled");
     }

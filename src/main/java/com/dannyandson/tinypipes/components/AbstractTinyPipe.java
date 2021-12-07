@@ -4,19 +4,18 @@ import com.dannyandson.tinypipes.setup.ClientSetup;
 import com.dannyandson.tinyredstone.api.IPanelCell;
 import com.dannyandson.tinyredstone.blocks.*;
 import com.dannyandson.tinyredstone.setup.Registration;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Vector3d;
-import net.minecraft.client.renderer.MultiBufferSource;
+import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.IVertexBuilder;
+import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.Vec3;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.state.properties.BlockStateProperties;
+import net.minecraft.util.Direction;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.BlockRayTraceResult;
+import net.minecraft.util.math.vector.Vector3d;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,10 +46,10 @@ public abstract class AbstractTinyPipe implements IPanelCell {
 
 
     @Override
-    public void render(PoseStack poseStack, MultiBufferSource buffer, int combinedLight, int combinedOverlay, float alpha) {
+    public void render(MatrixStack poseStack, IRenderTypeBuffer buffer, int combinedLight, int combinedOverlay, float alpha) {
 
         sprite = getSprite();
-        VertexConsumer builder = buffer.getBuffer((alpha==1.0)? RenderType.solid():RenderType.translucent());
+        IVertexBuilder builder = buffer.getBuffer((alpha==1.0)? RenderType.solid():RenderType.translucent());
         int color = getColor();
 
         RenderHelper.drawCube(poseStack,builder,sprite,c1,c2,c1,c2,c1,c2,combinedLight,color,alpha);
@@ -82,7 +81,7 @@ public abstract class AbstractTinyPipe implements IPanelCell {
     }
 
     @Override
-    public boolean onPlace(PanelCellPos cellPos, Player player) {
+    public boolean onPlace(PanelCellPos cellPos, PlayerEntity player) {
 
         if(RotationLock.getServerRotationLock(player)==null) {
             Direction panelFacing = cellPos.getPanelTile().getBlockState().getValue(BlockStateProperties.FACING);
@@ -119,7 +118,7 @@ public abstract class AbstractTinyPipe implements IPanelCell {
     }
 
     @Override
-    public boolean onBlockActivated(PanelCellPos cellPos, PanelCellSegment segmentClicked, Player player) {
+    public boolean onBlockActivated(PanelCellPos cellPos, PanelCellSegment segmentClicked, PlayerEntity player) {
         if (player.getMainHandItem().getItem()== Registration.REDSTONE_WRENCH.get())
         {
             Side sideOfCell = getClickedSide(cellPos,player);
@@ -137,13 +136,13 @@ public abstract class AbstractTinyPipe implements IPanelCell {
         return false;
     }
 
-    protected Side getClickedSide(PanelCellPos cellPos,Player player){
+    protected Side getClickedSide(PanelCellPos cellPos,PlayerEntity player){
         PanelTile panelTile = cellPos.getPanelTile();
         BlockPos pos = panelTile.getBlockPos();
         Direction panelFacing = panelTile.getBlockState().getValue(BlockStateProperties.FACING);
-        BlockHitResult result = panelTile.getPlayerCollisionHitResult(player);
+        BlockRayTraceResult result = panelTile.getPlayerCollisionHitResult(player);
         Direction rayTraceDirection = result.getDirection().getOpposite();
-        Vec3 hitVec;
+        Vector3d hitVec;
 
         if (pos.equals(result.getBlockPos()))
             hitVec = result.getLocation().add((double)rayTraceDirection.getStepX()*.001d,(double)rayTraceDirection.getStepY()*.001d,(double)rayTraceDirection.getStepZ()*.001d);
@@ -227,7 +226,7 @@ public abstract class AbstractTinyPipe implements IPanelCell {
     }
 
     @Override
-    public boolean hasActivation(Player player) {
+    public boolean hasActivation(PlayerEntity player) {
         return player.getMainHandItem().getItem()== Registration.REDSTONE_WRENCH.get();
     }
 
@@ -247,8 +246,8 @@ public abstract class AbstractTinyPipe implements IPanelCell {
     }
 
     @Override
-    public CompoundTag writeNBT() {
-        CompoundTag nbt = new CompoundTag();
+    public CompoundNBT writeNBT() {
+        CompoundNBT nbt = new CompoundNBT();
         if (!connectedSides.isEmpty()) {
             List<Integer> sides = new ArrayList<>();
             for (Side side : connectedSides)
@@ -265,7 +264,7 @@ public abstract class AbstractTinyPipe implements IPanelCell {
     }
 
     @Override
-    public void readNBT(CompoundTag compoundTag) {
+    public void readNBT(CompoundNBT compoundTag) {
         if (compoundTag.contains("connectedSides")){
             for (int i : compoundTag.getIntArray("connectedSides"))
                 connectedSides.add(Side.values()[i]);

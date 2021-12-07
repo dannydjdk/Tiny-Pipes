@@ -6,22 +6,21 @@ import com.dannyandson.tinypipes.network.ModNetworkHandler;
 import com.dannyandson.tinypipes.network.PushItemFilterFlags;
 import com.dannyandson.tinyredstone.blocks.PanelCellPos;
 import com.dannyandson.tinyredstone.blocks.PanelTile;
+import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.gui.screens.inventory.MenuAccess;
+import net.minecraft.client.gui.screen.inventory.ContainerScreen;
+import net.minecraft.client.gui.widget.button.Button;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.HitResult;
+import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.state.properties.BlockStateProperties;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.BlockRayTraceResult;
+import net.minecraft.util.math.RayTraceResult;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TranslationTextComponent;
 
-public class ItemFilterGUI extends AbstractContainerScreen<ItemFilterContainerMenu> implements MenuAccess<ItemFilterContainerMenu> {
+public class ItemFilterGUI extends ContainerScreen<ItemFilterContainerMenu> {
     public static final int WIDTH = 184;
     public static final int HEIGHT = 158;
     private static final ResourceLocation GUI = new ResourceLocation(TinyPipes.MODID, "textures/gui/item_filter.png");
@@ -32,7 +31,7 @@ public class ItemFilterGUI extends AbstractContainerScreen<ItemFilterContainerMe
 
     private final ItemFilterContainerMenu menu;
 
-    public ItemFilterGUI(ItemFilterContainerMenu menu, Inventory playerInventory,Component title) {
+    public ItemFilterGUI(ItemFilterContainerMenu menu, PlayerInventory playerInventory, ITextComponent title) {
         super(menu, playerInventory,title);
         this.menu=menu;
         this.imageHeight=HEIGHT;
@@ -42,12 +41,14 @@ public class ItemFilterGUI extends AbstractContainerScreen<ItemFilterContainerMe
 
     @Override
     protected void init() {
-        if (minecraft.hitResult != null && minecraft.hitResult.getType() == HitResult.Type.BLOCK) {
-            BlockHitResult blockhitresult = (BlockHitResult) minecraft.hitResult;
-            BlockEntity blockEntity = minecraft.level.getBlockEntity(blockhitresult.getBlockPos());
-            if (blockEntity instanceof PanelTile panelTile) {
+        if (minecraft.hitResult != null && minecraft.hitResult.getType() == RayTraceResult.Type.BLOCK) {
+            BlockRayTraceResult blockhitresult = (BlockRayTraceResult) minecraft.hitResult;
+            TileEntity blockEntity = minecraft.level.getBlockEntity(blockhitresult.getBlockPos());
+            if (blockEntity instanceof PanelTile) {
+                PanelTile panelTile = (PanelTile)blockEntity;
                 PanelCellPos cellPos = PanelCellPos.fromHitVec(panelTile, panelTile.getBlockState().getValue(BlockStateProperties.FACING), blockhitresult);
-                if (cellPos.getIPanelCell() instanceof ItemFilterPipe itemFilterPipe) {
+                if (cellPos.getIPanelCell() instanceof ItemFilterPipe) {
+                    ItemFilterPipe itemFilterPipe = (ItemFilterPipe)cellPos.getIPanelCell();
                     this.cellPos = cellPos;
                     this.itemFilterPipe=itemFilterPipe;
                     this.blacklist=itemFilterPipe.getBlackList();
@@ -57,36 +58,35 @@ public class ItemFilterGUI extends AbstractContainerScreen<ItemFilterContainerMe
 
         super.init();
         blackListButton = getNewFilterButton();
-        addRenderableWidget(blackListButton);
+        addButton(blackListButton);
     }
 
     private void toggleBlacklist() {
         if (this.itemFilterPipe != null) {
             this.blacklist=!this.blacklist;
-            removeWidget(blackListButton);
+            this.buttons.remove(blackListButton);
             blackListButton = getNewFilterButton();
-            addRenderableWidget(blackListButton);
+            addButton(blackListButton);
             ModNetworkHandler.sendToServer(new PushItemFilterFlags(cellPos,!itemFilterPipe.getBlackList()));
         }
     }
 
     private Button getNewFilterButton()
     {
-        return new Button(leftPos+113, topPos+3, 60, 16, new TranslatableComponent("tinypipes." + ((this.blacklist)?"blacklist" : "whitelist")), button -> toggleBlacklist());
+        return new Button(leftPos+113, topPos+3, 60, 16, new TranslationTextComponent("tinypipes." + ((this.blacklist)?"blacklist" : "whitelist")), button -> toggleBlacklist());
     }
 
     @Override
-    public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         this.renderBackground(matrixStack);
         super.render(matrixStack, mouseX, mouseY, partialTicks);
         this.renderTooltip(matrixStack, mouseX, mouseY);
    }
 
     @Override
-    protected void renderBg(PoseStack poseStack, float p_97788_, int p_97789_, int p_97790_) {
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        RenderSystem.setShaderTexture(0, GUI);
+    protected void renderBg(MatrixStack poseStack, float p_97788_, int p_97789_, int p_97790_) {
+        RenderSystem.blendColor(1.0F, 1.0F, 1.0F, 1.0F);
+        this.minecraft.getTextureManager().bind(GUI);
 
         int x = (this.width - this.imageWidth) / 2;
         int y = (this.height - this.imageHeight) / 2;

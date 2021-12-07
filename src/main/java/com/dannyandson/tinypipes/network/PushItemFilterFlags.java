@@ -3,10 +3,10 @@ package com.dannyandson.tinypipes.network;
 import com.dannyandson.tinypipes.components.ItemFilterPipe;
 import com.dannyandson.tinyredstone.blocks.PanelCellPos;
 import com.dannyandson.tinyredstone.blocks.PanelTile;
-import net.minecraft.core.BlockPos;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.fmllegacy.network.NetworkEvent;
+import net.minecraft.network.PacketBuffer;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.math.BlockPos;
+import net.minecraftforge.fml.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
@@ -21,14 +21,14 @@ public class PushItemFilterFlags {
         this.blacklist = blacklist;
     }
 
-    public PushItemFilterFlags(FriendlyByteBuf buffer)
+    public PushItemFilterFlags(PacketBuffer buffer)
     {
         this.pos= buffer.readBlockPos();
         this.cellIndex=buffer.readInt();
         this.blacklist =buffer.readBoolean();
     }
 
-    public void toBytes(FriendlyByteBuf buf)
+    public void toBytes(PacketBuffer buf)
     {
         buf.writeBlockPos(pos);
         buf.writeInt(cellIndex);
@@ -37,12 +37,12 @@ public class PushItemFilterFlags {
 
     public boolean handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(()-> {
-            BlockEntity blockEntity = ctx.get().getSender().level.getBlockEntity(pos);
-            if (blockEntity instanceof PanelTile panelTile)
+            TileEntity blockEntity = ctx.get().getSender().level.getBlockEntity(pos);
+            if (blockEntity instanceof PanelTile)
             {
-                PanelCellPos cellPos = PanelCellPos.fromIndex(panelTile,cellIndex);
-                if (cellPos.getIPanelCell() instanceof ItemFilterPipe itemFilterPipe){
-                    itemFilterPipe.serverSetBlacklist(blacklist);
+                PanelCellPos cellPos = PanelCellPos.fromIndex((PanelTile) blockEntity,cellIndex);
+                if (cellPos.getIPanelCell() instanceof ItemFilterPipe){
+                    ((ItemFilterPipe)cellPos.getIPanelCell()).serverSetBlacklist(blacklist);
                 }
             }
             ctx.get().setPacketHandled(true);

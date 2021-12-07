@@ -1,13 +1,13 @@
 package com.dannyandson.tinypipes.components;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Vector3f;
+import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.IVertexBuilder;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.util.math.vector.Vector3f;
 
 public class RenderHelper {
 
-    public static void drawCube(PoseStack poseStack, VertexConsumer builder, TextureAtlasSprite sprite, float x1, float x2, float y1, float y2, float z1, float z2, int combinedLight, int color, float alpha){
+    public static void drawCube(MatrixStack poseStack, IVertexBuilder builder, TextureAtlasSprite sprite, float x1, float x2, float y1, float y2, float z1, float z2, int combinedLight, int color, float alpha){
 
         poseStack.pushPose();
 

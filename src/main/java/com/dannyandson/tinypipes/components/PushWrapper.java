@@ -1,12 +1,14 @@
 package com.dannyandson.tinypipes.components;
 
-import net.minecraft.core.Direction;
-import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.Direction;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityManager;
-import net.minecraftforge.common.capabilities.CapabilityToken;
+import net.minecraftforge.energy.CapabilityEnergy;
 import net.minecraftforge.energy.IEnergyStorage;
+import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 
 import java.util.Set;
@@ -23,11 +25,11 @@ public class PushWrapper {
         return id;
     }
 
-    public void addBlockEntity(BlockEntity blockEntity, int distance, Direction side){
+    public void addBlockEntity(TileEntity blockEntity, int distance, Direction side){
         addBlockEntity(blockEntity, distance, 0,side);
     }
 
-    public void addBlockEntity(BlockEntity blockEntity, int distance, int priority, Direction side){
+    public void addBlockEntity(TileEntity blockEntity, int distance, int priority, Direction side){
         pushBlockEntities.add(new PushBlockEntity(blockEntity, distance,priority,side));
     }
 
@@ -36,19 +38,19 @@ public class PushWrapper {
     }
 
     public static class PushBlockEntity implements Comparable<PushBlockEntity>{
-        private final BlockEntity blockEntity;
+        private final TileEntity blockEntity;
         private final Direction side;
         private final int distance;
         private final int priority;
 
-        private PushBlockEntity(BlockEntity blockEntity, int distance, int priority, Direction side){
+        private PushBlockEntity(TileEntity blockEntity, int distance, int priority, Direction side){
             this.blockEntity=blockEntity;
             this.distance=distance;
             this.priority=priority;
             this.side=side;
         }
 
-        public BlockEntity getBlockEntity() {
+        public TileEntity getBlockEntity() {
             return blockEntity;
         }
 
@@ -61,9 +63,7 @@ public class PushWrapper {
         public IItemHandler getIItemHandler()
         {
             if (!iItemHandlerChecked){
-                Capability<IItemHandler> iItemHandlerCapability = CapabilityManager.get(new CapabilityToken<>() {
-                });
-                iItemHandler = blockEntity.getCapability(iItemHandlerCapability, side).orElse(null);
+                iItemHandler = blockEntity.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, side).orElse(null);
                 iItemHandlerChecked=true;
             }
             return iItemHandler;
@@ -74,9 +74,7 @@ public class PushWrapper {
         public IFluidHandler getIFluidHandler()
         {
             if (!iFluidHandlerChecked){
-                Capability<IFluidHandler> iFluidHandlerCapability = CapabilityManager.get(new CapabilityToken<>() {
-                });
-                iFluidHandler = blockEntity.getCapability(iFluidHandlerCapability, side).orElse(null);
+                iFluidHandler = blockEntity.getCapability(CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY, side).orElse(null);
                 iFluidHandlerChecked=true;
             }
             return iFluidHandler;
@@ -87,9 +85,7 @@ public class PushWrapper {
         public IEnergyStorage getIEnergyStorage()
         {
             if (!iEnergyStorageChecked){
-                Capability<IEnergyStorage> iEnergyStorageCapability = CapabilityManager.get(new CapabilityToken<>() {
-                });
-                iEnergyStorage = blockEntity.getCapability(iEnergyStorageCapability, side).orElse(null);
+                iEnergyStorage = blockEntity.getCapability(CapabilityEnergy.ENERGY, side).orElse(null);
                 iEnergyStorageChecked=true;
             }
             return iEnergyStorage;

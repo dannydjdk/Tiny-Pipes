@@ -6,9 +6,9 @@ import com.dannyandson.tinypipes.components.ItemFilterPipe;
 import com.dannyandson.tinypipes.components.ItemPipe;
 import com.dannyandson.tinypipes.components.RedstonePipe;
 import com.dannyandson.tinypipes.gui.ItemFilterGUI;
-import net.minecraft.client.gui.screens.MenuScreens;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.inventory.InventoryMenu;
+import net.minecraft.client.gui.ScreenManager;
+import net.minecraft.inventory.container.PlayerContainer;
+import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.TextureStitchEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -21,13 +21,13 @@ public class ClientSetup {
     public static final ResourceLocation PIPE_TEXTURE = new ResourceLocation(TinyPipes.MODID, "block/pipe");
 
     public static void init(final FMLClientSetupEvent event) {
-        MenuScreens.register(Registration.ITEM_FILTER_MENU_TYPE.get(), ItemFilterGUI::new);
+        ScreenManager.register(Registration.ITEM_FILTER_MENU_TYPE.get(), ItemFilterGUI::new);
     }
 
     @SuppressWarnings("unused")
     @SubscribeEvent
     public static void onTextureStitch(TextureStitchEvent.Pre event) {
-        if (!event.getMap().location().equals(InventoryMenu.BLOCK_ATLAS)) {
+        if (!event.getMap().location().equals(PlayerContainer.BLOCK_ATLAS)) {
             return;
         }
         event.addSprite(PIPE_TEXTURE);

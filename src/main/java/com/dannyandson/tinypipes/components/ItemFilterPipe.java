@@ -7,18 +7,18 @@ import com.dannyandson.tinyredstone.blocks.PanelCellSegment;
 import com.dannyandson.tinyredstone.blocks.Side;
 import com.dannyandson.tinyredstone.setup.Registration;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.Container;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.fmllegacy.network.NetworkHooks;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.inventory.IInventory;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.fml.network.NetworkHooks;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
 
-public class ItemFilterPipe extends ItemPipe implements Container {
+public class ItemFilterPipe extends ItemPipe implements IInventory {
 
     boolean changed = false;
 
@@ -39,14 +39,14 @@ public class ItemFilterPipe extends ItemPipe implements Container {
 
 
     @Override
-    public boolean onPlace(PanelCellPos cellPos, Player player) {
+    public boolean onPlace(PanelCellPos cellPos, PlayerEntity player) {
         ItemStack stack = ItemStack.EMPTY;
         if (player.getUsedItemHand() != null)
             stack = player.getItemInHand(player.getUsedItemHand());
         if (stack == ItemStack.EMPTY)
             stack = player.getMainHandItem();
         if (stack.hasTag()) {
-            CompoundTag itemNBT = stack.getTag();
+            CompoundNBT itemNBT = stack.getTag();
             String filterString = itemNBT.getString("filters");
             filters = Arrays.copyOf(filterString.split("\n",filterSlots),filterSlots);
         }
@@ -82,17 +82,17 @@ public class ItemFilterPipe extends ItemPipe implements Container {
     }
 
     @Override
-    public boolean hasActivation(Player player) {
+    public boolean hasActivation(PlayerEntity player) {
         return true;
     }
 
     @Override
-    public boolean onBlockActivated(PanelCellPos cellPos, PanelCellSegment segmentClicked, Player player) {
+    public boolean onBlockActivated(PanelCellPos cellPos, PanelCellSegment segmentClicked, PlayerEntity player) {
         if (player.getMainHandItem().getItem() == Registration.REDSTONE_WRENCH.get())
             return super.onBlockActivated(cellPos, segmentClicked, player);
 
-        if (player instanceof ServerPlayer serverPlayer) {
-            NetworkHooks.openGui(serverPlayer,new ItemFilterContainerMenu.Provider(this));
+        if (player instanceof ServerPlayerEntity) {
+            NetworkHooks.openGui((ServerPlayerEntity) player,new ItemFilterContainerMenu.Provider(this));
         }
         return false;
     }
@@ -107,8 +107,8 @@ public class ItemFilterPipe extends ItemPipe implements Container {
     }
 
     @Override
-    public CompoundTag writeNBT() {
-        CompoundTag nbt = super.writeNBT();
+    public CompoundNBT writeNBT() {
+        CompoundNBT nbt = super.writeNBT();
         String filterString = "";
         for (String filter : filters){
             filterString = ((filterString.length()>0)?filterString+"\n":"") + filter;
@@ -120,7 +120,7 @@ public class ItemFilterPipe extends ItemPipe implements Container {
     }
 
     @Override
-    public void readNBT(CompoundTag compoundTag) {
+    public void readNBT(CompoundNBT compoundTag) {
         super.readNBT(compoundTag);
         String filterString = compoundTag.getString("filters");
         filters = Arrays.copyOf(filterString.split("\n",filterSlots),filterSlots);
@@ -128,9 +128,9 @@ public class ItemFilterPipe extends ItemPipe implements Container {
     }
 
     @Override
-    public CompoundTag getItemTag() {
+    public CompoundNBT getItemTag() {
         boolean empty = true;
-        CompoundTag nbt = new CompoundTag();
+        CompoundNBT nbt = new CompoundNBT();
         String filterString = "";
         for (String filter : filters){
             filterString = ((filterString.length()>0)?filterString+"\n":"") + filter;
@@ -156,9 +156,14 @@ public class ItemFilterPipe extends ItemPipe implements Container {
     }
 
     @Override
+    public int getMaxStackSize() {
+        return 1;
+    }
+
+    @Override
     public ItemStack getItem(int slot) {
         if (slot<filters.length && filters[slot]!=null && !filters[slot].equals("null") && !filters[slot].isEmpty()) {
-            CompoundTag itemNbt = new CompoundTag();
+            CompoundNBT itemNbt = new CompoundNBT();
             itemNbt.putString("id", filters[slot]);
             itemNbt.putInt("Count",1);
             return ItemStack.of(itemNbt);
@@ -196,7 +201,7 @@ public class ItemFilterPipe extends ItemPipe implements Container {
     }
 
     @Override
-    public boolean stillValid(Player p_18946_) {
+    public boolean stillValid(PlayerEntity p_18946_) {
         return true;
     }
 

@@ -39,7 +39,7 @@ public abstract class AbstractTinyPipe implements IPanelCell {
         return 0xFFFFFFFF;
     }
 
-    private static final float
+    protected static final float
             c1=.25f, c2=.75f,
             s1=.30f,s2=.70f,
             s0=0f,s3=1f,

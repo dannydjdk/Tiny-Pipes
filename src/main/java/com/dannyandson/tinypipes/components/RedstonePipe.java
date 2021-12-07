@@ -118,7 +118,7 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
 
         for (Side pullSide : pullSides) {
             PanelCellNeighbor neighbor = cellPos.getNeighbor(pullSide);
-            if (neighbor != null) {
+            if (neighbor != null && !(neighbor.getNeighborIPanelCell() instanceof RedstonePipe)) {
                 int signal = neighbor.getStrongRsOutputForWire();
                 int frequency = frequencies.getOrDefault(pullSide, defaultFrequency);
                 if (signal > 0) {
@@ -147,7 +147,7 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
         //if checks pass, add id to list
         pushIds.add(queryId);
 
-        Map<Integer, Integer> rsOutputs = this.inputSignals;
+        Map<Integer, Integer> rsOutputs = new HashMap<>(this.inputSignals);
 
         for (Side connectedSide : connectedSides) {
             PanelCellNeighbor neighbor = cellPos.getNeighbor(connectedSide);
@@ -175,13 +175,12 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
 
         if (!this.outputSignals.equals(rsOutputs)) {
             this.outputSignals = rsOutputs;
+            updateFlag=true;
 
             for (Side connectedSide : connectedSides) {
                 PanelCellNeighbor neighbor = cellPos.getNeighbor(connectedSide);
                 if (neighbor!=null && neighbor.getNeighborIPanelCell() instanceof RedstonePipe neighborPipe) {
                     neighborPipe.updateNetwork(neighbor.getCellPos(), neighbor.getNeighborsSide(), rsOutputs, queryId);
-                }else{
-                    updateFlag=true;
                 }
             }
 
@@ -241,6 +240,10 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
                 frequencies.remove(sideClicked);
             else
                 frequencies.put(sideClicked, dyeItem.getDyeColor().getId());
+            if (pullSides.contains(sideClicked))
+                neighborChanged(cellPos);
+            else if (connectedSides.contains(sideClicked))
+                updateFlag=true;
         }
         return false;
     }

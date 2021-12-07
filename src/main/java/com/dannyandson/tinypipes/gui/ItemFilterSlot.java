@@ -6,6 +6,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
+//TODO this may no longer be needed
 public class ItemFilterSlot extends Slot {
     public ItemFilterSlot(Container p_40223_, int p_40224_, int p_40225_, int p_40226_) {
         super(p_40223_, p_40224_, p_40225_, p_40226_);
@@ -32,6 +33,6 @@ public class ItemFilterSlot extends Slot {
     @Override
     public boolean mayPickup(Player p_40228_) {
         ItemStack carried = p_40228_.containerMenu.getCarried();
-        return carried==null || carried.equals(ItemStack.EMPTY) || carried.getItem().equals(Items.AIR);
+        return carried.equals(ItemStack.EMPTY) || carried.getItem().equals(Items.AIR);
     }
 }

@@ -10,8 +10,10 @@ import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
@@ -71,18 +73,56 @@ public class ItemFilterContainerMenu extends AbstractContainerMenu {
             return itemFilterPipe;
         return null;
     }
+
+
+    @Override
+    public void clicked(int slot, int button, ClickType clickType, Player player) {
+        if (slot>=0 && slot<container.getContainerSize()) {
+            ItemStack carriedStack = getCarried();
+            if (!carriedStack.getItem().equals(Items.AIR) && !carriedStack.equals(ItemStack.EMPTY)) {
+                boolean exists = false;
+                for(int i = 0 ; i<container.getContainerSize() ; i++) {
+                    if (container.getItem(i).getItem().equals(carriedStack.getItem())) {
+                        exists = true;
+                        break;
+                    }
+                }
+                if (!exists) {
+                    ItemStack filterStack = carriedStack.copy();
+                    filterStack.setCount(1);
+                    container.setItem(slot, filterStack);
+                }
+            }else
+            {
+                container.removeItemNoUpdate(slot);
+            }
+        } else {
+            super.clicked(slot, button, clickType, player);
+        }
+    }
+
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
         Slot slot = this.slots.get(index);
-        if (slot != null && !(slot instanceof ItemFilterSlot) && slot.hasItem()) {
+        if (!(slot instanceof ItemFilterSlot) && slot.hasItem()) {
             ItemStack itemstack1 = slot.getItem();
-
+            boolean exists = false;
             for (int i = 0; i < container.getContainerSize(); i++) {
-                if (container.getItem(i).equals(ItemStack.EMPTY)) {
-                    container.setItem(i, itemstack1);
+                if (container.getItem(i).getItem().equals(itemstack1.getItem())) {
+                    exists = true;
                     break;
                 }
             }
+
+            if (!exists)
+                for (int i = 0; i < container.getContainerSize(); i++) {
+                    if (container.getItem(i).equals(ItemStack.EMPTY)) {
+                        ItemStack filterStack = itemstack1.copy();
+                        filterStack.setCount(1);
+                        container.setItem(i, filterStack);
+                        break;
+                    }
+                }
         }
 
         return ItemStack.EMPTY;

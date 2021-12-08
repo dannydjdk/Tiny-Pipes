@@ -1,7 +1,7 @@
 package com.dannyandson.tinypipes.gui;
 
 import com.dannyandson.tinypipes.TinyPipes;
-import com.dannyandson.tinypipes.components.ItemFilterPipe;
+import com.dannyandson.tinypipes.components.IFilterPipe;
 import com.dannyandson.tinypipes.network.ModNetworkHandler;
 import com.dannyandson.tinypipes.network.PushItemFilterFlags;
 import com.dannyandson.tinyredstone.blocks.PanelCellPos;
@@ -27,7 +27,7 @@ public class ItemFilterGUI extends AbstractContainerScreen<ItemFilterContainerMe
     private static final ResourceLocation GUI = new ResourceLocation(TinyPipes.MODID, "textures/gui/item_filter.png");
     private Button blackListButton = null;
     private PanelCellPos cellPos;
-    private ItemFilterPipe itemFilterPipe = null;
+    private IFilterPipe iFilterPipe = null;
     private boolean blacklist = false;
 
     private final ItemFilterContainerMenu menu;
@@ -47,10 +47,10 @@ public class ItemFilterGUI extends AbstractContainerScreen<ItemFilterContainerMe
             BlockEntity blockEntity = minecraft.level.getBlockEntity(blockhitresult.getBlockPos());
             if (blockEntity instanceof PanelTile panelTile) {
                 PanelCellPos cellPos = PanelCellPos.fromHitVec(panelTile, panelTile.getBlockState().getValue(BlockStateProperties.FACING), blockhitresult);
-                if (cellPos.getIPanelCell() instanceof ItemFilterPipe itemFilterPipe) {
+                if (cellPos.getIPanelCell() instanceof IFilterPipe iFilterPipe) {
                     this.cellPos = cellPos;
-                    this.itemFilterPipe=itemFilterPipe;
-                    this.blacklist=itemFilterPipe.getBlackList();
+                    this.iFilterPipe =iFilterPipe;
+                    this.blacklist=iFilterPipe.getBlackList();
                 }
             }
         }
@@ -61,12 +61,12 @@ public class ItemFilterGUI extends AbstractContainerScreen<ItemFilterContainerMe
     }
 
     private void toggleBlacklist() {
-        if (this.itemFilterPipe != null) {
+        if (this.iFilterPipe != null) {
             this.blacklist=!this.blacklist;
             removeWidget(blackListButton);
             blackListButton = getNewFilterButton();
             addRenderableWidget(blackListButton);
-            ModNetworkHandler.sendToServer(new PushItemFilterFlags(cellPos,!itemFilterPipe.getBlackList()));
+            ModNetworkHandler.sendToServer(new PushItemFilterFlags(cellPos,!iFilterPipe.getBlackList()));
         }
     }
 

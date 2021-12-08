@@ -1,5 +1,6 @@
 package com.dannyandson.tinypipes.gui;
 
+import com.dannyandson.tinypipes.components.IFilterPipe;
 import com.dannyandson.tinypipes.components.ItemFilterPipe;
 import com.dannyandson.tinypipes.setup.Registration;
 import net.minecraft.network.chat.Component;
@@ -11,9 +12,13 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.MobBucketItem;
+import net.minecraft.world.level.material.Fluids;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
@@ -31,7 +36,12 @@ public class ItemFilterContainerMenu extends AbstractContainerMenu {
     private final Container container;
 
     protected ItemFilterContainerMenu(int containerId, Inventory playerInventory, Container container) {
-        super(Registration.ITEM_FILTER_MENU_TYPE.get(),containerId);
+        this(containerId,playerInventory,container,Registration.ITEM_FILTER_MENU_TYPE.get());
+
+    }
+
+    protected ItemFilterContainerMenu(int containerId, Inventory playerInventory, Container container, @Nullable MenuType<?> menuType) {
+        super(menuType,containerId);
         this.container=container;
 
         int leftCol = 12;
@@ -68,9 +78,9 @@ public class ItemFilterContainerMenu extends AbstractContainerMenu {
     }
 
     @CheckForNull
-    public ItemFilterPipe getItemFilterPipe(){
-        if (this.container instanceof ItemFilterPipe itemFilterPipe)
-            return itemFilterPipe;
+    public IFilterPipe getIFilterPipe(){
+        if (this.container instanceof IFilterPipe iFilterPipe)
+            return iFilterPipe;
         return null;
     }
 
@@ -79,7 +89,12 @@ public class ItemFilterContainerMenu extends AbstractContainerMenu {
     public void clicked(int slot, int button, ClickType clickType, Player player) {
         if (slot>=0 && slot<container.getContainerSize()) {
             ItemStack carriedStack = getCarried();
-            if (!carriedStack.getItem().equals(Items.AIR) && !carriedStack.equals(ItemStack.EMPTY)) {
+            if (!carriedStack.getItem().equals(Items.AIR) && !carriedStack.equals(ItemStack.EMPTY) &&
+                    (!(this instanceof FluidFilterContainerMenu)||
+                            (carriedStack.getItem() instanceof BucketItem &&
+                                    !((BucketItem) carriedStack.getItem()).getFluid().equals(Fluids.EMPTY) &&
+                                    !(carriedStack.getItem() instanceof MobBucketItem)))
+            ) {
                 boolean exists = false;
                 for(int i = 0 ; i<container.getContainerSize() ; i++) {
                     if (container.getItem(i).getItem().equals(carriedStack.getItem())) {
@@ -104,7 +119,7 @@ public class ItemFilterContainerMenu extends AbstractContainerMenu {
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
         Slot slot = this.slots.get(index);
-        if (index<=container.getContainerSize() && slot.hasItem()) {
+        if (index>=container.getContainerSize() && slot.hasItem()) {
             ItemStack itemstack1 = slot.getItem();
             boolean exists = false;
             for (int i = 0; i < container.getContainerSize(); i++) {
@@ -114,7 +129,8 @@ public class ItemFilterContainerMenu extends AbstractContainerMenu {
                 }
             }
 
-            if (!exists)
+            if (!exists && (!(this instanceof FluidFilterContainerMenu)||
+                    (itemstack1.getItem() instanceof BucketItem && !((BucketItem) itemstack1.getItem()).getFluid().equals(Fluids.EMPTY) && !(itemstack1.getItem() instanceof MobBucketItem))))
                 for (int i = 0; i < container.getContainerSize(); i++) {
                     if (container.getItem(i).equals(ItemStack.EMPTY)) {
                         ItemStack filterStack = itemstack1.copy();

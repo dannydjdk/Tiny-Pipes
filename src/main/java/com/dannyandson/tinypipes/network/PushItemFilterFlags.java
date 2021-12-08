@@ -1,5 +1,6 @@
 package com.dannyandson.tinypipes.network;
 
+import com.dannyandson.tinypipes.components.IFilterPipe;
 import com.dannyandson.tinypipes.components.ItemFilterPipe;
 import com.dannyandson.tinyredstone.blocks.PanelCellPos;
 import com.dannyandson.tinyredstone.blocks.PanelTile;
@@ -41,8 +42,8 @@ public class PushItemFilterFlags {
             if (blockEntity instanceof PanelTile panelTile)
             {
                 PanelCellPos cellPos = PanelCellPos.fromIndex(panelTile,cellIndex);
-                if (cellPos.getIPanelCell() instanceof ItemFilterPipe itemFilterPipe){
-                    itemFilterPipe.serverSetBlacklist(blacklist);
+                if (cellPos.getIPanelCell() instanceof IFilterPipe iFilterPipe){
+                    iFilterPipe.serverSetBlacklist(blacklist);
                 }
             }
             ctx.get().setPacketHandled(true);

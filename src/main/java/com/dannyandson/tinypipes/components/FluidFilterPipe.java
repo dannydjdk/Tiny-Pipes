@@ -1,7 +1,9 @@
 package com.dannyandson.tinypipes.components;
 
 import com.dannyandson.tinypipes.TinyPipes;
-import com.dannyandson.tinypipes.gui.ItemFilterContainerMenu;
+import com.dannyandson.tinypipes.components.FluidPipe;
+import com.dannyandson.tinypipes.components.IFilterPipe;
+import com.dannyandson.tinypipes.gui.FluidFilterContainerMenu;
 import com.dannyandson.tinyredstone.blocks.PanelCellPos;
 import com.dannyandson.tinyredstone.blocks.PanelCellSegment;
 import com.dannyandson.tinyredstone.blocks.Side;
@@ -11,13 +13,17 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.MobBucketItem;
+import net.minecraft.world.level.material.Fluids;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fmllegacy.network.NetworkHooks;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
 
-public class ItemFilterPipe extends ItemPipe implements IFilterPipe{
+public class FluidFilterPipe extends FluidPipe implements IFilterPipe {
 
     boolean changed = false;
 
@@ -26,16 +32,15 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe{
     private String[] filters = new String[filterSlots];
     boolean blacklist = false;
 
-    public static final ResourceLocation ITEM_FILTER_PIPE_TEXTURE = new ResourceLocation(TinyPipes.MODID, "block/item_filter_pipe");
+    public static final ResourceLocation FLUID_FILTER_PIPE_TEXTURE = new ResourceLocation(TinyPipes.MODID, "block/fluid_filter_pipe");
     private static TextureAtlasSprite sprite = null;
 
     @Override
     protected TextureAtlasSprite getSprite() {
         if (sprite == null)
-            sprite = com.dannyandson.tinyredstone.blocks.RenderHelper.getSprite(ITEM_FILTER_PIPE_TEXTURE);
+            sprite = com.dannyandson.tinyredstone.blocks.RenderHelper.getSprite(FLUID_FILTER_PIPE_TEXTURE);
         return sprite;
     }
-
 
     @Override
     public boolean onPlace(PanelCellPos cellPos, Player player) {
@@ -48,22 +53,24 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe{
             CompoundTag itemNBT = stack.getTag();
             String filterString = itemNBT.getString("filters");
             filters = Arrays.copyOf(filterString.split("\n",filterSlots),filterSlots);
+            blacklist = itemNBT.getBoolean("blacklist");
         }
 
         return super.onPlace(cellPos, player);
     }
 
     @Override
-    protected void populatePushWrapper(PanelCellPos cellPos, @Nullable Side side, ItemStack itemStack, PushWrapper pushWrapper, int distance) {
-        ResourceLocation itemReg = itemStack.getItem().getRegistryName();
-        boolean hasItem = itemReg != null && hasItem(itemReg.toString());
-        if ((!blacklist && !hasItem) || (blacklist && hasItem)) {
+    protected void populatePushWrapper(PanelCellPos cellPos, @Nullable Side side, FluidStack fluidStack, PushWrapper pushWrapper, int distance) {
+        ResourceLocation fluidReg = fluidStack.getFluid().getBucket().getRegistryName();
+        boolean hasFluid = fluidReg != null && hasFluid(fluidReg.toString());
+        if ((!blacklist && !hasFluid) || (blacklist && hasFluid)) {
             return;
         }
-        super.populatePushWrapper(cellPos, side, itemStack, pushWrapper, distance);
+
+        super.populatePushWrapper(cellPos, side, fluidStack, pushWrapper, distance);
     }
 
-    public boolean hasItem(String itemRegistryName){
+    public boolean hasFluid(String itemRegistryName){
         for (String filter : filters) {
             if(filter!=null && filter.equals(itemRegistryName))
                 return true;
@@ -71,6 +78,8 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe{
         return false;
     }
 
+    //IFilterPipe interface implementation
+    @Override
     public boolean getBlackList(){
         return blacklist;
     }
@@ -79,6 +88,7 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe{
         this.blacklist = blacklist;
         setChanged();
     }
+    //end IFilterPipe
 
     @Override
     public boolean hasActivation(Player player) {
@@ -90,8 +100,8 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe{
         if (player.getMainHandItem().getItem() == Registration.REDSTONE_WRENCH.get())
             return super.onBlockActivated(cellPos, segmentClicked, player);
 
-        if (player instanceof ServerPlayer serverPlayer) {
-            NetworkHooks.openGui(serverPlayer,new ItemFilterContainerMenu.Provider(this));
+        if (player instanceof ServerPlayer) {
+            NetworkHooks.openGui((ServerPlayer) player,new FluidFilterContainerMenu.Provider(this));
         }
         return false;
     }
@@ -139,6 +149,7 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe{
         if (empty)return null;
 
         nbt.putString("filters",filterString);
+        nbt.putBoolean("blacklist",blacklist);
         return nbt;
     }
 
@@ -152,6 +163,11 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe{
     @Override
     public boolean isEmpty() {
         return false;
+    }
+
+    @Override
+    public int getMaxStackSize() {
+        return 1;
     }
 
     @Override
@@ -180,9 +196,16 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe{
 
     @Override
     public void setItem(int slot, ItemStack itemStack) {
-        if (slot<filters.length && itemStack.getItem().getRegistryName()!=null) {
+        BucketItem bucketItem;
+        if (!(itemStack.getItem() instanceof BucketItem))
+            return;
+        bucketItem=(BucketItem) itemStack.getItem();
+        if (slot<filters.length && bucketItem.getRegistryName()!=null &&
+                !bucketItem.getFluid().equals(Fluids.EMPTY) &&
+                !(bucketItem instanceof MobBucketItem)
+        ) {
             String itemName = itemStack.getItem().getRegistryName().toString();
-            if(hasItem(itemName))
+            if(hasFluid(itemName))
                 return;
             filters[slot] = itemStack.getItem().getRegistryName().toString();
         }
@@ -206,4 +229,5 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe{
     }
 
     //End Container Implementation
+
 }

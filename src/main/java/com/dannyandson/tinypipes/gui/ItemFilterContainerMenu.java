@@ -39,7 +39,7 @@ public class ItemFilterContainerMenu extends AbstractContainerMenu {
 
         //filter slots
         for(int i = 0; i<container.getContainerSize(); i++){
-            this.addSlot(new ItemFilterSlot(container, i, leftCol+(i%9)*18, Math.floorDiv(i,9)*18 + 20));
+            this.addSlot(new Slot(container, i, leftCol+(i%9)*18, Math.floorDiv(i,9)*18 + 20));
         }
 
         //player inventory slots
@@ -104,7 +104,7 @@ public class ItemFilterContainerMenu extends AbstractContainerMenu {
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
         Slot slot = this.slots.get(index);
-        if (!(slot instanceof ItemFilterSlot) && slot.hasItem()) {
+        if (index<=container.getContainerSize() && slot.hasItem()) {
             ItemStack itemstack1 = slot.getItem();
             boolean exists = false;
             for (int i = 0; i < container.getContainerSize(); i++) {

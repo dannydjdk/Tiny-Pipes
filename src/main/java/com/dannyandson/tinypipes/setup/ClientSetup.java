@@ -22,6 +22,7 @@ public class ClientSetup {
 
     public static void init(final FMLClientSetupEvent event) {
         ScreenManager.register(Registration.ITEM_FILTER_MENU_TYPE.get(), ItemFilterGUI::new);
+        ScreenManager.register(Registration.FLUID_FILTER_MENU_TYPE.get(), ItemFilterGUI::new);
     }
 
     @SuppressWarnings("unused")

@@ -1,7 +1,7 @@
 package com.dannyandson.tinypipes.gui;
 
 import com.dannyandson.tinypipes.TinyPipes;
-import com.dannyandson.tinypipes.components.ItemFilterPipe;
+import com.dannyandson.tinypipes.components.IFilterPipe;
 import com.dannyandson.tinypipes.network.ModNetworkHandler;
 import com.dannyandson.tinypipes.network.PushItemFilterFlags;
 import com.dannyandson.tinyredstone.blocks.PanelCellPos;
@@ -10,7 +10,6 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.screen.inventory.ContainerScreen;
 import net.minecraft.client.gui.widget.button.Button;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.tileentity.TileEntity;
@@ -26,7 +25,7 @@ public class ItemFilterGUI extends ContainerScreen<ItemFilterContainerMenu> {
     private static final ResourceLocation GUI = new ResourceLocation(TinyPipes.MODID, "textures/gui/item_filter.png");
     private Button blackListButton = null;
     private PanelCellPos cellPos;
-    private ItemFilterPipe itemFilterPipe = null;
+    private IFilterPipe iFilterPipe = null;
     private boolean blacklist = false;
 
     private final ItemFilterContainerMenu menu;
@@ -47,11 +46,10 @@ public class ItemFilterGUI extends ContainerScreen<ItemFilterContainerMenu> {
             if (blockEntity instanceof PanelTile) {
                 PanelTile panelTile = (PanelTile)blockEntity;
                 PanelCellPos cellPos = PanelCellPos.fromHitVec(panelTile, panelTile.getBlockState().getValue(BlockStateProperties.FACING), blockhitresult);
-                if (cellPos.getIPanelCell() instanceof ItemFilterPipe) {
-                    ItemFilterPipe itemFilterPipe = (ItemFilterPipe)cellPos.getIPanelCell();
+                if (cellPos.getIPanelCell() instanceof IFilterPipe) {
+                    this.iFilterPipe = (IFilterPipe)cellPos.getIPanelCell();
+                    this.blacklist= this.iFilterPipe.getBlackList();
                     this.cellPos = cellPos;
-                    this.itemFilterPipe=itemFilterPipe;
-                    this.blacklist=itemFilterPipe.getBlackList();
                 }
             }
         }
@@ -62,12 +60,12 @@ public class ItemFilterGUI extends ContainerScreen<ItemFilterContainerMenu> {
     }
 
     private void toggleBlacklist() {
-        if (this.itemFilterPipe != null) {
+        if (this.iFilterPipe != null) {
             this.blacklist=!this.blacklist;
             this.buttons.remove(blackListButton);
             blackListButton = getNewFilterButton();
             addButton(blackListButton);
-            ModNetworkHandler.sendToServer(new PushItemFilterFlags(cellPos,!itemFilterPipe.getBlackList()));
+            ModNetworkHandler.sendToServer(new PushItemFilterFlags(cellPos,!iFilterPipe.getBlackList()));
         }
     }
 

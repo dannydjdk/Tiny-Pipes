@@ -6,6 +6,8 @@
   "message.item.tinypipes.item_filter_pipe": "Transfers allowed items between inventory blocks.\nRight click without a wrench to set the filters.\nRight click with a redstone wrench to change input and output sides.",
   "item.tinypipes.fluid_pipe": "Tiny Fluid Pipe",
   "message.item.tinypipes.fluid_pipe": "Transfers fluids between tanks.\nRight click with a redstone wrench to change input and output sides.",
+  "item.tinypipes.fluid_filter_pipe": "Tiny Fluid Filter Pipe",
+  "message.item.tinypipes.fluid_filter_pipe": "Transfers allowed fluids between tanks.\nRight click without a wrench to set the filters using buckets of fluid.\nRight click with a redstone wrench to change input and output sides.",
   "item.tinypipes.energy_pipe": "Tiny Energy Pipe",
   "message.item.tinypipes.energy_pipe": "Transfers forge energy from source to receiver.\nRight click with a redstone wrench to change input and output sides.",
   "item.tinypipes.redstone_pipe": "Tiny Redstone Pipe",

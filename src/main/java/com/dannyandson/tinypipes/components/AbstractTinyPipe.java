@@ -199,29 +199,26 @@ public abstract class AbstractTinyPipe implements IPanelCell {
 
         //prioritize pullSides
         for (Side side : pullSides) {
-            if (side == Side.TOP) {
-                if (relY > c2) return side;
-            } else if (side == Side.BOTTOM) {
-                if (relY < c1) return side;
-            }
-            else{
-                if (relX>c2 && side == panelTile.getPanelCellSide(cellPos,panelTile.getSideFromDirection(Direction.EAST)))
-                    return side;
-                if (relX<c1 && side == panelTile.getPanelCellSide(cellPos,panelTile.getSideFromDirection(Direction.WEST)))
-                    return side;
-                if (relZ>c2 && side == panelTile.getPanelCellSide(cellPos,panelTile.getSideFromDirection(Direction.SOUTH)))
-                    return side;
-                if (relZ<c1 && side == panelTile.getPanelCellSide(cellPos,panelTile.getSideFromDirection(Direction.NORTH)))
-                    return side;
-            }
+            if (relY>c2 && side == panelTile.getPanelCellSide(cellPos,Side.TOP))
+                return side;
+            if (relY<c1 && side == panelTile.getPanelCellSide(cellPos,Side.BOTTOM))
+                return side;
+            if (relX>c2 && side == panelTile.getPanelCellSide(cellPos,Side.RIGHT))
+                return side;
+            if (relX<c1 && side == panelTile.getPanelCellSide(cellPos,Side.LEFT))
+                return side;
+            if (relZ>c2 && side == panelTile.getPanelCellSide(cellPos,Side.BACK))
+                return side;
+            if (relZ<c1 && side == panelTile.getPanelCellSide(cellPos,Side.FRONT))
+                return side;
         }
 
-        if (relX>c2) return panelTile.getPanelCellSide(cellPos,panelTile.getSideFromDirection(Direction.EAST));
-        if (relX<c1) return panelTile.getPanelCellSide(cellPos,panelTile.getSideFromDirection(Direction.WEST));
-        if (relY>c2) return Side.TOP;
-        if (relY<c1) return Side.BOTTOM;
-        if (relZ>c2) return panelTile.getPanelCellSide(cellPos,panelTile.getSideFromDirection(Direction.SOUTH));
-        if (relZ<c1) return panelTile.getPanelCellSide(cellPos,panelTile.getSideFromDirection(Direction.NORTH));
+        if (relX>c2) return panelTile.getPanelCellSide(cellPos,Side.RIGHT);
+        if (relX<c1) return panelTile.getPanelCellSide(cellPos,Side.LEFT);
+        if (relY>c2) return panelTile.getPanelCellSide(cellPos,Side.TOP);
+        if (relY<c1) return panelTile.getPanelCellSide(cellPos,Side.BOTTOM);
+        if (relZ>c2) return panelTile.getPanelCellSide(cellPos,Side.BACK);
+        if (relZ<c1) return panelTile.getPanelCellSide(cellPos,Side.FRONT);
         return panelTile.getPanelCellSide(cellPos,panelTile.getSideFromDirection(rayTraceDirection.getOpposite()));
     }
 

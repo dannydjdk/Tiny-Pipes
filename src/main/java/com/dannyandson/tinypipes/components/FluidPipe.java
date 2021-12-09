@@ -50,17 +50,12 @@ public class FluidPipe  extends AbstractTinyPipe {
                 topNeighbor = cellPos.getNeighbor(Side.TOP),
                 bottomNeighbor = cellPos.getNeighbor(Side.BOTTOM);
 
-        if (
-                (rightNeighbor != null && rightNeighbor.getStrongRsOutput() > 0) ||
-                        (leftNeighbor != null && leftNeighbor.getStrongRsOutput() > 0) ||
-                        (backNeighbor != null && backNeighbor.getStrongRsOutput() > 0) ||
-                        (frontNeighbor != null && frontNeighbor.getStrongRsOutput() > 0) ||
-                        (topNeighbor != null && topNeighbor.getStrongRsOutput() > 0) ||
-                        (bottomNeighbor != null && bottomNeighbor.getStrongRsOutput() > 0)
-        )
-            disabled = true;
-        else
-            disabled = false;
+        disabled = (rightNeighbor != null && rightNeighbor.getStrongRsOutput() > 0) ||
+                (leftNeighbor != null && leftNeighbor.getStrongRsOutput() > 0) ||
+                (backNeighbor != null && backNeighbor.getStrongRsOutput() > 0) ||
+                (frontNeighbor != null && frontNeighbor.getStrongRsOutput() > 0) ||
+                (topNeighbor != null && topNeighbor.getStrongRsOutput() > 0) ||
+                (bottomNeighbor != null && bottomNeighbor.getStrongRsOutput() > 0);
 
         return false;
     }
@@ -85,53 +80,48 @@ public class FluidPipe  extends AbstractTinyPipe {
         pushWrapper = null;
 
         for (Side side : pullSides) {
-            //if set to pull, check for connected neighbor with item capabilities
+            //if set to pull, check for connected neighbor with fluid capabilities
             PanelCellNeighbor extractNeighbor = cellPos.getNeighbor(side);
-            BlockPos neighborBlockPos = (extractNeighbor==null)?null:extractNeighbor.getBlockPos();
+            BlockPos neighborBlockPos = (extractNeighbor == null) ? null : extractNeighbor.getBlockPos();
 
             if (neighborBlockPos != null) {
-                BlockEntity neighborBlockEntity = cellPos.getPanelTile().getLevel().getBlockEntity(neighborBlockPos);
-                if (neighborBlockEntity != null) {
-                    Capability<IFluidHandler> iFluidHandlerCapability = CapabilityManager.get(new CapabilityToken<>() {
-                    });
-                    BlockPos panelBlockPos = cellPos.getPanelTile().getBlockPos();
-                    Direction neighborSide =
-                            (neighborBlockPos.relative(Direction.NORTH).equals(panelBlockPos)) ? Direction.NORTH :
-                                    (neighborBlockPos.relative(Direction.EAST).equals(panelBlockPos)) ? Direction.EAST :
-                                            (neighborBlockPos.relative(Direction.SOUTH).equals(panelBlockPos)) ? Direction.SOUTH :
-                                                    (neighborBlockPos.relative(Direction.WEST).equals(panelBlockPos)) ? Direction.WEST :
-                                                            (neighborBlockPos.relative(Direction.UP).equals(panelBlockPos)) ? Direction.UP :
-                                                                    Direction.DOWN;
+                BlockPos panelBlockPos = cellPos.getPanelTile().getBlockPos();
+                Direction neighborSide =
+                        (neighborBlockPos.relative(Direction.NORTH).equals(panelBlockPos)) ? Direction.NORTH :
+                                (neighborBlockPos.relative(Direction.EAST).equals(panelBlockPos)) ? Direction.EAST :
+                                        (neighborBlockPos.relative(Direction.SOUTH).equals(panelBlockPos)) ? Direction.SOUTH :
+                                                (neighborBlockPos.relative(Direction.WEST).equals(panelBlockPos)) ? Direction.WEST :
+                                                        (neighborBlockPos.relative(Direction.UP).equals(panelBlockPos)) ? Direction.UP :
+                                                                Direction.DOWN;
 
-                    IFluidHandler iFluidHandler = neighborBlockEntity.getCapability(iFluidHandlerCapability, neighborSide).orElse(null);
-                    if (iFluidHandler != null) {
-                        boolean fluidMoved = false;
-                        for (int tank = 0; tank < iFluidHandler.getTanks() && !fluidMoved; tank++) {
-                            //if an item stack exists that can be pulled, ask connected ItemPipe neighbors if a destination exists
-                            FluidStack fluidStack = iFluidHandler.getFluidInTank(tank);
-                            if (fluidStack != null && !fluidStack.isEmpty()) {
-                                //we found a stack that can be extracted
-                                //see if there's a place to put it
-                                FluidStack fluidStack2 = fluidStack.copy();
-                                fluidStack2.setAmount(Math.min(fluidStack2.getAmount(),50));
-                                PushWrapper pushWrapper = getPushWrapper(cellPos, fluidStack2);
-                                for (PushWrapper.PushBlockEntity pushBlockEntity : pushWrapper.getSortedBlockEntities()) {
-                                    //grab capabilities and push
-                                    IFluidHandler iFluidHandler2 = pushBlockEntity.getIFluidHandler();
-                                    if (iFluidHandler2 != null) {
-                                        int filled = iFluidHandler2.fill(fluidStack2, IFluidHandler.FluidAction.EXECUTE);
-                                        if (filled>0) {
-                                            fluidStack2.setAmount(filled);
-                                            iFluidHandler.drain(fluidStack2, IFluidHandler.FluidAction.EXECUTE);
-                                            fluidMoved = true;
-                                            break;
-                                        }
+                IFluidHandler iFluidHandler = ModCapabilityManager.getIFluidHandler(cellPos.getPanelTile().getLevel(), neighborBlockPos, neighborSide);
+                if (iFluidHandler != null) {
+                    boolean fluidMoved = false;
+                    for (int tank = 0; tank < iFluidHandler.getTanks() && !fluidMoved; tank++) {
+                        //if an item stack exists that can be pulled, ask connected ItemPipe neighbors if a destination exists
+                        FluidStack fluidStack = iFluidHandler.getFluidInTank(tank);
+                        if (!fluidStack.isEmpty()) {
+                            //we found a stack that can be extracted
+                            //see if there's a place to put it
+                            FluidStack fluidStack2 = fluidStack.copy();
+                            fluidStack2.setAmount(Math.min(fluidStack2.getAmount(), 50));
+                            PushWrapper pushWrapper = getPushWrapper(cellPos, fluidStack2);
+                            for (PushWrapper.PushBlockEntity pushBlockEntity : pushWrapper.getSortedBlockEntities()) {
+                                //grab capabilities and push
+                                IFluidHandler iFluidHandler2 = pushBlockEntity.getIFluidHandler();
+                                if (iFluidHandler2 != null) {
+                                    int filled = iFluidHandler2.fill(fluidStack2, IFluidHandler.FluidAction.EXECUTE);
+                                    if (filled > 0) {
+                                        fluidStack2.setAmount(filled);
+                                        iFluidHandler.drain(fluidStack2, IFluidHandler.FluidAction.EXECUTE);
+                                        fluidMoved = true;
+                                        break;
                                     }
-
                                 }
-                            }
 
+                            }
                         }
+
                     }
                 }
             }
@@ -140,10 +130,8 @@ public class FluidPipe  extends AbstractTinyPipe {
     }
 
     private PushWrapper getPushWrapper(PanelCellPos cellPos, FluidStack fluidStack) {
-        if (pushWrapper == null) {
-            this.pushWrapper = new PushWrapper();
-            populatePushWrapper(cellPos, null, fluidStack, this.pushWrapper, 0);
-        }
+        this.pushWrapper = new PushWrapper();
+        populatePushWrapper(cellPos, null, fluidStack, this.pushWrapper, 0);
         return pushWrapper;
     }
 

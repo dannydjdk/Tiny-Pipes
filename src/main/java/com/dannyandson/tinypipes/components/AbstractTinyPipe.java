@@ -84,34 +84,6 @@ public abstract class AbstractTinyPipe implements IPanelCell {
     @Override
     public boolean onPlace(PanelCellPos cellPos, Player player) {
 
-        if(RotationLock.getServerRotationLock(player)==null) {
-            Direction panelFacing = cellPos.getPanelTile().getBlockState().getValue(BlockStateProperties.FACING);
-            double playerToPanel;
-            switch (panelFacing) {
-                case NORTH:
-                    playerToPanel = -player.getLookAngle().z;
-                    break;
-                case SOUTH:
-                    playerToPanel = player.getLookAngle().z;
-                    break;
-                case WEST:
-                    playerToPanel = -player.getLookAngle().x;
-                    break;
-                case EAST:
-                    playerToPanel = player.getLookAngle().x;
-                    break;
-                case UP:
-                    playerToPanel = player.getLookAngle().y;
-                    break;
-                default:
-                    playerToPanel = -player.getLookAngle().y;
-            }
-            if (playerToPanel > 0.90 || playerToPanel < -0.7){
-                connectedSides.add(Side.TOP);
-                connectedSides.add(Side.BOTTOM);
-                return false;
-            }
-        }
         connectedSides.add(Side.FRONT);
         connectedSides.add(Side.BACK);
 
@@ -120,24 +92,30 @@ public abstract class AbstractTinyPipe implements IPanelCell {
 
     @Override
     public boolean onBlockActivated(PanelCellPos cellPos, PanelCellSegment segmentClicked, Player player) {
-        if (player.getMainHandItem().getItem()== Registration.REDSTONE_WRENCH.get())
-        {
-            Side sideOfCell = getClickedSide(cellPos,player);
-            if (connectedSides.contains(sideOfCell)){
-                PanelCellNeighbor neighbor = cellPos.getNeighbor(sideOfCell);
-                if (neighbor!=null && neighbor.getBlockPos()!=null && !pullSides.contains(sideOfCell))
-                    pullSides.add(sideOfCell);
-                else{
-                    pullSides.remove(sideOfCell);
-                    connectedSides.remove(sideOfCell);
-                }
-            }else
-                connectedSides.add(sideOfCell);
+        if (player.getMainHandItem().getItem()== Registration.REDSTONE_WRENCH.get()) {
+            Side sideOfCell = getClickedSide(cellPos, player);
+            if (sideOfCell != null) {
+                if (connectedSides.contains(sideOfCell)) {
+                    PanelCellNeighbor neighbor = cellPos.getNeighbor(sideOfCell);
+                    if (neighbor != null && neighbor.getBlockPos() != null && !pullSides.contains(sideOfCell))
+                        pullSides.add(sideOfCell);
+                    else {
+                        pullSides.remove(sideOfCell);
+                        connectedSides.remove(sideOfCell);
+                    }
+                } else
+                    connectedSides.add(sideOfCell);
+            }
         }
         return false;
     }
 
-    protected Side getClickedSide(PanelCellPos cellPos,Player player){
+    @Override
+    public boolean canPlaceVertical() {
+        return true;
+    }
+
+    protected Side getClickedSide(PanelCellPos cellPos, Player player){
         PanelTile panelTile = cellPos.getPanelTile();
         BlockPos pos = panelTile.getBlockPos();
         Direction panelFacing = panelTile.getBlockState().getValue(BlockStateProperties.FACING);
@@ -249,13 +227,15 @@ public abstract class AbstractTinyPipe implements IPanelCell {
         if (!connectedSides.isEmpty()) {
             List<Integer> sides = new ArrayList<>();
             for (Side side : connectedSides)
-                sides.add(side.ordinal());
+                if (side != null)
+                    sides.add(side.ordinal());
             nbt.putIntArray("connectedSides",sides);
         }
         if (!pullSides.isEmpty()) {
             List<Integer> sides = new ArrayList<>();
             for (Side side : pullSides)
-                sides.add(side.ordinal());
+                if (side != null)
+                    sides.add(side.ordinal());
             nbt.putIntArray("pullSides",sides);
         }
         return nbt;
@@ -344,22 +324,22 @@ public abstract class AbstractTinyPipe implements IPanelCell {
                         new Vector3d(s0, c1, c1),
                         new Vector3d(c1, c2, c2)
                 ));
-            if (pullSides.contains(Side.TOP))
+            if (pullSides.contains(panelTile.getPanelCellSide(cellPos,Side.TOP)))
                 shapes.add(new PanelCellVoxelShape(
                         new Vector3d(p1, c2, p1),
                         new Vector3d(p2, s3, p2)
                 ));
-            else if (connectedSides.contains(Side.TOP))
+            else if (connectedSides.contains(panelTile.getPanelCellSide(cellPos,Side.TOP)))
                 shapes.add(new PanelCellVoxelShape(
                         new Vector3d(c1, c2, c1),
                         new Vector3d(c2, s3, c2)
                 ));
-            if (pullSides.contains(Side.BOTTOM))
+            if (pullSides.contains(panelTile.getPanelCellSide(cellPos,Side.BOTTOM)))
                 shapes.add(new PanelCellVoxelShape(
                         new Vector3d(p1, s0, p1),
                         new Vector3d(p2, c1, p2)
                 ));
-            else if (connectedSides.contains(Side.BOTTOM))
+            else if (connectedSides.contains(panelTile.getPanelCellSide(cellPos,Side.BOTTOM)))
                 shapes.add(new PanelCellVoxelShape(
                         new Vector3d(c1, s0, c1),
                         new Vector3d(c2, c1, c2)

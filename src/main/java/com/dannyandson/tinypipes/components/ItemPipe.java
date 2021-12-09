@@ -9,9 +9,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.CapabilityManager;
-import net.minecraftforge.common.capabilities.CapabilityToken;
 import net.minecraftforge.items.IItemHandler;
 
 import javax.annotation.Nullable;
@@ -46,17 +43,12 @@ public class ItemPipe extends AbstractTinyPipe {
                 topNeighbor = cellPos.getNeighbor(Side.TOP),
                 bottomNeighbor = cellPos.getNeighbor(Side.BOTTOM);
 
-        if (
-                (rightNeighbor != null && rightNeighbor.getStrongRsOutput() > 0) ||
-                        (leftNeighbor != null && leftNeighbor.getStrongRsOutput() > 0) ||
-                        (backNeighbor != null && backNeighbor.getStrongRsOutput() > 0) ||
-                        (frontNeighbor != null && frontNeighbor.getStrongRsOutput() > 0) ||
-                        (topNeighbor != null && topNeighbor.getStrongRsOutput() > 0) ||
-                        (bottomNeighbor != null && bottomNeighbor.getStrongRsOutput() > 0)
-        )
-            disabled = true;
-        else
-            disabled = false;
+        disabled = (rightNeighbor != null && rightNeighbor.getStrongRsOutput() > 0) ||
+                (leftNeighbor != null && leftNeighbor.getStrongRsOutput() > 0) ||
+                (backNeighbor != null && backNeighbor.getStrongRsOutput() > 0) ||
+                (frontNeighbor != null && frontNeighbor.getStrongRsOutput() > 0) ||
+                (topNeighbor != null && topNeighbor.getStrongRsOutput() > 0) ||
+                (bottomNeighbor != null && bottomNeighbor.getStrongRsOutput() > 0);
 
         return false;
     }
@@ -83,48 +75,43 @@ public class ItemPipe extends AbstractTinyPipe {
         for (Side side : pullSides) {
             //if set to pull, check for connected neighbor with item capabilities
             PanelCellNeighbor extractNeighbor = cellPos.getNeighbor(side);
-            BlockPos neighborBlockPos = (extractNeighbor==null)?null:extractNeighbor.getBlockPos();
+            BlockPos neighborBlockPos = (extractNeighbor == null) ? null : extractNeighbor.getBlockPos();
 
             if (neighborBlockPos != null) {
-                BlockEntity neighborBlockEntity = cellPos.getPanelTile().getLevel().getBlockEntity(neighborBlockPos);
-                if (neighborBlockEntity != null) {
-                    Capability<IItemHandler> iItemHandlerCapability = CapabilityManager.get(new CapabilityToken<>() {
-                    });
-                    BlockPos panelBlockPos = cellPos.getPanelTile().getBlockPos();
-                    Direction neighborSide =
-                            (neighborBlockPos.relative(Direction.NORTH).equals(panelBlockPos)) ? Direction.NORTH :
-                                    (neighborBlockPos.relative(Direction.EAST).equals(panelBlockPos)) ? Direction.EAST :
-                                            (neighborBlockPos.relative(Direction.SOUTH).equals(panelBlockPos)) ? Direction.SOUTH :
-                                                    (neighborBlockPos.relative(Direction.WEST).equals(panelBlockPos)) ? Direction.WEST :
-                                                            (neighborBlockPos.relative(Direction.UP).equals(panelBlockPos)) ? Direction.UP :
-                                                                    Direction.DOWN;
+                BlockPos panelBlockPos = cellPos.getPanelTile().getBlockPos();
+                Direction neighborSide =
+                        (neighborBlockPos.relative(Direction.NORTH).equals(panelBlockPos)) ? Direction.NORTH :
+                                (neighborBlockPos.relative(Direction.EAST).equals(panelBlockPos)) ? Direction.EAST :
+                                        (neighborBlockPos.relative(Direction.SOUTH).equals(panelBlockPos)) ? Direction.SOUTH :
+                                                (neighborBlockPos.relative(Direction.WEST).equals(panelBlockPos)) ? Direction.WEST :
+                                                        (neighborBlockPos.relative(Direction.UP).equals(panelBlockPos)) ? Direction.UP :
+                                                                Direction.DOWN;
 
-                    IItemHandler iItemHandler = neighborBlockEntity.getCapability(iItemHandlerCapability, neighborSide).orElse(null);
-                    if (iItemHandler != null) {
-                        boolean itemMoved = false;
-                        for (int slot = 0; slot < iItemHandler.getSlots() && !itemMoved; slot++) {
-                            //if an item stack exists that can be pulled, ask connected ItemPipe neighbors if a destination exists
-                            ItemStack itemStack = iItemHandler.extractItem(slot, 1, true);
-                            if (itemStack != null && !itemStack.isEmpty()) {
-                                //we found a stack that can be extracted
-                                //see if there's a place to put it
-                                ItemStack itemStack2 = itemStack.copy();
-                                PushWrapper pushWrapper = getPushWrapper(cellPos, itemStack);
-                                for (PushWrapper.PushBlockEntity pushBlockEntity : pushWrapper.getSortedBlockEntities()) {
-                                    //grab capabilities and push
-                                    IItemHandler iItemHandler2 = pushBlockEntity.getIItemHandler();
-                                    if (iItemHandler2 != null) {
-                                        for (int pSlot = 0; pSlot < iItemHandler2.getSlots() && !itemStack2.isEmpty() ; pSlot++) {
-                                            itemStack2 = iItemHandler2.insertItem(pSlot, itemStack2, false);
-                                        }
-                                        if (itemStack2.getCount()< itemStack.getCount()) {
-                                            iItemHandler.extractItem(slot, itemStack.getCount() - itemStack2.getCount(), false);
-                                            itemMoved = true;
-                                            break;
-                                        }
+                IItemHandler iItemHandler = ModCapabilityManager.getItemHandler(cellPos.getPanelTile().getLevel(), neighborBlockPos, neighborSide);
+                if (iItemHandler != null) {
+                    boolean itemMoved = false;
+                    for (int slot = 0; slot < iItemHandler.getSlots() && !itemMoved; slot++) {
+                        //if an item stack exists that can be pulled, ask connected ItemPipe neighbors if a destination exists
+                        ItemStack itemStack = iItemHandler.extractItem(slot, 1, true);
+                        if (!itemStack.isEmpty()) {
+                            //we found a stack that can be extracted
+                            //see if there's a place to put it
+                            ItemStack itemStack2 = itemStack.copy();
+                            PushWrapper pushWrapper = getPushWrapper(cellPos, itemStack);
+                            for (PushWrapper.PushBlockEntity pushBlockEntity : pushWrapper.getSortedBlockEntities()) {
+                                //grab capabilities and push
+                                IItemHandler iItemHandler2 = pushBlockEntity.getIItemHandler();
+                                if (iItemHandler2 != null) {
+                                    for (int pSlot = 0; pSlot < iItemHandler2.getSlots() && !itemStack2.isEmpty(); pSlot++) {
+                                        itemStack2 = iItemHandler2.insertItem(pSlot, itemStack2, false);
                                     }
-
+                                    if (itemStack2.getCount() < itemStack.getCount()) {
+                                        iItemHandler.extractItem(slot, itemStack.getCount() - itemStack2.getCount(), false);
+                                        itemMoved = true;
+                                        break;
+                                    }
                                 }
+
                             }
 
                         }
@@ -136,10 +123,8 @@ public class ItemPipe extends AbstractTinyPipe {
     }
 
     private PushWrapper getPushWrapper(PanelCellPos cellPos, ItemStack itemStack) {
-        if (pushWrapper == null) {
-            this.pushWrapper = new PushWrapper();
-            populatePushWrapper(cellPos, null, itemStack, this.pushWrapper, 0);
-        }
+        this.pushWrapper = new PushWrapper();
+        populatePushWrapper(cellPos, null, itemStack, this.pushWrapper, 0);
         return pushWrapper;
     }
 

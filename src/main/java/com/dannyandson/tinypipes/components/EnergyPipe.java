@@ -44,17 +44,12 @@ public class EnergyPipe extends AbstractTinyPipe {
                 topNeighbor = cellPos.getNeighbor(Side.TOP),
                 bottomNeighbor = cellPos.getNeighbor(Side.BOTTOM);
 
-        if (
-                (rightNeighbor != null && rightNeighbor.getStrongRsOutput() > 0) ||
-                        (leftNeighbor != null && leftNeighbor.getStrongRsOutput() > 0) ||
-                        (backNeighbor != null && backNeighbor.getStrongRsOutput() > 0) ||
-                        (frontNeighbor != null && frontNeighbor.getStrongRsOutput() > 0) ||
-                        (topNeighbor != null && topNeighbor.getStrongRsOutput() > 0) ||
-                        (bottomNeighbor != null && bottomNeighbor.getStrongRsOutput() > 0)
-        )
-            disabled = true;
-        else
-            disabled = false;
+        disabled = (rightNeighbor != null && rightNeighbor.getStrongRsOutput() > 0) ||
+                (leftNeighbor != null && leftNeighbor.getStrongRsOutput() > 0) ||
+                (backNeighbor != null && backNeighbor.getStrongRsOutput() > 0) ||
+                (frontNeighbor != null && frontNeighbor.getStrongRsOutput() > 0) ||
+                (topNeighbor != null && topNeighbor.getStrongRsOutput() > 0) ||
+                (bottomNeighbor != null && bottomNeighbor.getStrongRsOutput() > 0);
 
         return false;
     }
@@ -70,43 +65,38 @@ public class EnergyPipe extends AbstractTinyPipe {
         for (Side side : pullSides) {
             //if set to pull, check for connected neighbor with item capabilities
             PanelCellNeighbor extractNeighbor = cellPos.getNeighbor(side);
-            BlockPos neighborBlockPos = (extractNeighbor==null)?null:extractNeighbor.getBlockPos();
+            BlockPos neighborBlockPos = (extractNeighbor == null) ? null : extractNeighbor.getBlockPos();
 
             if (neighborBlockPos != null) {
-                BlockEntity neighborBlockEntity = cellPos.getPanelTile().getLevel().getBlockEntity(neighborBlockPos);
-                if (neighborBlockEntity != null) {
-                    Capability<IEnergyStorage> iEnergyStorageCapability = CapabilityManager.get(new CapabilityToken<>() {
-                    });
-                    BlockPos panelBlockPos = cellPos.getPanelTile().getBlockPos();
-                    Direction neighborSide =
-                            (neighborBlockPos.relative(Direction.NORTH).equals(panelBlockPos)) ? Direction.NORTH :
-                                    (neighborBlockPos.relative(Direction.EAST).equals(panelBlockPos)) ? Direction.EAST :
-                                            (neighborBlockPos.relative(Direction.SOUTH).equals(panelBlockPos)) ? Direction.SOUTH :
-                                                    (neighborBlockPos.relative(Direction.WEST).equals(panelBlockPos)) ? Direction.WEST :
-                                                            (neighborBlockPos.relative(Direction.UP).equals(panelBlockPos)) ? Direction.UP :
-                                                                    Direction.DOWN;
+                BlockPos panelBlockPos = cellPos.getPanelTile().getBlockPos();
+                Direction neighborSide =
+                        (neighborBlockPos.relative(Direction.NORTH).equals(panelBlockPos)) ? Direction.NORTH :
+                                (neighborBlockPos.relative(Direction.EAST).equals(panelBlockPos)) ? Direction.EAST :
+                                        (neighborBlockPos.relative(Direction.SOUTH).equals(panelBlockPos)) ? Direction.SOUTH :
+                                                (neighborBlockPos.relative(Direction.WEST).equals(panelBlockPos)) ? Direction.WEST :
+                                                        (neighborBlockPos.relative(Direction.UP).equals(panelBlockPos)) ? Direction.UP :
+                                                                Direction.DOWN;
 
-                    IEnergyStorage iEnergyStorage = neighborBlockEntity.getCapability(iEnergyStorageCapability, neighborSide).orElse(null);
-                    if (iEnergyStorage != null) {
-                        int toExtract = 20;
-                        int energy = iEnergyStorage.extractEnergy(toExtract, true);
-                        if (energy > 0) {
-                            int remainingEnergy = energy;
-                            //we found energy that can be extracted
-                            //see if there's a place to put it
-                            PushWrapper pushWrapper = getPushWrapper(cellPos, energy);
-                            for (PushWrapper.PushBlockEntity pushBlockEntity : pushWrapper.getSortedBlockEntities()) {
-                                //grab capabilities and push
-                                IEnergyStorage iEnergyStorage2 = pushBlockEntity.getIEnergyStorage();
-                                if (iEnergyStorage2 != null && iEnergyStorage2.canReceive()) {
-                                    int energyReceived = iEnergyStorage2.receiveEnergy(remainingEnergy, false);
-                                    remainingEnergy -= energyReceived;
-                                    if (energy == 0) break;
-                                }
+                IEnergyStorage iEnergyStorage = ModCapabilityManager.getIEnergyStorage(cellPos.getPanelTile().getLevel(), neighborBlockPos, neighborSide);
+                if (iEnergyStorage != null) {
+                    int toExtract = 20;
+                    int energy = iEnergyStorage.extractEnergy(toExtract, true);
+                    if (energy > 0) {
+                        int remainingEnergy = energy;
+                        //we found energy that can be extracted
+                        //see if there's a place to put it
+                        PushWrapper pushWrapper = getPushWrapper(cellPos, energy);
+                        for (PushWrapper.PushBlockEntity pushBlockEntity : pushWrapper.getSortedBlockEntities()) {
+                            //grab capabilities and push
+                            IEnergyStorage iEnergyStorage2 = pushBlockEntity.getIEnergyStorage();
+                            if (iEnergyStorage2 != null && iEnergyStorage2.canReceive()) {
+                                int energyReceived = iEnergyStorage2.receiveEnergy(remainingEnergy, false);
+                                remainingEnergy -= energyReceived;
+                                if (remainingEnergy == 0) break;
                             }
-                            if (remainingEnergy < energy)
-                                iEnergyStorage.extractEnergy(energy - remainingEnergy, false);
                         }
+                        if (remainingEnergy < energy)
+                            iEnergyStorage.extractEnergy(energy - remainingEnergy, false);
                     }
                 }
             }

@@ -2,9 +2,6 @@ package com.dannyandson.tinypipes.components;
 
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.CapabilityManager;
-import net.minecraftforge.common.capabilities.CapabilityToken;
 import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.items.IItemHandler;
@@ -56,43 +53,19 @@ public class PushWrapper {
             return side;
         }
 
-        private IItemHandler iItemHandler = null;
-        private boolean iItemHandlerChecked = false;
         public IItemHandler getIItemHandler()
         {
-            if (!iItemHandlerChecked){
-                Capability<IItemHandler> iItemHandlerCapability = CapabilityManager.get(new CapabilityToken<>() {
-                });
-                iItemHandler = blockEntity.getCapability(iItemHandlerCapability, side).orElse(null);
-                iItemHandlerChecked=true;
-            }
-            return iItemHandler;
+             return ModCapabilityManager.getItemHandler(blockEntity.getLevel(),blockEntity.getBlockPos(),side,blockEntity);
         }
 
-        private IFluidHandler iFluidHandler = null;
-        private boolean iFluidHandlerChecked = false;
         public IFluidHandler getIFluidHandler()
         {
-            if (!iFluidHandlerChecked){
-                Capability<IFluidHandler> iFluidHandlerCapability = CapabilityManager.get(new CapabilityToken<>() {
-                });
-                iFluidHandler = blockEntity.getCapability(iFluidHandlerCapability, side).orElse(null);
-                iFluidHandlerChecked=true;
-            }
-            return iFluidHandler;
+            return ModCapabilityManager.getIFluidHandler(blockEntity.getLevel(),blockEntity.getBlockPos(),side,blockEntity);
         }
 
-        private IEnergyStorage iEnergyStorage = null;
-        private boolean iEnergyStorageChecked = false;
         public IEnergyStorage getIEnergyStorage()
         {
-            if (!iEnergyStorageChecked){
-                Capability<IEnergyStorage> iEnergyStorageCapability = CapabilityManager.get(new CapabilityToken<>() {
-                });
-                iEnergyStorage = blockEntity.getCapability(iEnergyStorageCapability, side).orElse(null);
-                iEnergyStorageChecked=true;
-            }
-            return iEnergyStorage;
+            return ModCapabilityManager.getIEnergyStorage(blockEntity.getLevel(),blockEntity.getBlockPos(),side,blockEntity);
         }
 
         /**

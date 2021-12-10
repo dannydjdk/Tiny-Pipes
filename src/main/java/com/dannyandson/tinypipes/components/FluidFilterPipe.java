@@ -1,6 +1,7 @@
 package com.dannyandson.tinypipes.components;
 
 import com.dannyandson.tinypipes.TinyPipes;
+import com.dannyandson.tinypipes.caphandlers.PushWrapper;
 import com.dannyandson.tinypipes.gui.FluidFilterContainerMenu;
 import com.dannyandson.tinyredstone.blocks.PanelCellPos;
 import com.dannyandson.tinyredstone.blocks.PanelCellSegment;
@@ -10,19 +11,19 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.fluid.Fluids;
-import net.minecraft.inventory.IInventory;
 import net.minecraft.item.BucketItem;
 import net.minecraft.item.FishBucketItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fml.network.NetworkHooks;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
 
-public class FluidFilterPipe extends FluidPipe implements IInventory, IFilterPipe {
+public class FluidFilterPipe extends FluidPipe implements IFilterPipe {
 
     boolean changed = false;
 
@@ -59,7 +60,7 @@ public class FluidFilterPipe extends FluidPipe implements IInventory, IFilterPip
     }
 
     @Override
-    protected void populatePushWrapper(PanelCellPos cellPos, @Nullable Side side, FluidStack fluidStack, PushWrapper pushWrapper, int distance) {
+    protected void populatePushWrapper(PanelCellPos cellPos, @Nullable Side side, FluidStack fluidStack, PushWrapper<IFluidHandler> pushWrapper, int distance) {
         ResourceLocation fluidReg = fluidStack.getFluid().getBucket().getRegistryName();
         boolean hasFluid = fluidReg != null && hasFluid(fluidReg.toString());
         if ((!blacklist && !hasFluid) || (blacklist && hasFluid)) {

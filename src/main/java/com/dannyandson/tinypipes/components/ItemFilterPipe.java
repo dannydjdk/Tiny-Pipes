@@ -1,6 +1,7 @@
 package com.dannyandson.tinypipes.components;
 
 import com.dannyandson.tinypipes.TinyPipes;
+import com.dannyandson.tinypipes.caphandlers.PushWrapper;
 import com.dannyandson.tinypipes.gui.ItemFilterContainerMenu;
 import com.dannyandson.tinyredstone.blocks.PanelCellPos;
 import com.dannyandson.tinyredstone.blocks.PanelCellSegment;
@@ -9,21 +10,21 @@ import com.dannyandson.tinyredstone.setup.Registration;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.network.NetworkHooks;
+import net.minecraftforge.items.IItemHandler;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
 
-public class ItemFilterPipe extends ItemPipe implements IInventory, IFilterPipe {
+public class ItemFilterPipe extends ItemPipe implements IFilterPipe {
 
     boolean changed = false;
 
     //saved fields
-    private static int filterSlots = 18;
+    private static final int filterSlots = 18;
     private String[] filters = new String[filterSlots];
     boolean blacklist = false;
 
@@ -56,7 +57,7 @@ public class ItemFilterPipe extends ItemPipe implements IInventory, IFilterPipe 
     }
 
     @Override
-    protected void populatePushWrapper(PanelCellPos cellPos, @Nullable Side side, ItemStack itemStack, PushWrapper pushWrapper, int distance) {
+    protected void populatePushWrapper(PanelCellPos cellPos, @Nullable Side side, ItemStack itemStack, PushWrapper<IItemHandler> pushWrapper, int distance) {
         ResourceLocation itemReg = itemStack.getItem().getRegistryName();
         boolean hasItem = itemReg != null && hasItem(itemReg.toString());
         if ((!blacklist && !hasItem) || (blacklist && hasItem)) {

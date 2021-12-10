@@ -20,6 +20,7 @@ build
 # other
 eclipse
 run
+runServer
 sandbox
 
 # Files from Forge MDK

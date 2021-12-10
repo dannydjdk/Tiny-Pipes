@@ -114,7 +114,6 @@ public class ItemFilterContainerMenu extends Container {
     @Override
     public ItemStack quickMoveStack(PlayerEntity player, int index) {
         Slot slot = this.slots.get(index);
-        //TODO
         if (slot != null && index>=container.getContainerSize() && slot.hasItem()) {
             ItemStack itemstack1 = slot.getItem();
             boolean exists = false;

@@ -1,6 +1,9 @@
 package com.dannyandson.tinypipes.components;
 
+import com.dannyandson.tinypipes.Config;
 import com.dannyandson.tinypipes.TinyPipes;
+import com.dannyandson.tinypipes.caphandlers.ModCapabilityManager;
+import com.dannyandson.tinypipes.caphandlers.PushWrapper;
 import com.dannyandson.tinyredstone.blocks.PanelCellNeighbor;
 import com.dannyandson.tinyredstone.blocks.PanelCellPos;
 import com.dannyandson.tinyredstone.blocks.Side;
@@ -9,18 +12,12 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.CapabilityManager;
-import net.minecraftforge.common.capabilities.CapabilityToken;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.items.IItemHandler;
 
 import javax.annotation.Nullable;
 
-public class FluidPipe  extends AbstractTinyPipe {
+public class FluidPipe  extends AbstractCapPipe<IFluidHandler> {
 
     private boolean disabled = false;
     private int priority = 0;//TODO
@@ -69,11 +66,12 @@ public class FluidPipe  extends AbstractTinyPipe {
     public boolean tick(PanelCellPos cellPos) {
         if (disabled) return false;
 
-        if (ticks < 8) {
+        if (ticks < 5) {
             ticks++;
             return false;
         }
         ticks = 0;
+        super.tick(cellPos);
 
         //clear Push Wrappers
         pushIds.clear();
@@ -104,18 +102,24 @@ public class FluidPipe  extends AbstractTinyPipe {
                             //we found a stack that can be extracted
                             //see if there's a place to put it
                             FluidStack fluidStack2 = fluidStack.copy();
-                            fluidStack2.setAmount(Math.min(fluidStack2.getAmount(), 50));
-                            PushWrapper pushWrapper = getPushWrapper(cellPos, fluidStack2);
-                            for (PushWrapper.PushBlockEntity pushBlockEntity : pushWrapper.getSortedBlockEntities()) {
+                            fluidStack2.setAmount(Math.min(fluidStack2.getAmount(), Config.FLUID_THROUGHPUT.get()/4));
+                            PushWrapper<IFluidHandler> pushWrapper = getPushWrapper(cellPos, fluidStack2);
+                            for (PushWrapper.PushTarget<IFluidHandler> pushTarget : pushWrapper.getSortedTargets()) {
                                 //grab capabilities and push
-                                IFluidHandler iFluidHandler2 = pushBlockEntity.getIFluidHandler();
+                                IFluidHandler iFluidHandler2 = pushTarget.getTarget();
                                 if (iFluidHandler2 != null) {
-                                    int filled = iFluidHandler2.fill(fluidStack2, IFluidHandler.FluidAction.EXECUTE);
-                                    if (filled > 0) {
-                                        fluidStack2.setAmount(filled);
-                                        iFluidHandler.drain(fluidStack2, IFluidHandler.FluidAction.EXECUTE);
-                                        fluidMoved = true;
-                                        break;
+                                    int pushLimit = pushTarget.getPipe().canAccept(fluidStack.getAmount());
+                                    if (pushLimit>0) {
+                                        FluidStack fluidStack3 = fluidStack2.copy();
+                                        fluidStack3.setAmount(pushLimit);
+                                        int filled = iFluidHandler2.fill(fluidStack3, IFluidHandler.FluidAction.EXECUTE);
+                                        if (filled > 0) {
+                                            pushTarget.getPipe().didPush(filled);
+                                            fluidStack2.setAmount(filled);
+                                            iFluidHandler.drain(fluidStack2, IFluidHandler.FluidAction.EXECUTE);
+                                            fluidMoved = true;
+                                            break;
+                                        }
                                     }
                                 }
 
@@ -129,13 +133,13 @@ public class FluidPipe  extends AbstractTinyPipe {
         return false;
     }
 
-    private PushWrapper getPushWrapper(PanelCellPos cellPos, FluidStack fluidStack) {
-        this.pushWrapper = new PushWrapper();
+    private PushWrapper<IFluidHandler> getPushWrapper(PanelCellPos cellPos, FluidStack fluidStack) {
+        this.pushWrapper = new PushWrapper<>();
         populatePushWrapper(cellPos, null, fluidStack, this.pushWrapper, 0);
         return pushWrapper;
     }
 
-    protected void populatePushWrapper(PanelCellPos cellPos, @Nullable Side side, FluidStack fluidStack, PushWrapper pushWrapper, int distance) {
+    protected void populatePushWrapper(PanelCellPos cellPos, @Nullable Side side, FluidStack fluidStack, PushWrapper<IFluidHandler> pushWrapper, int distance) {
         //check if we've already played with this PushWrapper (to prevent infinite loops if there is a loop in the pipe network)
         if (disabled || pushIds.contains(pushWrapper.getId())) {
             //if so, return
@@ -148,8 +152,6 @@ public class FluidPipe  extends AbstractTinyPipe {
         //if checks pass, add id to list
         pushIds.add(pushWrapper.getId());
 
-        //TODO check filter and return if it fails
-
         //check if a destination exists on the side(s) set to push
         for (Side connectedSide : connectedSides) {
             if (!pullSides.contains(connectedSide)) {
@@ -160,19 +162,16 @@ public class FluidPipe  extends AbstractTinyPipe {
                 } else if (pushToNeighbor != null && pushToNeighbor.getBlockPos() != null) {
                     //edge of tile found, check for a neighboring tile entity
                     BlockPos neighborBlockPos = pushToNeighbor.getBlockPos();
-                    BlockEntity neighborBlockEntity = cellPos.getPanelTile().getLevel().getBlockEntity(neighborBlockPos);
-                    if (neighborBlockEntity != null) {
-                        BlockPos panelBlockPos = cellPos.getPanelTile().getBlockPos();
-                        Direction neighborSide =
-                                (neighborBlockPos.relative(Direction.NORTH).equals(panelBlockPos)) ? Direction.NORTH :
-                                        (neighborBlockPos.relative(Direction.EAST).equals(panelBlockPos)) ? Direction.EAST :
-                                                (neighborBlockPos.relative(Direction.SOUTH).equals(panelBlockPos)) ? Direction.SOUTH :
-                                                        (neighborBlockPos.relative(Direction.WEST).equals(panelBlockPos)) ? Direction.WEST :
-                                                                (neighborBlockPos.relative(Direction.UP).equals(panelBlockPos)) ? Direction.UP :
-                                                                        Direction.DOWN;
+                    BlockPos panelBlockPos = cellPos.getPanelTile().getBlockPos();
+                    Direction neighborSide =
+                            (neighborBlockPos.relative(Direction.NORTH).equals(panelBlockPos)) ? Direction.NORTH :
+                                    (neighborBlockPos.relative(Direction.EAST).equals(panelBlockPos)) ? Direction.EAST :
+                                            (neighborBlockPos.relative(Direction.SOUTH).equals(panelBlockPos)) ? Direction.SOUTH :
+                                                    (neighborBlockPos.relative(Direction.WEST).equals(panelBlockPos)) ? Direction.WEST :
+                                                            (neighborBlockPos.relative(Direction.UP).equals(panelBlockPos)) ? Direction.UP :
+                                                                    Direction.DOWN;
 
-                        pushWrapper.addBlockEntity(neighborBlockEntity, distance, priority, neighborSide);
-                    }
+                    pushWrapper.addPushTarget(ModCapabilityManager.getIFluidHandler(cellPos.getPanelTile().getLevel(),neighborBlockPos,neighborSide), this, distance, priority);
                 }
             }
         }
@@ -190,4 +189,10 @@ public class FluidPipe  extends AbstractTinyPipe {
         super.readNBT(compoundTag);
         disabled = compoundTag.getBoolean("disabled");
     }
+
+    @Override
+    public int canAccept(int amount) {
+        return Math.min(amount,(Config.FLUID_THROUGHPUT.get()/4-amountPushed));
+    }
+
 }

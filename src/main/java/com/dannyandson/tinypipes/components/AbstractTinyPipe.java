@@ -24,7 +24,6 @@ import java.util.List;
 public abstract class AbstractTinyPipe implements IPanelCell {
 
     protected List<Long> pushIds = new ArrayList<>();
-    protected PushWrapper pushWrapper = null;
     protected int ticks = 0;
     protected List<Side> connectedSides = new ArrayList<>();
     protected List<Side> pullSides = new ArrayList<>();

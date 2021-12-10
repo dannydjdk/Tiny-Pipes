@@ -1,6 +1,9 @@
 package com.dannyandson.tinypipes.components;
 
 import com.dannyandson.tinypipes.TinyPipes;
+import com.dannyandson.tinypipes.Config;
+import com.dannyandson.tinypipes.caphandlers.ModCapabilityManager;
+import com.dannyandson.tinypipes.caphandlers.PushWrapper;
 import com.dannyandson.tinyredstone.blocks.*;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
@@ -8,12 +11,11 @@ import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.items.IItemHandler;
 
 import javax.annotation.Nullable;
 
-public class ItemPipe extends AbstractTinyPipe {
+public class ItemPipe extends AbstractCapPipe<IItemHandler> {
 
     private boolean disabled = false;
     private int priority = 0;//TODO
@@ -62,11 +64,13 @@ public class ItemPipe extends AbstractTinyPipe {
     public boolean tick(PanelCellPos cellPos) {
         if (disabled) return false;
 
-        if (ticks < 8) {
+        if (ticks < ((Config.ITEM_THROUGHPUT.get()<4)?20/Config.ITEM_THROUGHPUT.get():5)) {
             ticks++;
             return false;
         }
         ticks = 0;
+
+        super.tick(cellPos);
 
         //clear Push Wrappers
         pushIds.clear();
@@ -92,26 +96,32 @@ public class ItemPipe extends AbstractTinyPipe {
                     boolean itemMoved = false;
                     for (int slot = 0; slot < iItemHandler.getSlots() && !itemMoved; slot++) {
                         //if an item stack exists that can be pulled, ask connected ItemPipe neighbors if a destination exists
-                        ItemStack itemStack = iItemHandler.extractItem(slot, 1, true);
+                        ItemStack itemStack = iItemHandler.extractItem(slot, (Config.ITEM_THROUGHPUT.get()<4)?1:Config.ITEM_THROUGHPUT.get()/4, true);
                         if (!itemStack.isEmpty()) {
                             //we found a stack that can be extracted
                             //see if there's a place to put it
                             ItemStack itemStack2 = itemStack.copy();
-                            PushWrapper pushWrapper = getPushWrapper(cellPos, itemStack);
-                            for (PushWrapper.PushBlockEntity pushBlockEntity : pushWrapper.getSortedBlockEntities()) {
-                                //grab capabilities and push
-                                IItemHandler iItemHandler2 = pushBlockEntity.getIItemHandler();
-                                if (iItemHandler2 != null) {
-                                    for (int pSlot = 0; pSlot < iItemHandler2.getSlots() && !itemStack2.isEmpty(); pSlot++) {
-                                        itemStack2 = iItemHandler2.insertItem(pSlot, itemStack2, false);
-                                    }
-                                    if (itemStack2.getCount() < itemStack.getCount()) {
-                                        iItemHandler.extractItem(slot, itemStack.getCount() - itemStack2.getCount(), false);
-                                        itemMoved = true;
-                                        break;
+                            PushWrapper<IItemHandler> pushWrapper = getPushWrapper(cellPos, itemStack);
+                            for (PushWrapper.PushTarget<IItemHandler> pushTarget : pushWrapper.getSortedTargets()) {
+                                int pushLimit = pushTarget.getPipe().canAccept(itemStack2.getCount());
+                                if (pushLimit > 0) {
+                                    //grab capabilities and push
+                                    IItemHandler iItemHandler2 = pushTarget.getTarget();
+                                    if (iItemHandler2 != null) {
+                                        ItemStack itemStack3 = itemStack2.copy();
+                                        itemStack3.setCount(pushLimit);
+                                        for (int pSlot = 0; pSlot < iItemHandler2.getSlots() && !itemStack3.isEmpty(); pSlot++) {
+                                            itemStack3 = iItemHandler2.insertItem(pSlot, itemStack3, false);
+                                        }
+                                        int pushed = pushLimit - itemStack3.getCount();
+                                        if (pushed>0) {
+                                            iItemHandler.extractItem(slot, pushed, false);
+                                            pushTarget.getPipe().didPush(pushed);
+                                            itemMoved = true;
+                                            break;
+                                        }
                                     }
                                 }
-
                             }
 
                         }
@@ -122,13 +132,13 @@ public class ItemPipe extends AbstractTinyPipe {
         return false;
     }
 
-    private PushWrapper getPushWrapper(PanelCellPos cellPos, ItemStack itemStack) {
-        this.pushWrapper = new PushWrapper();
+    private PushWrapper<IItemHandler> getPushWrapper(PanelCellPos cellPos, ItemStack itemStack) {
+        this.pushWrapper = new PushWrapper<>();
         populatePushWrapper(cellPos, null, itemStack, this.pushWrapper, 0);
         return pushWrapper;
     }
 
-    protected void populatePushWrapper(PanelCellPos cellPos, @Nullable Side side, ItemStack itemStack, PushWrapper pushWrapper, int distance) {
+    protected void populatePushWrapper(PanelCellPos cellPos, @Nullable Side side, ItemStack itemStack, PushWrapper<IItemHandler> pushWrapper, int distance) {
         //check if we've already played with this PushWrapper (to prevent infinite loops if there is a loop in the pipe network)
         if (disabled || pushIds.contains(pushWrapper.getId())) {
             //if so, return
@@ -151,19 +161,16 @@ public class ItemPipe extends AbstractTinyPipe {
                 } else if (pushToNeighbor != null && pushToNeighbor.getBlockPos() != null) {
                     //edge of tile found, check for a neighboring tile entity
                     BlockPos neighborBlockPos = pushToNeighbor.getBlockPos();
-                    BlockEntity neighborBlockEntity = cellPos.getPanelTile().getLevel().getBlockEntity(neighborBlockPos);
-                    if (neighborBlockEntity != null) {
-                        BlockPos panelBlockPos = cellPos.getPanelTile().getBlockPos();
-                        Direction neighborSide =
-                                (neighborBlockPos.relative(Direction.NORTH).equals(panelBlockPos)) ? Direction.NORTH :
-                                        (neighborBlockPos.relative(Direction.EAST).equals(panelBlockPos)) ? Direction.EAST :
-                                                (neighborBlockPos.relative(Direction.SOUTH).equals(panelBlockPos)) ? Direction.SOUTH :
-                                                        (neighborBlockPos.relative(Direction.WEST).equals(panelBlockPos)) ? Direction.WEST :
-                                                                (neighborBlockPos.relative(Direction.UP).equals(panelBlockPos)) ? Direction.UP :
-                                                                        Direction.DOWN;
+                    BlockPos panelBlockPos = cellPos.getPanelTile().getBlockPos();
+                    Direction neighborSide =
+                            (neighborBlockPos.relative(Direction.NORTH).equals(panelBlockPos)) ? Direction.NORTH :
+                                    (neighborBlockPos.relative(Direction.EAST).equals(panelBlockPos)) ? Direction.EAST :
+                                            (neighborBlockPos.relative(Direction.SOUTH).equals(panelBlockPos)) ? Direction.SOUTH :
+                                                    (neighborBlockPos.relative(Direction.WEST).equals(panelBlockPos)) ? Direction.WEST :
+                                                            (neighborBlockPos.relative(Direction.UP).equals(panelBlockPos)) ? Direction.UP :
+                                                                    Direction.DOWN;
 
-                        pushWrapper.addBlockEntity(neighborBlockEntity, distance, priority, neighborSide);
-                    }
+                    pushWrapper.addPushTarget(ModCapabilityManager.getItemHandler(cellPos.getPanelTile().getLevel(),neighborBlockPos,neighborSide), this, distance, priority);
                 }
             }
         }
@@ -180,6 +187,11 @@ public class ItemPipe extends AbstractTinyPipe {
     public void readNBT(CompoundTag compoundTag) {
         super.readNBT(compoundTag);
         disabled = compoundTag.getBoolean("disabled");
+    }
+
+    @Override
+    public int canAccept(int amount) {
+        return Math.min(amount,(((Config.ITEM_THROUGHPUT.get()<4)?1:Config.ITEM_THROUGHPUT.get()/4)-amountPushed));
     }
 
 }

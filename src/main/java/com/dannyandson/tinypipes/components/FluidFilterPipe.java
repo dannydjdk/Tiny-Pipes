@@ -1,8 +1,7 @@
 package com.dannyandson.tinypipes.components;
 
 import com.dannyandson.tinypipes.TinyPipes;
-import com.dannyandson.tinypipes.components.FluidPipe;
-import com.dannyandson.tinypipes.components.IFilterPipe;
+import com.dannyandson.tinypipes.caphandlers.PushWrapper;
 import com.dannyandson.tinypipes.gui.FluidFilterContainerMenu;
 import com.dannyandson.tinyredstone.blocks.PanelCellPos;
 import com.dannyandson.tinyredstone.blocks.PanelCellSegment;
@@ -18,6 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.MobBucketItem;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fmllegacy.network.NetworkHooks;
 
 import javax.annotation.Nullable;
@@ -28,7 +28,7 @@ public class FluidFilterPipe extends FluidPipe implements IFilterPipe {
     boolean changed = false;
 
     //saved fields
-    private static int filterSlots = 18;
+    private static final int filterSlots = 18;
     private String[] filters = new String[filterSlots];
     boolean blacklist = false;
 
@@ -44,9 +44,7 @@ public class FluidFilterPipe extends FluidPipe implements IFilterPipe {
 
     @Override
     public boolean onPlace(PanelCellPos cellPos, Player player) {
-        ItemStack stack = ItemStack.EMPTY;
-        if (player.getUsedItemHand() != null)
-            stack = player.getItemInHand(player.getUsedItemHand());
+        ItemStack stack = player.getItemInHand(player.getUsedItemHand());
         if (stack == ItemStack.EMPTY)
             stack = player.getMainHandItem();
         if (stack.hasTag()) {
@@ -60,7 +58,7 @@ public class FluidFilterPipe extends FluidPipe implements IFilterPipe {
     }
 
     @Override
-    protected void populatePushWrapper(PanelCellPos cellPos, @Nullable Side side, FluidStack fluidStack, PushWrapper pushWrapper, int distance) {
+    protected void populatePushWrapper(PanelCellPos cellPos, @Nullable Side side, FluidStack fluidStack, PushWrapper<IFluidHandler> pushWrapper, int distance) {
         ResourceLocation fluidReg = fluidStack.getFluid().getBucket().getRegistryName();
         boolean hasFluid = fluidReg != null && hasFluid(fluidReg.toString());
         if ((!blacklist && !hasFluid) || (blacklist && hasFluid)) {

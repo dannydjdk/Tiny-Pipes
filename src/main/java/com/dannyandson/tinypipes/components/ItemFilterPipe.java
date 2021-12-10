@@ -1,6 +1,7 @@
 package com.dannyandson.tinypipes.components;
 
 import com.dannyandson.tinypipes.TinyPipes;
+import com.dannyandson.tinypipes.caphandlers.PushWrapper;
 import com.dannyandson.tinypipes.gui.ItemFilterContainerMenu;
 import com.dannyandson.tinyredstone.blocks.PanelCellPos;
 import com.dannyandson.tinyredstone.blocks.PanelCellSegment;
@@ -13,6 +14,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.fmllegacy.network.NetworkHooks;
+import net.minecraftforge.items.IItemHandler;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
@@ -22,7 +24,7 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe{
     boolean changed = false;
 
     //saved fields
-    private static int filterSlots = 18;
+    private static final int filterSlots = 18;
     private String[] filters = new String[filterSlots];
     boolean blacklist = false;
 
@@ -39,9 +41,7 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe{
 
     @Override
     public boolean onPlace(PanelCellPos cellPos, Player player) {
-        ItemStack stack = ItemStack.EMPTY;
-        if (player.getUsedItemHand() != null)
-            stack = player.getItemInHand(player.getUsedItemHand());
+        ItemStack stack = player.getItemInHand(player.getUsedItemHand());
         if (stack == ItemStack.EMPTY)
             stack = player.getMainHandItem();
         if (stack.hasTag()) {
@@ -54,7 +54,7 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe{
     }
 
     @Override
-    protected void populatePushWrapper(PanelCellPos cellPos, @Nullable Side side, ItemStack itemStack, PushWrapper pushWrapper, int distance) {
+    protected void populatePushWrapper(PanelCellPos cellPos, @Nullable Side side, ItemStack itemStack, PushWrapper<IItemHandler> pushWrapper, int distance) {
         ResourceLocation itemReg = itemStack.getItem().getRegistryName();
         boolean hasItem = itemReg != null && hasItem(itemReg.toString());
         if ((!blacklist && !hasItem) || (blacklist && hasItem)) {

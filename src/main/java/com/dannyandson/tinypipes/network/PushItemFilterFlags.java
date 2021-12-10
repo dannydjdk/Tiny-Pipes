@@ -1,13 +1,12 @@
 package com.dannyandson.tinypipes.network;
 
 import com.dannyandson.tinypipes.components.IFilterPipe;
-import com.dannyandson.tinypipes.components.ItemFilterPipe;
 import com.dannyandson.tinyredstone.blocks.PanelCellPos;
 import com.dannyandson.tinyredstone.blocks.PanelTile;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.fmllegacy.network.NetworkEvent;
+import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 

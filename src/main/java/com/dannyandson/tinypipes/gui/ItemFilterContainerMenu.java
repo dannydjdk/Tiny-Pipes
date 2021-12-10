@@ -1,7 +1,6 @@
 package com.dannyandson.tinypipes.gui;
 
 import com.dannyandson.tinypipes.components.IFilterPipe;
-import com.dannyandson.tinypipes.components.ItemFilterPipe;
 import com.dannyandson.tinypipes.setup.Registration;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TranslatableComponent;

@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "isi",
+    "iri",
+    " i "
+  ],
+  "key": {
+    "i": {
+      "item": "minecraft:copper_ingot"
+    },
+    "s": {
+      "tag": "forge:silicon"
+    },
+    "r": {
+      "item": "minecraft:redstone"
+    }
+  },
+  "result": {
+    "item": "tinypipes:energy_pipe",
+    "count": 8
+  }
+}

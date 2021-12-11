@@ -64,6 +64,8 @@ public class PushWrapper<T> {
         public int compareTo(PushTarget o) {
             if (this.priority!=o.priority)
                 return o.priority-this.priority;
+            if (this.distance==o.distance)
+                return this.pipe.hashCode()-o.pipe.hashCode();
             return this.distance-o.distance;
         }
     }

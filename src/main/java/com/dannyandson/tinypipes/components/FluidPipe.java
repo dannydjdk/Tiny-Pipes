@@ -14,7 +14,6 @@ import net.minecraft.util.Direction;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
 import javax.annotation.Nullable;
@@ -109,7 +108,7 @@ public class FluidPipe  extends AbstractCapPipe<IFluidHandler> {
                             for (PushWrapper.PushTarget<IFluidHandler> pushTarget : pushWrapper.getSortedTargets()) {
                                 //grab capabilities and push
                                 IFluidHandler iFluidHandler2 = pushTarget.getTarget();
-                                if (iFluidHandler2 != null) {
+                                if (iFluidHandler2 != null && ! iFluidHandler2.equals(iFluidHandler)) {
                                     int pushLimit = pushTarget.getPipe().canAccept(fluidStack.getAmount());
                                     if (pushLimit>0) {
                                         FluidStack fluidStack3 = fluidStack2.copy();

@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " r ",
+    "srs",
+    " r "
+  ],
+  "key": {
+    "r": {
+      "item": "minecraft:redstone"
+    },
+    "s": {
+      "tag": "forge:silicon"
+    }
+  },
+  "result": {
+    "item": "tinypipes:redstone_pipe",
+    "count": 8
+  }
+}

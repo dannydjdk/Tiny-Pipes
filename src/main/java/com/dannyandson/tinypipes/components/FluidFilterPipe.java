@@ -44,7 +44,10 @@ public class FluidFilterPipe extends FluidPipe implements IFilterPipe {
 
     @Override
     public boolean onPlace(PanelCellPos cellPos, Player player) {
-        ItemStack stack = player.getItemInHand(player.getUsedItemHand());
+
+        ItemStack stack = ItemStack.EMPTY;
+        if (player.getUsedItemHand()!=null)
+            stack = player.getItemInHand(player.getUsedItemHand());
         if (stack == ItemStack.EMPTY)
             stack = player.getMainHandItem();
         if (stack.hasTag()) {
@@ -87,11 +90,6 @@ public class FluidFilterPipe extends FluidPipe implements IFilterPipe {
         setChanged();
     }
     //end IFilterPipe
-
-    @Override
-    public boolean hasActivation(Player player) {
-        return true;
-    }
 
     @Override
     public boolean onBlockActivated(PanelCellPos cellPos, PanelCellSegment segmentClicked, Player player) {

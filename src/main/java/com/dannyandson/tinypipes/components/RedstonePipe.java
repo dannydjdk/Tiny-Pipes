@@ -210,29 +210,14 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
 
     @Override
     public boolean hasActivation(PlayerEntity player) {
-        return player.getMainHandItem().getItem() == Registration.REDSTONE_WRENCH.get() || player.getMainHandItem().getItem() instanceof DyeItem;
+        return super.hasActivation(player) || player.getMainHandItem().getItem() instanceof DyeItem;
     }
 
     @Override
     public boolean onBlockActivated(PanelCellPos cellPos, PanelCellSegment segmentClicked, PlayerEntity player) {
-        if (player.getMainHandItem().getItem()== Registration.REDSTONE_WRENCH.get())
-        {
-            Side sideOfCell = getClickedSide(cellPos,player);
-            if (connectedSides.contains(sideOfCell)){
-                PanelCellNeighbor neighbor = cellPos.getNeighbor(sideOfCell);
-                if (!pullSides.contains(sideOfCell) && (neighbor==null || !(neighbor.getNeighborIPanelCell() instanceof RedstonePipe)))
-                    pullSides.add(sideOfCell);
-                else{
-                    pullSides.remove(sideOfCell);
-                    connectedSides.remove(sideOfCell);
-                }
-            }else
-                connectedSides.add(sideOfCell);
-            updateInputSignal(cellPos);
-            Map<Integer,Integer> outputs = getNetworkRsOutput(cellPos, null, getNextId());
-            if (!outputs.equals(outputSignals)) {
-                updateNetwork(cellPos, null, outputs, getNextId());
-            }
+        if (player.getMainHandItem().getItem() == Registration.REDSTONE_WRENCH.get()) {
+            Side sideOfCell = getClickedSide(cellPos, player);
+            toggleSideConnection(cellPos, sideOfCell);
             return true;
         } else if (player.getMainHandItem().getItem() instanceof DyeItem) {
             DyeItem dyeItem = (DyeItem) player.getMainHandItem().getItem();
@@ -245,9 +230,56 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
             if (pullSides.contains(sideClicked))
                 neighborChanged(cellPos);
             else if (connectedSides.contains(sideClicked))
-                updateFlag=true;
+                updateFlag = true;
+        } else {
+            super.onBlockActivated(cellPos, segmentClicked, player);
         }
         return false;
+    }
+
+    @Override
+    public PipeConnectionState toggleSideConnection(PanelCellPos cellPos, Side sideOfCell) {
+        PipeConnectionState connectionState = getSideConnection(sideOfCell);
+        PipeConnectionState returnState;
+
+        if (connectionState == PipeConnectionState.DISABLED) {
+            connectedSides.add(sideOfCell);
+            returnState = PipeConnectionState.ENABLED;
+        } else if (connectionState == PipeConnectionState.PULLING) {
+            pullSides.remove(sideOfCell);
+            connectedSides.remove(sideOfCell);
+            returnState = PipeConnectionState.DISABLED;
+        } else {
+            PanelCellNeighbor neighbor = cellPos.getNeighbor(sideOfCell);
+            if (neighbor == null || !(neighbor.getNeighborIPanelCell() instanceof RedstonePipe)) {
+                pullSides.add(sideOfCell);
+                returnState = PipeConnectionState.PULLING;
+            } else {
+                pullSides.remove(sideOfCell);
+                connectedSides.remove(sideOfCell);
+                returnState = PipeConnectionState.DISABLED;
+            }
+        }
+
+        updateInputSignal(cellPos);
+        Map<Integer,Integer> outputs = getNetworkRsOutput(cellPos, null, getNextId());
+        if (!outputs.equals(outputSignals)) {
+            updateNetwork(cellPos, null, outputs, getNextId());
+        }
+
+        return  returnState;
+    }
+
+    @Override
+    public void setConnectionState(PanelCellPos cellPos, Side side, PipeConnectionState state) {
+        super.setConnectionState(cellPos, side, state);
+
+        updateInputSignal(cellPos);
+        Map<Integer,Integer> outputs = getNetworkRsOutput(cellPos, null, getNextId());
+        if (!outputs.equals(outputSignals)) {
+            updateNetwork(cellPos, null, outputs, getNextId());
+        }
+
     }
 
     @Override

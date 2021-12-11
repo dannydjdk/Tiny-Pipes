@@ -1,6 +1,7 @@
 package com.dannyandson.tinypipes.gui;
 
 import com.dannyandson.tinypipes.TinyPipes;
+import com.dannyandson.tinypipes.components.AbstractTinyPipe;
 import com.dannyandson.tinypipes.components.IFilterPipe;
 import com.dannyandson.tinypipes.network.ModNetworkHandler;
 import com.dannyandson.tinypipes.network.PushItemFilterFlags;
@@ -57,6 +58,8 @@ public class ItemFilterGUI extends ContainerScreen<ItemFilterContainerMenu> {
         super.init();
         blackListButton = getNewFilterButton();
         addButton(blackListButton);
+
+        addButton(new Button(leftPos+73, topPos+3, 50, 16, new TranslationTextComponent("tinypipes.pipe_config_button"), button -> TinyPipeConfigGUI.open(cellPos,(AbstractTinyPipe) iFilterPipe)));
     }
 
     private void toggleBlacklist() {
@@ -71,7 +74,7 @@ public class ItemFilterGUI extends ContainerScreen<ItemFilterContainerMenu> {
 
     private Button getNewFilterButton()
     {
-        return new Button(leftPos+113, topPos+3, 60, 16, new TranslationTextComponent("tinypipes." + ((this.blacklist)?"blacklist" : "whitelist")), button -> toggleBlacklist());
+        return new Button(leftPos+123, topPos+3, 50, 16, new TranslationTextComponent("tinypipes." + ((this.blacklist)?"blacklist" : "whitelist")), button -> toggleBlacklist());
     }
 
     @Override

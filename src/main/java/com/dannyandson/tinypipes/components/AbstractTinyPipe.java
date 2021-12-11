@@ -1,5 +1,6 @@
 package com.dannyandson.tinypipes.components;
 
+import com.dannyandson.tinypipes.gui.TinyPipeConfigGUI;
 import com.dannyandson.tinypipes.setup.ClientSetup;
 import com.dannyandson.tinyredstone.api.IPanelCell;
 import com.dannyandson.tinyredstone.blocks.*;
@@ -10,6 +11,8 @@ import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.Item;
+import net.minecraft.item.Items;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.state.properties.BlockStateProperties;
 import net.minecraft.util.Direction;
@@ -90,20 +93,13 @@ public abstract class AbstractTinyPipe implements IPanelCell {
 
     @Override
     public boolean onBlockActivated(PanelCellPos cellPos, PanelCellSegment segmentClicked, PlayerEntity player) {
-        if (player.getMainHandItem().getItem()== Registration.REDSTONE_WRENCH.get()) {
+        if (player.getMainHandItem().getItem() == Registration.REDSTONE_WRENCH.get()) {
             Side sideOfCell = getClickedSide(cellPos, player);
             if (sideOfCell != null) {
-                if (connectedSides.contains(sideOfCell)) {
-                    PanelCellNeighbor neighbor = cellPos.getNeighbor(sideOfCell);
-                    if (neighbor != null && neighbor.getBlockPos() != null && !pullSides.contains(sideOfCell))
-                        pullSides.add(sideOfCell);
-                    else {
-                        pullSides.remove(sideOfCell);
-                        connectedSides.remove(sideOfCell);
-                    }
-                } else
-                    connectedSides.add(sideOfCell);
+                toggleSideConnection(cellPos, sideOfCell);
             }
+        } else if (player.level.isClientSide) {
+            TinyPipeConfigGUI.open(cellPos, this);
         }
         return false;
     }
@@ -199,9 +195,55 @@ public abstract class AbstractTinyPipe implements IPanelCell {
         return panelTile.getPanelCellSide(cellPos,panelTile.getSideFromDirection(rayTraceDirection.getOpposite()));
     }
 
+    public PipeConnectionState toggleSideConnection(PanelCellPos cellPos, Side sideOfCell) {
+        PipeConnectionState connectionState = getSideConnection(sideOfCell);
+        if (connectionState == PipeConnectionState.DISABLED) {
+            connectedSides.add(sideOfCell);
+            return PipeConnectionState.ENABLED;
+        }
+        if (connectionState == PipeConnectionState.PULLING) {
+            pullSides.remove(sideOfCell);
+            connectedSides.remove(sideOfCell);
+            return PipeConnectionState.DISABLED;
+        }
+        PanelCellNeighbor neighbor = cellPos.getNeighbor(sideOfCell);
+        if (neighbor != null && neighbor.getBlockPos() != null) {
+            pullSides.add(sideOfCell);
+            return PipeConnectionState.PULLING;
+        }
+        pullSides.remove(sideOfCell);
+        connectedSides.remove(sideOfCell);
+        return PipeConnectionState.DISABLED;
+    }
+
+    public void setConnectionState(PanelCellPos cellPos, Side side, PipeConnectionState state) {
+        if (state==PipeConnectionState.ENABLED) {
+            if (!connectedSides.contains(side))
+                connectedSides.add(side);
+            pullSides.remove(side);
+        } else if (state==PipeConnectionState.PULLING) {
+            if (!connectedSides.contains(side))
+                connectedSides.add(side);
+            if (!pullSides.contains(side))
+                pullSides.add(side);
+        } else {
+            connectedSides.remove(side);
+            pullSides.remove(side);
+        }
+    }
+
+    public PipeConnectionState getSideConnection(Side side){
+        if (pullSides.contains(side))
+            return PipeConnectionState.PULLING;
+        if (connectedSides.contains(side))
+            return PipeConnectionState.ENABLED;
+        return PipeConnectionState.DISABLED;
+    }
+
     @Override
     public boolean hasActivation(PlayerEntity player) {
-        return player.getMainHandItem().getItem()== Registration.REDSTONE_WRENCH.get();
+        Item heldItem = player.getMainHandItem().getItem();
+        return heldItem == Registration.REDSTONE_WRENCH.get() || heldItem == Items.AIR;
     }
 
     @Override
@@ -344,4 +386,7 @@ public abstract class AbstractTinyPipe implements IPanelCell {
 
         return shapes.toArray(new PanelCellVoxelShape[0]);
     }
+
+    public enum PipeConnectionState{ DISABLED, ENABLED, PULLING }
+
 }

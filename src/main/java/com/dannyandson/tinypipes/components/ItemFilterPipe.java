@@ -85,11 +85,6 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe {
     }
 
     @Override
-    public boolean hasActivation(PlayerEntity player) {
-        return true;
-    }
-
-    @Override
     public boolean onBlockActivated(PanelCellPos cellPos, PanelCellSegment segmentClicked, PlayerEntity player) {
         if (player.getMainHandItem().getItem() == Registration.REDSTONE_WRENCH.get())
             return super.onBlockActivated(cellPos, segmentClicked, player);

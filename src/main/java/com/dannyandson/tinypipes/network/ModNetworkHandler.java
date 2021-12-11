@@ -29,6 +29,12 @@ public class ModNetworkHandler {
                 .decoder(PushItemFilterFlags::new)
                 .consumer(PushItemFilterFlags::handle)
                 .add();
+
+        INSTANCE.messageBuilder(PushPipeConnection.class,nextID())
+                .encoder(PushPipeConnection::toBytes)
+                .decoder(PushPipeConnection::new)
+                .consumer(PushPipeConnection::handle)
+                .add();
     }
     public static void sendToClient(Object packet, ServerPlayerEntity player) {
         INSTANCE.sendTo(packet, player.connection.connection, NetworkDirection.PLAY_TO_CLIENT);

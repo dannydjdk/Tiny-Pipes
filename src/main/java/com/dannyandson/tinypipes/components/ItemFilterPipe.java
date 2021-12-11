@@ -41,7 +41,9 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe{
 
     @Override
     public boolean onPlace(PanelCellPos cellPos, Player player) {
-        ItemStack stack = player.getItemInHand(player.getUsedItemHand());
+        ItemStack stack = ItemStack.EMPTY;
+        if (player.getUsedItemHand()!=null)
+            stack = player.getItemInHand(player.getUsedItemHand());
         if (stack == ItemStack.EMPTY)
             stack = player.getMainHandItem();
         if (stack.hasTag()) {
@@ -78,11 +80,6 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe{
     public void serverSetBlacklist(boolean blacklist) {
         this.blacklist = blacklist;
         setChanged();
-    }
-
-    @Override
-    public boolean hasActivation(Player player) {
-        return true;
     }
 
     @Override

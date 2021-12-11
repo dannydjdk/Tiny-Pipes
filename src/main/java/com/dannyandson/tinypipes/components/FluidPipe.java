@@ -107,7 +107,7 @@ public class FluidPipe  extends AbstractCapPipe<IFluidHandler> {
                             for (PushWrapper.PushTarget<IFluidHandler> pushTarget : pushWrapper.getSortedTargets()) {
                                 //grab capabilities and push
                                 IFluidHandler iFluidHandler2 = pushTarget.getTarget();
-                                if (iFluidHandler2 != null) {
+                                if (iFluidHandler2 != null && ! iFluidHandler2.equals(iFluidHandler)) {
                                     int pushLimit = pushTarget.getPipe().canAccept(fluidStack.getAmount());
                                     if (pushLimit>0) {
                                         FluidStack fluidStack3 = fluidStack2.copy();

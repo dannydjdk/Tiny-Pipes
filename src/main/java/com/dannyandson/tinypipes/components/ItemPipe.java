@@ -107,7 +107,7 @@ public class ItemPipe extends AbstractCapPipe<IItemHandler> {
                                 if (pushLimit > 0) {
                                     //grab capabilities and push
                                     IItemHandler iItemHandler2 = pushTarget.getTarget();
-                                    if (iItemHandler2 != null) {
+                                    if (iItemHandler2 != null && !iItemHandler2.equals(iItemHandler)) {
                                         ItemStack itemStack3 = itemStack2.copy();
                                         itemStack3.setCount(pushLimit);
                                         for (int pSlot = 0; pSlot < iItemHandler2.getSlots() && !itemStack3.isEmpty(); pSlot++) {

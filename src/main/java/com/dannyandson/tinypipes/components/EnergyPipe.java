@@ -89,7 +89,7 @@ public class EnergyPipe extends AbstractCapPipe<IEnergyStorage> {
                         for (PushWrapper.PushTarget<IEnergyStorage> pushTarget : pushWrapper.getSortedTargets()) {
                             //grab capabilities and push
                             IEnergyStorage iEnergyStorage2 = pushTarget.getTarget();
-                            if (iEnergyStorage2 != null && iEnergyStorage2.canReceive()) {
+                            if (iEnergyStorage2 != null && !iEnergyStorage2.equals(iEnergyStorage) && iEnergyStorage2.canReceive()) {
                                 int pushLimit = pushTarget.getPipe().canAccept(remainingEnergy);
                                 if (pushLimit>0) {
                                     int energyReceived = iEnergyStorage2.receiveEnergy(pushLimit, false);

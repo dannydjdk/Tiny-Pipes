@@ -1,23 +1,70 @@
 {
-  "type": "minecraft:crafting_shaped",
-  "pattern": [
-    "isi",
-    "iri",
-    " i "
-  ],
-  "key": {
-    "i": {
-      "item": "minecraft:copper_ingot"
+  "type": "forge:conditional",
+  "recipes": [
+    {
+      "conditions": [
+        {
+          "value": {
+            "tag": "forge:ingots/copper",
+            "type": "forge:tag_empty"
+          },
+          "type": "forge:not"
+        }
+      ],
+      "recipe": {
+        "type": "minecraft:crafting_shaped",
+        "pattern": [
+          "isi",
+          "iri",
+          " i "
+        ],
+        "key": {
+          "i": {
+            "tag": "forge:ingots/copper"
+          },
+          "s": {
+            "tag": "forge:silicon"
+          },
+          "r": {
+            "item": "minecraft:redstone"
+          }
+        },
+        "result": {
+          "item": "tinypipes:energy_pipe",
+          "count": 8
+        }
+      }
     },
-    "s": {
-      "tag": "forge:silicon"
-    },
-    "r": {
-      "item": "minecraft:redstone"
+    {
+      "conditions": [
+        {
+          "tag": "forge:ingots/copper",
+          "type": "forge:tag_empty"
+        }
+      ],
+      "recipe": {
+        "type": "minecraft:crafting_shaped",
+        "pattern": [
+          " s ",
+          "iri",
+          " i "
+        ],
+        "key": {
+          "i": {
+            "tag": "forge:ingots/gold"
+          },
+          "s": {
+            "tag": "forge:silicon"
+          },
+          "r": {
+            "item": "minecraft:redstone"
+          }
+        },
+        "result": {
+          "item": "tinypipes:energy_pipe",
+          "count": 8
+        }
+      }
     }
-  },
-  "result": {
-    "item": "tinypipes:energy_pipe",
-    "count": 8
-  }
+  ]
 }

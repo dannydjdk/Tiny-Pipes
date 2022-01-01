@@ -21,7 +21,7 @@ public class Config {
         ENERGY_THROUGHPUT = serverBuilder.comment(
                         "How much forge energy per tick should each connection allow?" +
                         "\nKeep in mind that multiple pipes can be connected to each block (up to 64), and pipes have unlimited throughput." +
-                        "\n(default: 128 fe/tick)")
+                        "\n(default: 256 fe/tick)")
                 .defineInRange("fe_per_tick", 256, 1, Integer.MAX_VALUE);
 
         FLUID_THROUGHPUT = serverBuilder.comment(

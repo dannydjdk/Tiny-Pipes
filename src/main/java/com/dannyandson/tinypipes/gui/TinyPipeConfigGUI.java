@@ -113,7 +113,8 @@ public class TinyPipeConfigGUI extends Screen {
 
 
     public static void open(PanelCellPos cellPos, AbstractTinyPipe tinyPipe) {
-        Minecraft.getInstance().setScreen(new TinyPipeConfigGUI(cellPos,tinyPipe));
+        if(cellPos!=null && tinyPipe!=null)
+            Minecraft.getInstance().setScreen(new TinyPipeConfigGUI(cellPos,tinyPipe));
     }
 
 }

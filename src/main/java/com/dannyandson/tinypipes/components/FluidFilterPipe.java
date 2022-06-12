@@ -19,6 +19,7 @@ import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.network.NetworkHooks;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
@@ -61,7 +62,7 @@ public class FluidFilterPipe extends FluidPipe implements IFilterPipe {
 
     @Override
     protected void populatePushWrapper(PanelCellPos cellPos, @Nullable Side side, FluidStack fluidStack, PushWrapper<IFluidHandler> pushWrapper, int distance) {
-        ResourceLocation fluidReg = fluidStack.getFluid().getBucket().getRegistryName();
+        ResourceLocation fluidReg = ForgeRegistries.ITEMS.getKey(fluidStack.getFluid().getBucket());
         boolean hasFluid = fluidReg != null && hasFluid(fluidReg.toString());
         if ((!blacklist && !hasFluid) || (blacklist && hasFluid)) {
             return;
@@ -195,14 +196,14 @@ public class FluidFilterPipe extends FluidPipe implements IFilterPipe {
         if (!(itemStack.getItem() instanceof BucketItem))
             return;
         bucketItem=(BucketItem) itemStack.getItem();
-        if (slot<filters.length && bucketItem.getRegistryName()!=null &&
+        if (slot<filters.length && ForgeRegistries.ITEMS.getKey(bucketItem)!=null &&
                 !bucketItem.getFluid().equals(Fluids.EMPTY) &&
                 !(bucketItem instanceof MobBucketItem)
         ) {
-            String itemName = itemStack.getItem().getRegistryName().toString();
+            String itemName = ForgeRegistries.ITEMS.getKey(itemStack.getItem()).toString();
             if(hasFluid(itemName))
                 return;
-            filters[slot] = itemStack.getItem().getRegistryName().toString();
+            filters[slot] = ForgeRegistries.ITEMS.getKey(itemStack.getItem()).toString();
         }
         setChanged();
     }

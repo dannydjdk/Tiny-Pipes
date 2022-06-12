@@ -3,7 +3,6 @@ package com.dannyandson.tinypipes.gui;
 import com.dannyandson.tinypipes.components.IFilterPipe;
 import com.dannyandson.tinypipes.setup.Registration;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.world.Container;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleContainer;
@@ -146,7 +145,7 @@ public class ItemFilterContainerMenu extends AbstractContainerMenu {
 
     public static class Provider implements MenuProvider{
         private Container container;
-        private static Component displayNameComponent = new TranslatableComponent("tinypipes:item_filter");
+        private static Component displayNameComponent = Component.translatable("tinypipes:item_filter");
 
         public Provider(Container container){
             this.container=container;

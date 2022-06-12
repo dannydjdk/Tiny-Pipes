@@ -16,7 +16,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.HashMap;
@@ -36,7 +35,7 @@ public class TinyPipeConfigGUI extends Screen {
     private final ResourceLocation GUI = new ResourceLocation(TinyPipes.MODID, "textures/gui/transparent.png");
 
     protected TinyPipeConfigGUI(PanelCellPos cellPos, AbstractTinyPipe tinyPipe) {
-        super(new TranslatableComponent("tinypipes:pipeconfiggui"));
+        super(Component.translatable("tinypipes:pipeconfiggui"));
         this.cellPos = cellPos;
         this.tinyPipe = tinyPipe;
     }
@@ -49,7 +48,7 @@ public class TinyPipeConfigGUI extends Screen {
         addRenderableWidget(new ModWidget(relX-1, relY-1, WIDTH+2, HEIGHT+2, 0xAA000000));
         addRenderableWidget(new ModWidget(relX, relY, WIDTH, HEIGHT, 0x88EEEEEE));
 
-        addRenderableWidget(new ModWidget(relX,relY+2,WIDTH-2,40,new TranslatableComponent("tinypipes.gui.pipe_config")).setTextHAlignment(ModWidget.HAlignment.CENTER));
+        addRenderableWidget(new ModWidget(relX,relY+2,WIDTH-2,40,Component.translatable("tinypipes.gui.pipe_config")).setTextHAlignment(ModWidget.HAlignment.CENTER));
 
         for (Direction direction : Direction.values()) {
             int dRelX = relX + ((direction == Direction.UP) ? 2 : (direction == Direction.DOWN) ? 2 : (direction == Direction.NORTH) ? 122 : (direction == Direction.WEST) ? 62 : (direction == Direction.EAST) ? 182 : 122);
@@ -69,11 +68,11 @@ public class TinyPipeConfigGUI extends Screen {
         }
 
 
-        addRenderableWidget(new ModWidget(relX+2,relY+100,WIDTH-2,40,new TranslatableComponent("tinypipes.gui.pipe_config.msg.enabled")));
-        addRenderableWidget(new ModWidget(relX+2,relY+110,WIDTH-2,40,new TranslatableComponent("tinypipes.gui.pipe_config.msg.disabled")));
-        addRenderableWidget(new ModWidget(relX+2,relY+120,WIDTH-2,40,new TranslatableComponent("tinypipes.gui.pipe_config.msg.pulling")));
+        addRenderableWidget(new ModWidget(relX+2,relY+100,WIDTH-2,40,Component.translatable("tinypipes.gui.pipe_config.msg.enabled")));
+        addRenderableWidget(new ModWidget(relX+2,relY+110,WIDTH-2,40,Component.translatable("tinypipes.gui.pipe_config.msg.disabled")));
+        addRenderableWidget(new ModWidget(relX+2,relY+120,WIDTH-2,40,Component.translatable("tinypipes.gui.pipe_config.msg.pulling")));
 
-        addRenderableWidget(new Button(relX + 82, relY + 135, 80, 20, new TranslatableComponent("tinyredstone.close"), button -> close()));
+        addRenderableWidget(new Button(relX + 82, relY + 135, 80, 20, Component.translatable("tinyredstone.close"), button -> close()));
 
 
     }

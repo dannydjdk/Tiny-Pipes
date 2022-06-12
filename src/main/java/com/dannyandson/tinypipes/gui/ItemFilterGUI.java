@@ -14,7 +14,6 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.MenuAccess;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -60,7 +59,7 @@ public class ItemFilterGUI extends AbstractContainerScreen<ItemFilterContainerMe
         blackListButton = getNewFilterButton();
         addRenderableWidget(blackListButton);
 
-        addRenderableWidget(new Button(leftPos+73, topPos+3, 50, 16, new TranslatableComponent("tinypipes.pipe_config_button"), button -> {
+        addRenderableWidget(new Button(leftPos+73, topPos+3, 50, 16, Component.translatable("tinypipes.pipe_config_button"), button -> {
             TinyPipeConfigGUI.open(cellPos,(AbstractTinyPipe) iFilterPipe);
         }));
 
@@ -78,7 +77,7 @@ public class ItemFilterGUI extends AbstractContainerScreen<ItemFilterContainerMe
 
     private Button getNewFilterButton()
     {
-        return new Button(leftPos+123, topPos+3, 50, 16, new TranslatableComponent("tinypipes." + ((this.blacklist)?"blacklist" : "whitelist")), button -> toggleBlacklist());
+        return new Button(leftPos+123, topPos+3, 50, 16, Component.translatable("tinypipes." + ((this.blacklist)?"blacklist" : "whitelist")), button -> toggleBlacklist());
     }
 
     @Override

@@ -15,6 +15,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.network.NetworkHooks;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
@@ -57,7 +58,7 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe{
 
     @Override
     protected void populatePushWrapper(PanelCellPos cellPos, @Nullable Side side, ItemStack itemStack, PushWrapper<IItemHandler> pushWrapper, int distance) {
-        ResourceLocation itemReg = itemStack.getItem().getRegistryName();
+        ResourceLocation itemReg = ForgeRegistries.ITEMS.getKey(itemStack.getItem());
         boolean hasItem = itemReg != null && hasItem(itemReg.toString());
         if ((!blacklist && !hasItem) || (blacklist && hasItem)) {
             return;
@@ -177,11 +178,11 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe{
 
     @Override
     public void setItem(int slot, ItemStack itemStack) {
-        if (slot<filters.length && itemStack.getItem().getRegistryName()!=null) {
-            String itemName = itemStack.getItem().getRegistryName().toString();
+        if (slot<filters.length && ForgeRegistries.ITEMS.getKey(itemStack.getItem())!=null) {
+            String itemName = ForgeRegistries.ITEMS.getKey(itemStack.getItem()).toString();
             if(hasItem(itemName))
                 return;
-            filters[slot] = itemStack.getItem().getRegistryName().toString();
+            filters[slot] = ForgeRegistries.ITEMS.getKey(itemStack.getItem()).toString();
         }
         setChanged();
     }

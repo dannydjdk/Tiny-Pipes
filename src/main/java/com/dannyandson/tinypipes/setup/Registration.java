@@ -15,7 +15,7 @@ import net.minecraftforge.registries.RegistryObject;
 
 public class Registration {
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, TinyPipes.MODID);
-    private static final DeferredRegister<MenuType<?>> MENU_TYPES = DeferredRegister.create(ForgeRegistries.CONTAINERS,TinyPipes.MODID);
+    private static final DeferredRegister<MenuType<?>> MENU_TYPES = DeferredRegister.create(ForgeRegistries.MENU_TYPES,TinyPipes.MODID);
 
     public static final RegistryObject<Item> ITEM_PIPE_ITEM = ITEMS.register("item_pipe", TinyPipeItem::new);
     public static final RegistryObject<Item> ITEM_FILTER_PIPE_ITEM = ITEMS.register("item_filter_pipe", TinyPipeItem::new);

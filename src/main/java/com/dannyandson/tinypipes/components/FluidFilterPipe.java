@@ -97,7 +97,7 @@ public class FluidFilterPipe extends FluidPipe implements IFilterPipe {
             return super.onBlockActivated(cellPos, segmentClicked, player);
 
         if (player instanceof ServerPlayer) {
-            NetworkHooks.openGui((ServerPlayer) player,new FluidFilterContainerMenu.Provider(this));
+            NetworkHooks.openScreen((ServerPlayer) player,new FluidFilterContainerMenu.Provider(this));
         }
         return false;
     }

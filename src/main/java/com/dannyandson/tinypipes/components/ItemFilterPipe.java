@@ -89,7 +89,7 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe{
             return super.onBlockActivated(cellPos, segmentClicked, player);
 
         if (player instanceof ServerPlayer serverPlayer) {
-            NetworkHooks.openGui(serverPlayer,new ItemFilterContainerMenu.Provider(this));
+            NetworkHooks.openScreen(serverPlayer,new ItemFilterContainerMenu.Provider(this));
         }
         return false;
     }

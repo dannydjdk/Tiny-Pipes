@@ -119,7 +119,7 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
         for (Side pullSide : pullSides) {
             PanelCellNeighbor neighbor = cellPos.getNeighbor(pullSide);
             if (neighbor != null && !(neighbor.getNeighborIPanelCell() instanceof RedstonePipe)) {
-                int signal = neighbor.getStrongRsOutputForWire();
+                int signal = (neighbor.canConnectRedstone())?neighbor.getWeakRsOutput():neighbor.getStrongRsOutputForWire();
                 int frequency = frequencies.getOrDefault(pullSide, defaultFrequency);
                 if (signal > 0) {
                     if (!signals.containsKey(frequency) || signal > signals.get(frequency))

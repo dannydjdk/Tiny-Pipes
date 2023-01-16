@@ -1,6 +1,5 @@
 package com.dannyandson.tinypipes.items;
 
-import com.dannyandson.tinypipes.TinyPipes;
 import com.dannyandson.tinyredstone.api.AbstractPanelCellItem;
 import com.dannyandson.tinyredstone.blocks.PanelBlock;
 import net.minecraft.ChatFormatting;
@@ -18,7 +17,7 @@ import java.util.List;
 public class TinyPipeItem extends AbstractPanelCellItem {
 
     public TinyPipeItem() {
-        super(new Properties().tab(TinyPipes.ITEM_GROUP));
+        super(new Properties());
     }
 
     @Override

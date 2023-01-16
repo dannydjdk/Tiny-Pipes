@@ -3,8 +3,6 @@ package com.dannyandson.tinypipes;
 import com.dannyandson.tinypipes.network.ModNetworkHandler;
 import com.dannyandson.tinypipes.setup.ClientSetup;
 import com.dannyandson.tinypipes.setup.Registration;
-import net.minecraft.world.item.CreativeModeTab;
-import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
@@ -45,11 +43,4 @@ public class TinyPipes
         ModNetworkHandler.registerMessages();
         Registration.registerPanelCells();
     }
-
-    public static final CreativeModeTab ITEM_GROUP = new CreativeModeTab(MODID) {
-        @Override
-        public ItemStack makeIcon() {
-            return new ItemStack(Registration.REDSTONE_PIPE_ITEM.get());
-        }
-    };
 }

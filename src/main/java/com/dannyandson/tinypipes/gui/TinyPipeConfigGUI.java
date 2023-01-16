@@ -62,7 +62,7 @@ public class TinyPipeConfigGUI extends Screen {
             addRenderableWidget(new ModWidget(dRelX, dRelY, 60, 20, Component.nullToEmpty(direction.name())).setTextHAlignment(ModWidget.HAlignment.CENTER));
 
             //side toggle button
-            Button toggleButton = new Button(dRelX, dRelY + 10, 60, 20, Component.nullToEmpty(tinyPipe.getSideConnection(side).name()), button -> toggleConnection(side));
+            Button toggleButton = ModWidget.buildButton(dRelX, dRelY + 10, 60, 20, Component.nullToEmpty(tinyPipe.getSideConnection(side).name()), button -> toggleConnection(side));
             sideButtons.put(side, toggleButton);
             addRenderableWidget(toggleButton);
         }
@@ -72,7 +72,7 @@ public class TinyPipeConfigGUI extends Screen {
         addRenderableWidget(new ModWidget(relX+2,relY+110,WIDTH-2,40,Component.translatable("tinypipes.gui.pipe_config.msg.disabled")));
         addRenderableWidget(new ModWidget(relX+2,relY+120,WIDTH-2,40,Component.translatable("tinypipes.gui.pipe_config.msg.pulling")));
 
-        addRenderableWidget(new Button(relX + 82, relY + 135, 80, 20, Component.translatable("tinyredstone.close"), button -> close()));
+        addRenderableWidget(ModWidget.buildButton(relX + 82, relY + 135, 80, 20, Component.translatable("tinyredstone.close"), button -> close()));
 
 
     }
@@ -86,7 +86,7 @@ public class TinyPipeConfigGUI extends Screen {
         AbstractTinyPipe.PipeConnectionState state = tinyPipe.toggleSideConnection(cellPos,side);
         ModNetworkHandler.sendToServer(new PushPipeConnection(cellPos, side, state));
 
-        Button widget = new Button(xLocations.get(side),yLocations.get(side)+10,60,20, Component.nullToEmpty(state.name()),button->toggleConnection(side));
+        Button widget = ModWidget.buildButton(xLocations.get(side),yLocations.get(side)+10,60,20, Component.nullToEmpty(state.name()),button->toggleConnection(side));
 
         this.removeWidget(sideButtons.get(side));
         sideButtons.put(side, widget);

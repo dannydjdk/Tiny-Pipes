@@ -7,7 +7,6 @@ import com.dannyandson.tinyredstone.blocks.*;
 import com.dannyandson.tinyredstone.setup.Registration;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Vector3d;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
@@ -20,6 +19,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Vector3d;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -7,6 +7,7 @@ import com.dannyandson.tinypipes.network.ModNetworkHandler;
 import com.dannyandson.tinypipes.network.PushItemFilterFlags;
 import com.dannyandson.tinyredstone.blocks.PanelCellPos;
 import com.dannyandson.tinyredstone.blocks.PanelTile;
+import com.dannyandson.tinyredstone.gui.ModWidget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.components.Button;
@@ -59,7 +60,7 @@ public class ItemFilterGUI extends AbstractContainerScreen<ItemFilterContainerMe
         blackListButton = getNewFilterButton();
         addRenderableWidget(blackListButton);
 
-        addRenderableWidget(new Button(leftPos+73, topPos+3, 50, 16, Component.translatable("tinypipes.pipe_config_button"), button -> {
+        addRenderableWidget(ModWidget.buildButton(leftPos+73, topPos+3, 50, 16, Component.translatable("tinypipes.pipe_config_button"), button -> {
             TinyPipeConfigGUI.open(cellPos,(AbstractTinyPipe) iFilterPipe);
         }));
 
@@ -77,7 +78,7 @@ public class ItemFilterGUI extends AbstractContainerScreen<ItemFilterContainerMe
 
     private Button getNewFilterButton()
     {
-        return new Button(leftPos+123, topPos+3, 50, 16, Component.translatable("tinypipes." + ((this.blacklist)?"blacklist" : "whitelist")), button -> toggleBlacklist());
+        return ModWidget.buildButton(leftPos+123, topPos+3, 50, 16, Component.translatable("tinypipes." + ((this.blacklist)?"blacklist" : "whitelist")), button -> toggleBlacklist());
     }
 
     @Override

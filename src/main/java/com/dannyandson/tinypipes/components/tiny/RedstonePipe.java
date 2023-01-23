@@ -1,4 +1,4 @@
-package com.dannyandson.tinypipes.components;
+package com.dannyandson.tinypipes.components.tiny;
 
 import com.dannyandson.tinypipes.TinyPipes;
 import com.dannyandson.tinypipes.setup.ClientSetup;
@@ -48,32 +48,32 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
 
         VertexConsumer builder = buffer.getBuffer((alpha == 1.0) ? RenderType.solid() : RenderType.translucent());
 
-        RenderHelper.drawCube(poseStack, builder, sprite, c1, c2, c1, c2, c1, c2, combinedLight, 0xFFFFFFFF, alpha);
+        com.dannyandson.tinypipes.components.RenderHelper.drawCube(poseStack, builder, sprite, c1, c2, c1, c2, c1, c2, combinedLight, 0xFFFFFFFF, alpha);
 
         if (pullSides.contains(Side.FRONT))
-            RenderHelper.drawCube(poseStack, builder, sprite_color, p1, p2, p1, p2, c2, s3, combinedLight, getColor(Side.FRONT), alpha);
+            com.dannyandson.tinypipes.components.RenderHelper.drawCube(poseStack, builder, sprite_color, p1, p2, p1, p2, c2, s3, combinedLight, getColor(Side.FRONT), alpha);
         else if (connectedSides.contains(Side.FRONT))
-            RenderHelper.drawCube(poseStack, builder, sprite_color, s1, s2, s1, s2, c2, s3, combinedLight, getColor(Side.FRONT), alpha);
+            com.dannyandson.tinypipes.components.RenderHelper.drawCube(poseStack, builder, sprite_color, s1, s2, s1, s2, c2, s3, combinedLight, getColor(Side.FRONT), alpha);
         if (pullSides.contains(Side.BACK))
-            RenderHelper.drawCube(poseStack, builder, sprite_color, p1, p2, p1, p2, s0, c1, combinedLight, getColor(Side.BACK), alpha);
+            com.dannyandson.tinypipes.components.RenderHelper.drawCube(poseStack, builder, sprite_color, p1, p2, p1, p2, s0, c1, combinedLight, getColor(Side.BACK), alpha);
         else if (connectedSides.contains(Side.BACK))
-            RenderHelper.drawCube(poseStack, builder, sprite_color, s1, s2, s1, s2, s0, c1, combinedLight, getColor(Side.BACK), alpha);
+            com.dannyandson.tinypipes.components.RenderHelper.drawCube(poseStack, builder, sprite_color, s1, s2, s1, s2, s0, c1, combinedLight, getColor(Side.BACK), alpha);
         if (pullSides.contains(Side.LEFT))
-            RenderHelper.drawCube(poseStack, builder, sprite_color, c2, s3, p1, p2, p1, p2, combinedLight, getColor(Side.LEFT), alpha);
+            com.dannyandson.tinypipes.components.RenderHelper.drawCube(poseStack, builder, sprite_color, c2, s3, p1, p2, p1, p2, combinedLight, getColor(Side.LEFT), alpha);
         else if (connectedSides.contains(Side.LEFT))
-            RenderHelper.drawCube(poseStack, builder, sprite_color, c2, s3, s1, s2, s1, s2, combinedLight, getColor(Side.LEFT), alpha);
+            com.dannyandson.tinypipes.components.RenderHelper.drawCube(poseStack, builder, sprite_color, c2, s3, s1, s2, s1, s2, combinedLight, getColor(Side.LEFT), alpha);
         if (pullSides.contains(Side.RIGHT))
-            RenderHelper.drawCube(poseStack, builder, sprite_color, s0, c1, p1, p2, p1, p2, combinedLight, getColor(Side.RIGHT), alpha);
+            com.dannyandson.tinypipes.components.RenderHelper.drawCube(poseStack, builder, sprite_color, s0, c1, p1, p2, p1, p2, combinedLight, getColor(Side.RIGHT), alpha);
         else if (connectedSides.contains(Side.RIGHT))
-            RenderHelper.drawCube(poseStack, builder, sprite_color, s0, c1, s1, s2, s1, s2, combinedLight, getColor(Side.RIGHT), alpha);
+            com.dannyandson.tinypipes.components.RenderHelper.drawCube(poseStack, builder, sprite_color, s0, c1, s1, s2, s1, s2, combinedLight, getColor(Side.RIGHT), alpha);
         if (pullSides.contains(Side.TOP))
-            RenderHelper.drawCube(poseStack, builder, sprite_color, p1, p2, c2, s3, p1, p2, combinedLight, getColor(Side.TOP), alpha);
+            com.dannyandson.tinypipes.components.RenderHelper.drawCube(poseStack, builder, sprite_color, p1, p2, c2, s3, p1, p2, combinedLight, getColor(Side.TOP), alpha);
         else if (connectedSides.contains(Side.TOP))
-            RenderHelper.drawCube(poseStack, builder, sprite_color, s1, s2, c2, s3, s1, s2, combinedLight, getColor(Side.TOP), alpha);
+            com.dannyandson.tinypipes.components.RenderHelper.drawCube(poseStack, builder, sprite_color, s1, s2, c2, s3, s1, s2, combinedLight, getColor(Side.TOP), alpha);
         if (pullSides.contains(Side.BOTTOM))
-            RenderHelper.drawCube(poseStack, builder, sprite_color, p1, p2, s0, c1, p1, p2, combinedLight, getColor(Side.BOTTOM), alpha);
+            com.dannyandson.tinypipes.components.RenderHelper.drawCube(poseStack, builder, sprite_color, p1, p2, s0, c1, p1, p2, combinedLight, getColor(Side.BOTTOM), alpha);
         else if (connectedSides.contains(Side.BOTTOM))
-            RenderHelper.drawCube(poseStack, builder, sprite_color, s1, s2, s0, c1, s1, s2, combinedLight, getColor(Side.BOTTOM), alpha);
+            com.dannyandson.tinypipes.components.RenderHelper.drawCube(poseStack, builder, sprite_color, s1, s2, s0, c1, s1, s2, combinedLight, getColor(Side.BOTTOM), alpha);
     }
 
     private int getColor(Side side) {

@@ -1,6 +1,6 @@
 package com.dannyandson.tinypipes.network;
 
-import com.dannyandson.tinypipes.components.IFilterPipe;
+import com.dannyandson.tinypipes.components.tiny.IFilterPipe;
 import com.dannyandson.tinyredstone.blocks.PanelCellPos;
 import com.dannyandson.tinyredstone.blocks.PanelTile;
 import net.minecraft.core.BlockPos;

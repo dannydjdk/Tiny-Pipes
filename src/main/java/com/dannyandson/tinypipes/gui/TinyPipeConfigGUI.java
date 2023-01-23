@@ -1,7 +1,7 @@
 package com.dannyandson.tinypipes.gui;
 
 import com.dannyandson.tinypipes.TinyPipes;
-import com.dannyandson.tinypipes.components.AbstractTinyPipe;
+import com.dannyandson.tinypipes.components.tiny.AbstractTinyPipe;
 import com.dannyandson.tinypipes.network.ModNetworkHandler;
 import com.dannyandson.tinypipes.network.PushPipeConnection;
 import com.dannyandson.tinyredstone.blocks.PanelCellPos;

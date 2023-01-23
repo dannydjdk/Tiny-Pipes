@@ -1,6 +1,6 @@
 package com.dannyandson.tinypipes.caphandlers;
 
-import com.dannyandson.tinypipes.components.AbstractCapPipe;
+import com.dannyandson.tinypipes.components.tiny.AbstractCapPipe;
 
 import java.util.Set;
 import java.util.SortedSet;

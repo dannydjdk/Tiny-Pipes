@@ -1,8 +1,8 @@
 package com.dannyandson.tinypipes.gui;
 
 import com.dannyandson.tinypipes.TinyPipes;
-import com.dannyandson.tinypipes.components.AbstractTinyPipe;
-import com.dannyandson.tinypipes.components.IFilterPipe;
+import com.dannyandson.tinypipes.components.tiny.AbstractTinyPipe;
+import com.dannyandson.tinypipes.components.tiny.IFilterPipe;
 import com.dannyandson.tinypipes.network.ModNetworkHandler;
 import com.dannyandson.tinypipes.network.PushItemFilterFlags;
 import com.dannyandson.tinyredstone.blocks.PanelCellPos;

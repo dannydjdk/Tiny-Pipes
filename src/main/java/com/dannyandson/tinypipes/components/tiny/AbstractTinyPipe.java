@@ -1,4 +1,4 @@
-package com.dannyandson.tinypipes.components;
+package com.dannyandson.tinypipes.components.tiny;
 
 import com.dannyandson.tinypipes.gui.TinyPipeConfigGUI;
 import com.dannyandson.tinypipes.setup.ClientSetup;
@@ -55,32 +55,32 @@ public abstract class AbstractTinyPipe implements IPanelCell {
         VertexConsumer builder = buffer.getBuffer((alpha==1.0)? RenderType.solid():RenderType.translucent());
         int color = getColor();
 
-        RenderHelper.drawCube(poseStack,builder,sprite,c1,c2,c1,c2,c1,c2,combinedLight,color,alpha);
+        com.dannyandson.tinypipes.components.RenderHelper.drawCube(poseStack,builder,sprite,c1,c2,c1,c2,c1,c2,combinedLight,color,alpha);
 
         if (pullSides.contains(Side.FRONT))
-            RenderHelper.drawCube(poseStack,builder,sprite,p1,p2,p1,p2,c2,s3,combinedLight, color,alpha);
+            com.dannyandson.tinypipes.components.RenderHelper.drawCube(poseStack,builder,sprite,p1,p2,p1,p2,c2,s3,combinedLight, color,alpha);
         else if (connectedSides.contains(Side.FRONT))
-            RenderHelper.drawCube(poseStack,builder,sprite,s1,s2,s1,s2,c2,s3,combinedLight, color,alpha);
+            com.dannyandson.tinypipes.components.RenderHelper.drawCube(poseStack,builder,sprite,s1,s2,s1,s2,c2,s3,combinedLight, color,alpha);
         if (pullSides.contains(Side.BACK))
-            RenderHelper.drawCube(poseStack,builder,sprite,p1,p2,p1,p2,s0,c1,combinedLight, color,alpha);
+            com.dannyandson.tinypipes.components.RenderHelper.drawCube(poseStack,builder,sprite,p1,p2,p1,p2,s0,c1,combinedLight, color,alpha);
         else if (connectedSides.contains(Side.BACK))
-            RenderHelper.drawCube(poseStack,builder,sprite,s1,s2,s1,s2,s0,c1,combinedLight, color,alpha);
+            com.dannyandson.tinypipes.components.RenderHelper.drawCube(poseStack,builder,sprite,s1,s2,s1,s2,s0,c1,combinedLight, color,alpha);
         if (pullSides.contains(Side.LEFT))
-            RenderHelper.drawCube(poseStack,builder,sprite,c2,s3,p1,p2,p1,p2,combinedLight, color,alpha);
+            com.dannyandson.tinypipes.components.RenderHelper.drawCube(poseStack,builder,sprite,c2,s3,p1,p2,p1,p2,combinedLight, color,alpha);
         else if (connectedSides.contains(Side.LEFT))
-            RenderHelper.drawCube(poseStack,builder,sprite,c2,s3,s1,s2,s1,s2,combinedLight, color,alpha);
+            com.dannyandson.tinypipes.components.RenderHelper.drawCube(poseStack,builder,sprite,c2,s3,s1,s2,s1,s2,combinedLight, color,alpha);
         if (pullSides.contains(Side.RIGHT))
-            RenderHelper.drawCube(poseStack,builder,sprite,s0,c1,p1,p2,p1,p2,combinedLight, color,alpha);
+            com.dannyandson.tinypipes.components.RenderHelper.drawCube(poseStack,builder,sprite,s0,c1,p1,p2,p1,p2,combinedLight, color,alpha);
         else if (connectedSides.contains(Side.RIGHT))
-            RenderHelper.drawCube(poseStack,builder,sprite,s0,c1,s1,s2,s1,s2,combinedLight, color,alpha);
+            com.dannyandson.tinypipes.components.RenderHelper.drawCube(poseStack,builder,sprite,s0,c1,s1,s2,s1,s2,combinedLight, color,alpha);
         if (pullSides.contains(Side.TOP))
-            RenderHelper.drawCube(poseStack,builder,sprite,p1,p2,c2,s3,p1,p2,combinedLight, color,alpha);
+            com.dannyandson.tinypipes.components.RenderHelper.drawCube(poseStack,builder,sprite,p1,p2,c2,s3,p1,p2,combinedLight, color,alpha);
         else if (connectedSides.contains(Side.TOP))
-            RenderHelper.drawCube(poseStack,builder,sprite,s1,s2,c2,s3,s1,s2,combinedLight, color,alpha);
+            com.dannyandson.tinypipes.components.RenderHelper.drawCube(poseStack,builder,sprite,s1,s2,c2,s3,s1,s2,combinedLight, color,alpha);
         if (pullSides.contains(Side.BOTTOM))
-            RenderHelper.drawCube(poseStack,builder,sprite,p1,p2,s0,c1,p1,p2,combinedLight, color,alpha);
+            com.dannyandson.tinypipes.components.RenderHelper.drawCube(poseStack,builder,sprite,p1,p2,s0,c1,p1,p2,combinedLight, color,alpha);
         else if (connectedSides.contains(Side.BOTTOM))
-            RenderHelper.drawCube(poseStack,builder,sprite,s1,s2,s0,c1,s1,s2,combinedLight, color,alpha);
+            com.dannyandson.tinypipes.components.RenderHelper.drawCube(poseStack,builder,sprite,s1,s2,s0,c1,s1,s2,combinedLight, color,alpha);
     }
 
     @Override

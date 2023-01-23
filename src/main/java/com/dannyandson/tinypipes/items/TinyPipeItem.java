@@ -30,7 +30,7 @@ public class TinyPipeItem extends AbstractPanelCellItem {
     public  void  appendHoverText(ItemStack stack, @Nullable Level world, List<Component> list, TooltipFlag flags)
     {
         if (Screen.hasShiftDown()) {
-            list.add(Component.translatable("message.item.redstone_panel_cell").withStyle(ChatFormatting.GRAY));
+            list.add(Component.translatable("message.item.tiny_pipe").withStyle(ChatFormatting.GRAY));
             list.add(Component.translatable("message." + this.getDescriptionId()).withStyle(ChatFormatting.DARK_AQUA));
         } else
             list.add(Component.translatable("tinyredstone.tooltip.press_shift").withStyle(ChatFormatting.DARK_GRAY));    }

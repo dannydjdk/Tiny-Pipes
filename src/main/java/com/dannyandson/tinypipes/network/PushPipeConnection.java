@@ -1,6 +1,6 @@
 package com.dannyandson.tinypipes.network;
 
-import com.dannyandson.tinypipes.components.AbstractTinyPipe;
+import com.dannyandson.tinypipes.components.tiny.AbstractTinyPipe;
 import com.dannyandson.tinyredstone.blocks.PanelCellPos;
 import com.dannyandson.tinyredstone.blocks.PanelTile;
 import com.dannyandson.tinyredstone.blocks.Side;

@@ -1,4 +1,4 @@
-package com.dannyandson.tinypipes.components;
+package com.dannyandson.tinypipes.components.tiny;
 
 import net.minecraft.world.Container;
 

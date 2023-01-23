@@ -1,34 +1,32 @@
-package com.dannyandson.tinypipes.components;
+package com.dannyandson.tinypipes.components.tiny;
 
-import com.dannyandson.tinypipes.Config;
 import com.dannyandson.tinypipes.TinyPipes;
+import com.dannyandson.tinypipes.Config;
 import com.dannyandson.tinypipes.caphandlers.ModCapabilityManager;
 import com.dannyandson.tinypipes.caphandlers.PushWrapper;
-import com.dannyandson.tinyredstone.blocks.PanelCellNeighbor;
-import com.dannyandson.tinyredstone.blocks.PanelCellPos;
-import com.dannyandson.tinyredstone.blocks.Side;
+import com.dannyandson.tinyredstone.blocks.*;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.items.IItemHandler;
 
 import javax.annotation.Nullable;
 
-public class FluidPipe  extends AbstractCapPipe<IFluidHandler> {
+public class ItemPipe extends AbstractCapPipe<IItemHandler> {
 
     private boolean disabled = false;
     private int priority = 0;//TODO
 
-    public static final ResourceLocation FLUID_PIPE_TEXTURE = new ResourceLocation(TinyPipes.MODID, "block/fluid_pipe");
+    public static final ResourceLocation ITEM_PIPE_TEXTURE = new ResourceLocation(TinyPipes.MODID, "block/item_pipe");
     private static TextureAtlasSprite sprite = null;
 
     @Override
     protected TextureAtlasSprite getSprite() {
         if (sprite == null)
-            sprite = com.dannyandson.tinyredstone.blocks.RenderHelper.getSprite(FLUID_PIPE_TEXTURE);
+            sprite = com.dannyandson.tinyredstone.blocks.RenderHelper.getSprite(ITEM_PIPE_TEXTURE);
         return sprite;
     }
 
@@ -66,11 +64,12 @@ public class FluidPipe  extends AbstractCapPipe<IFluidHandler> {
     public boolean tick(PanelCellPos cellPos) {
         if (disabled) return false;
 
-        if (ticks < 5) {
+        if (ticks < ((Config.ITEM_THROUGHPUT.get()<4)?20/Config.ITEM_THROUGHPUT.get():5)) {
             ticks++;
             return false;
         }
         ticks = 0;
+
         super.tick(cellPos);
 
         //clear Push Wrappers
@@ -78,7 +77,7 @@ public class FluidPipe  extends AbstractCapPipe<IFluidHandler> {
         pushWrapper = null;
 
         for (Side side : pullSides) {
-            //if set to pull, check for connected neighbor with fluid capabilities
+            //if set to pull, check for connected neighbor with item capabilities
             PanelCellNeighbor extractNeighbor = cellPos.getNeighbor(side);
             BlockPos neighborBlockPos = (extractNeighbor == null) ? null : extractNeighbor.getBlockPos();
 
@@ -92,40 +91,40 @@ public class FluidPipe  extends AbstractCapPipe<IFluidHandler> {
                                                         (neighborBlockPos.relative(Direction.UP).equals(panelBlockPos)) ? Direction.UP :
                                                                 Direction.DOWN;
 
-                IFluidHandler iFluidHandler = ModCapabilityManager.getIFluidHandler(cellPos.getPanelTile().getLevel(), neighborBlockPos, neighborSide);
-                if (iFluidHandler != null) {
-                    boolean fluidMoved = false;
-                    for (int tank = 0; tank < iFluidHandler.getTanks() && !fluidMoved; tank++) {
+                IItemHandler iItemHandler = ModCapabilityManager.getItemHandler(cellPos.getPanelTile().getLevel(), neighborBlockPos, neighborSide);
+                if (iItemHandler != null) {
+                    boolean itemMoved = false;
+                    for (int slot = 0; slot < iItemHandler.getSlots() && !itemMoved; slot++) {
                         //if an item stack exists that can be pulled, ask connected ItemPipe neighbors if a destination exists
-                        FluidStack fluidStack = iFluidHandler.getFluidInTank(tank);
-                        if (!fluidStack.isEmpty()) {
+                        ItemStack itemStack = iItemHandler.extractItem(slot, (Config.ITEM_THROUGHPUT.get()<4)?1:Config.ITEM_THROUGHPUT.get()/4, true);
+                        if (!itemStack.isEmpty()) {
                             //we found a stack that can be extracted
                             //see if there's a place to put it
-                            FluidStack fluidStack2 = fluidStack.copy();
-                            fluidStack2.setAmount(Math.min(fluidStack2.getAmount(), Config.FLUID_THROUGHPUT.get()/4));
-                            PushWrapper<IFluidHandler> pushWrapper = getPushWrapper(cellPos, fluidStack2);
-                            for (PushWrapper.PushTarget<IFluidHandler> pushTarget : pushWrapper.getSortedTargets()) {
-                                //grab capabilities and push
-                                IFluidHandler iFluidHandler2 = pushTarget.getTarget();
-                                if (iFluidHandler2 != null && ! iFluidHandler2.equals(iFluidHandler)) {
-                                    int pushLimit = pushTarget.getPipe().canAccept(fluidStack.getAmount());
-                                    if (pushLimit>0) {
-                                        FluidStack fluidStack3 = fluidStack2.copy();
-                                        fluidStack3.setAmount(pushLimit);
-                                        int filled = iFluidHandler2.fill(fluidStack3, IFluidHandler.FluidAction.EXECUTE);
-                                        if (filled > 0) {
-                                            pushTarget.getPipe().didPush(filled);
-                                            fluidStack2.setAmount(filled);
-                                            iFluidHandler.drain(fluidStack2, IFluidHandler.FluidAction.EXECUTE);
-                                            fluidMoved = true;
+                            ItemStack itemStack2 = itemStack.copy();
+                            PushWrapper<IItemHandler> pushWrapper = getPushWrapper(cellPos, itemStack);
+                            for (PushWrapper.PushTarget<IItemHandler> pushTarget : pushWrapper.getSortedTargets()) {
+                                int pushLimit = pushTarget.getPipe().canAccept(itemStack2.getCount());
+                                if (pushLimit > 0) {
+                                    //grab capabilities and push
+                                    IItemHandler iItemHandler2 = pushTarget.getTarget();
+                                    if (iItemHandler2 != null && !iItemHandler2.equals(iItemHandler)) {
+                                        ItemStack itemStack3 = itemStack2.copy();
+                                        itemStack3.setCount(pushLimit);
+                                        for (int pSlot = 0; pSlot < iItemHandler2.getSlots() && !itemStack3.isEmpty(); pSlot++) {
+                                            itemStack3 = iItemHandler2.insertItem(pSlot, itemStack3, false);
+                                        }
+                                        int pushed = pushLimit - itemStack3.getCount();
+                                        if (pushed>0) {
+                                            iItemHandler.extractItem(slot, pushed, false);
+                                            pushTarget.getPipe().didPush(pushed);
+                                            itemMoved = true;
                                             break;
                                         }
                                     }
                                 }
-
                             }
-                        }
 
+                        }
                     }
                 }
             }
@@ -133,13 +132,13 @@ public class FluidPipe  extends AbstractCapPipe<IFluidHandler> {
         return false;
     }
 
-    private PushWrapper<IFluidHandler> getPushWrapper(PanelCellPos cellPos, FluidStack fluidStack) {
+    private PushWrapper<IItemHandler> getPushWrapper(PanelCellPos cellPos, ItemStack itemStack) {
         this.pushWrapper = new PushWrapper<>();
-        populatePushWrapper(cellPos, null, fluidStack, this.pushWrapper, 0);
+        populatePushWrapper(cellPos, null, itemStack, this.pushWrapper, 0);
         return pushWrapper;
     }
 
-    protected void populatePushWrapper(PanelCellPos cellPos, @Nullable Side side, FluidStack fluidStack, PushWrapper<IFluidHandler> pushWrapper, int distance) {
+    protected void populatePushWrapper(PanelCellPos cellPos, @Nullable Side side, ItemStack itemStack, PushWrapper<IItemHandler> pushWrapper, int distance) {
         //check if we've already played with this PushWrapper (to prevent infinite loops if there is a loop in the pipe network)
         if (disabled || pushIds.contains(pushWrapper.getId())) {
             //if so, return
@@ -156,9 +155,9 @@ public class FluidPipe  extends AbstractCapPipe<IFluidHandler> {
         for (Side connectedSide : connectedSides) {
             if (!pullSides.contains(connectedSide)) {
                 PanelCellNeighbor pushToNeighbor = cellPos.getNeighbor(connectedSide);
-                if (pushToNeighbor != null && pushToNeighbor.getNeighborIPanelCell() instanceof FluidPipe neighborPipe) {
+                if (pushToNeighbor != null && pushToNeighbor.getNeighborIPanelCell() instanceof ItemPipe neighborPipe) {
                     //check the next cell
-                    neighborPipe.populatePushWrapper(pushToNeighbor.getCellPos(), pushToNeighbor.getNeighborsSide(), fluidStack, pushWrapper, distance + 1);
+                    neighborPipe.populatePushWrapper(pushToNeighbor.getCellPos(), pushToNeighbor.getNeighborsSide(), itemStack, pushWrapper, distance + 1);
                 } else if (pushToNeighbor != null && pushToNeighbor.getBlockPos() != null) {
                     //edge of tile found, check for a neighboring tile entity
                     BlockPos neighborBlockPos = pushToNeighbor.getBlockPos();
@@ -171,7 +170,7 @@ public class FluidPipe  extends AbstractCapPipe<IFluidHandler> {
                                                             (neighborBlockPos.relative(Direction.UP).equals(panelBlockPos)) ? Direction.UP :
                                                                     Direction.DOWN;
 
-                    pushWrapper.addPushTarget(ModCapabilityManager.getIFluidHandler(cellPos.getPanelTile().getLevel(),neighborBlockPos,neighborSide), this, distance, priority);
+                    pushWrapper.addPushTarget(ModCapabilityManager.getItemHandler(cellPos.getPanelTile().getLevel(),neighborBlockPos,neighborSide), this, distance, priority);
                 }
             }
         }
@@ -192,7 +191,7 @@ public class FluidPipe  extends AbstractCapPipe<IFluidHandler> {
 
     @Override
     public int canAccept(int amount) {
-        return Math.min(amount,(Config.FLUID_THROUGHPUT.get()/4-amountPushed));
+        return Math.min(amount,(((Config.ITEM_THROUGHPUT.get()<4)?1:Config.ITEM_THROUGHPUT.get()/4)-amountPushed));
     }
 
 }

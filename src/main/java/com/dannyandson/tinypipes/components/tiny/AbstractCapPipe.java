@@ -1,4 +1,4 @@
-package com.dannyandson.tinypipes.components;
+package com.dannyandson.tinypipes.components.tiny;
 
 import com.dannyandson.tinypipes.caphandlers.PushWrapper;
 import com.dannyandson.tinyredstone.blocks.PanelCellPos;

@@ -1,15 +1,17 @@
 package com.dannyandson.tinypipes.setup;
 
 import com.dannyandson.tinypipes.TinyPipes;
-import com.dannyandson.tinypipes.components.EnergyPipe;
-import com.dannyandson.tinypipes.components.ItemFilterPipe;
-import com.dannyandson.tinypipes.components.ItemPipe;
-import com.dannyandson.tinypipes.components.RedstonePipe;
+import com.dannyandson.tinypipes.blocks.PipeBlockEntityRenderer;
+import com.dannyandson.tinypipes.components.tiny.EnergyPipe;
+import com.dannyandson.tinypipes.components.tiny.ItemFilterPipe;
+import com.dannyandson.tinypipes.components.tiny.ItemPipe;
+import com.dannyandson.tinypipes.components.tiny.RedstonePipe;
 import com.dannyandson.tinypipes.gui.ItemFilterGUI;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.TextureStitchEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -38,4 +40,9 @@ public class ClientSetup {
         event.addSprite(RedstonePipe.REDSTONE_PIPE_TEXTURE);
     }
 
-}
+    @SubscribeEvent
+    public static void onRegisterRenderer(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerBlockEntityRenderer(Registration.PIPE_BLOCK_ENTITY.get(), PipeBlockEntityRenderer::new);
+    }
+
+    }

@@ -23,7 +23,7 @@ public class TinyPipes
 {
     public static final String MODID = "tinypipes";
     // Directly reference a log4j logger.
-    private static final Logger LOGGER = LogManager.getLogger();
+    public static final Logger LOGGER = LogManager.getLogger();
 
     public TinyPipes() {
 
@@ -48,6 +48,7 @@ public class TinyPipes
         ModNetworkHandler.registerMessages();
         if (ModList.get().isLoaded("tinyredstone"))
             RegistrationTinyRedstone.registerPanelCells();
+        Registration.registerFullPipeItems();
     }
 
     public static final CreativeModeTab ITEM_GROUP = new CreativeModeTab(MODID) {

@@ -1,8 +1,11 @@
 package com.dannyandson.tinypipes.setup;
 
 import com.dannyandson.tinypipes.TinyPipes;
+import com.dannyandson.tinypipes.api.Registry;
 import com.dannyandson.tinypipes.blocks.PipeBlock;
 import com.dannyandson.tinypipes.blocks.PipeBlockEntity;
+import com.dannyandson.tinypipes.components.full.ItemPipe;
+import com.dannyandson.tinypipes.components.full.RedstonePipe;
 import com.dannyandson.tinypipes.gui.FluidFilterContainerMenu;
 import com.dannyandson.tinypipes.gui.ItemFilterContainerMenu;
 import com.dannyandson.tinypipes.items.FullPipeItem;
@@ -16,6 +19,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 public class Registration {
+
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, TinyPipes.MODID);
     private static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITY_TYPES = DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, TinyPipes.MODID);
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, TinyPipes.MODID);
@@ -43,6 +47,11 @@ public class Registration {
         BLOCK_ENTITY_TYPES.register(FMLJavaModLoadingContext.get().getModEventBus());
         ITEMS.register(FMLJavaModLoadingContext.get().getModEventBus());
         MENU_TYPES.register(FMLJavaModLoadingContext.get().getModEventBus());
+    }
+
+    public static void registerFullPipeItems(){
+        Registry.registerFullPipeItem(ItemPipe.class,ITEM_PIPE_ITEM.get());
+        Registry.registerFullPipeItem(RedstonePipe.class,REDSTONE_PIPE_ITEM.get());
     }
 
 }

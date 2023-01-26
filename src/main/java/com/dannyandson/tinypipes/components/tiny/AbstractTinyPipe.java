@@ -34,7 +34,7 @@ public abstract class AbstractTinyPipe implements IPanelCell {
     private static TextureAtlasSprite sprite = null;
     protected TextureAtlasSprite getSprite(){
         if (sprite==null)
-            sprite = com.dannyandson.tinyredstone.blocks.RenderHelper.getSprite(ClientSetup.PIPE_TEXTURE);
+            sprite = RenderHelper.getSprite(ClientSetup.PIPE_TEXTURE);
         return sprite;
     }
     protected int getColor() {

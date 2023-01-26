@@ -2,8 +2,11 @@ package com.dannyandson.tinypipes.blocks;
 
 import com.dannyandson.tinypipes.TinyPipes;
 import com.dannyandson.tinypipes.api.Registry;
+import com.dannyandson.tinypipes.components.RenderHelper;
 import com.dannyandson.tinypipes.components.full.AbstractFullPipe;
+import com.dannyandson.tinypipes.setup.ClientSetup;
 import com.dannyandson.tinypipes.setup.Registration;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
@@ -27,6 +30,7 @@ import java.util.List;
 public class PipeBlockEntity extends BlockEntity {
 
     private final List<AbstractFullPipe> pipes = new ArrayList();
+    private TextureAtlasSprite centerSprite=null;
 
     public PipeBlockEntity(BlockPos pos, BlockState state) {
         super(Registration.PIPE_BLOCK_ENTITY.get(), pos, state);
@@ -40,6 +44,17 @@ public class PipeBlockEntity extends BlockEntity {
                     return true;
         return false;
     }
+
+    public AbstractFullPipe getPipe(int index)
+    {
+        return pipes.get(index);
+    }
+
+    public AbstractFullPipe[] getPipes(){
+        return pipes.toArray(new AbstractFullPipe[0]);
+    }
+
+    public int pipeCount(){return pipes.size();}
 
     /**
      * Add pipe from itemstack
@@ -56,7 +71,16 @@ public class PipeBlockEntity extends BlockEntity {
         if (itemStack.hasTag())
             pipe.readNBT(itemStack.getTag().getCompound("pipe_data"));
         pipes.add(pipe);
+        this.centerSprite=null;
         return true;
+    }
+
+    public boolean removePipe(AbstractFullPipe pipe){
+        if(pipes.remove(pipe)){
+            this.centerSprite=null;
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -124,6 +148,16 @@ public class PipeBlockEntity extends BlockEntity {
         double reachDistance = player.getAttribute(net.minecraftforge.common.ForgeMod.REACH_DISTANCE.get()).getValue();
         Vec3 vec31 = eyePosition.add((double)x * reachDistance, (double)y * reachDistance, (double)z * reachDistance);
         return level.clip(new ClipContext(eyePosition, vec31, ClipContext.Block.COLLIDER, ClipContext.Fluid.ANY, player));
+    }
+
+    public TextureAtlasSprite getCenterSprite() {
+        if (this.centerSprite==null) {
+            if (pipeCount()==1)
+                this.centerSprite = pipes.get(0).getSprite();
+            else
+                this.centerSprite = RenderHelper.getSprite(ClientSetup.PIPE_TEXTURE);
+        }
+        return this.centerSprite;
     }
 
 

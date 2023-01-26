@@ -1,6 +1,5 @@
 package com.dannyandson.tinypipes.components.tiny;
 
-import com.dannyandson.tinypipes.TinyPipes;
 import com.dannyandson.tinypipes.setup.ClientSetup;
 import com.dannyandson.tinyredstone.api.IOverlayBlockInfo;
 import com.dannyandson.tinyredstone.api.IPanelCellInfoProvider;
@@ -12,7 +11,6 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.DyeItem;
@@ -22,7 +20,6 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProvider {
-    public static final ResourceLocation REDSTONE_PIPE_TEXTURE = new ResourceLocation(TinyPipes.MODID, "block/redstone_pipe");
     private static TextureAtlasSprite sprite = null;
     private static TextureAtlasSprite sprite_color = null;
     private static final int defaultFrequency = 0x810E0C;
@@ -44,7 +41,7 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
 
         TextureAtlasSprite sprite = getSprite();
         if (sprite_color == null)
-            sprite_color = com.dannyandson.tinyredstone.blocks.RenderHelper.getSprite(ClientSetup.PIPE_TEXTURE);
+            sprite_color = RenderHelper.getSprite(ClientSetup.PIPE_TEXTURE);
 
         VertexConsumer builder = buffer.getBuffer((alpha == 1.0) ? RenderType.solid() : RenderType.translucent());
 
@@ -83,7 +80,7 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
     @Override
     protected TextureAtlasSprite getSprite() {
         if (sprite == null)
-            sprite = com.dannyandson.tinyredstone.blocks.RenderHelper.getSprite(REDSTONE_PIPE_TEXTURE);
+            sprite = RenderHelper.getSprite(com.dannyandson.tinypipes.components.RenderHelper.REDSTONE_PIPE_TEXTURE);
         return sprite;
     }
 

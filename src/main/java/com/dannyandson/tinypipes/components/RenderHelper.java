@@ -1,12 +1,23 @@
 package com.dannyandson.tinypipes.components;
 
+import com.dannyandson.tinypipes.TinyPipes;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Matrix4f;
 import com.mojang.math.Vector3f;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.inventory.InventoryMenu;
 
 public class RenderHelper {
+
+    public static final ResourceLocation REDSTONE_PIPE_TEXTURE = new ResourceLocation(TinyPipes.MODID, "block/redstone_pipe");
+    public static final ResourceLocation ENERGY_PIPE_TEXTURE = new ResourceLocation(TinyPipes.MODID, "block/energy_pipe");
+    public static final ResourceLocation FLUID_FILTER_PIPE_TEXTURE = new ResourceLocation(TinyPipes.MODID, "block/fluid_filter_pipe");
+    public static final ResourceLocation FLUID_PIPE_TEXTURE = new ResourceLocation(TinyPipes.MODID, "block/fluid_pipe");
+    public static final ResourceLocation ITEM_FILTER_PIPE_TEXTURE = new ResourceLocation(TinyPipes.MODID, "block/item_filter_pipe");
+    public static final ResourceLocation ITEM_PIPE_TEXTURE = new ResourceLocation(TinyPipes.MODID, "block/item_pipe");
 
     public static void drawCube(PoseStack poseStack, VertexConsumer builder, TextureAtlasSprite sprite, float x1, float x2, float y1, float y2, float z1, float z2, int combinedLight, int color, float alpha){
 
@@ -71,4 +82,8 @@ public class RenderHelper {
                 .endVertex();
     }
 
+    public static TextureAtlasSprite getSprite(ResourceLocation resourceLocation)
+    {
+        return Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(resourceLocation);
+    }
 }

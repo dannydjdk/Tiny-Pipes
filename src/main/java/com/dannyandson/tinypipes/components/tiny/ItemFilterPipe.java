@@ -1,7 +1,7 @@
 package com.dannyandson.tinypipes.components.tiny;
 
-import com.dannyandson.tinypipes.TinyPipes;
 import com.dannyandson.tinypipes.caphandlers.PushWrapper;
+import com.dannyandson.tinypipes.components.RenderHelper;
 import com.dannyandson.tinypipes.gui.ItemFilterContainerMenu;
 import com.dannyandson.tinyredstone.blocks.PanelCellPos;
 import com.dannyandson.tinyredstone.blocks.PanelCellSegment;
@@ -29,13 +29,12 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe{
     private String[] filters = new String[filterSlots];
     boolean blacklist = false;
 
-    public static final ResourceLocation ITEM_FILTER_PIPE_TEXTURE = new ResourceLocation(TinyPipes.MODID, "block/item_filter_pipe");
     private static TextureAtlasSprite sprite = null;
 
     @Override
     protected TextureAtlasSprite getSprite() {
         if (sprite == null)
-            sprite = com.dannyandson.tinyredstone.blocks.RenderHelper.getSprite(ITEM_FILTER_PIPE_TEXTURE);
+            sprite = com.dannyandson.tinyredstone.blocks.RenderHelper.getSprite(RenderHelper.ITEM_FILTER_PIPE_TEXTURE);
         return sprite;
     }
 

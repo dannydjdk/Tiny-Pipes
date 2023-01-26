@@ -1,7 +1,6 @@
 package com.dannyandson.tinypipes.components.tiny;
 
 import com.dannyandson.tinypipes.Config;
-import com.dannyandson.tinypipes.TinyPipes;
 import com.dannyandson.tinypipes.caphandlers.ModCapabilityManager;
 import com.dannyandson.tinypipes.caphandlers.PushWrapper;
 import com.dannyandson.tinyredstone.blocks.*;
@@ -9,14 +8,12 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.energy.IEnergyStorage;
 
 import javax.annotation.Nullable;
 
 public class EnergyPipe extends AbstractCapPipe<IEnergyStorage> {
 
-    public static final ResourceLocation ENERGY_PIPE_TEXTURE = new ResourceLocation(TinyPipes.MODID, "block/energy_pipe");
     private static TextureAtlasSprite sprite = null;
 
     private boolean disabled = false;
@@ -24,7 +21,7 @@ public class EnergyPipe extends AbstractCapPipe<IEnergyStorage> {
     @Override
     protected TextureAtlasSprite getSprite() {
         if (sprite == null)
-            sprite = com.dannyandson.tinyredstone.blocks.RenderHelper.getSprite(ENERGY_PIPE_TEXTURE);
+            sprite = com.dannyandson.tinyredstone.blocks.RenderHelper.getSprite(com.dannyandson.tinypipes.components.RenderHelper.ENERGY_PIPE_TEXTURE);
         return sprite;
     }
 

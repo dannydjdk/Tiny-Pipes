@@ -2,10 +2,7 @@ package com.dannyandson.tinypipes.setup;
 
 import com.dannyandson.tinypipes.TinyPipes;
 import com.dannyandson.tinypipes.blocks.PipeBlockEntityRenderer;
-import com.dannyandson.tinypipes.components.tiny.EnergyPipe;
-import com.dannyandson.tinypipes.components.tiny.ItemFilterPipe;
-import com.dannyandson.tinypipes.components.tiny.ItemPipe;
-import com.dannyandson.tinypipes.components.tiny.RedstonePipe;
+import com.dannyandson.tinypipes.components.RenderHelper;
 import com.dannyandson.tinypipes.gui.ItemFilterGUI;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.resources.ResourceLocation;
@@ -34,10 +31,10 @@ public class ClientSetup {
             return;
         }
         event.addSprite(PIPE_TEXTURE);
-        event.addSprite(EnergyPipe.ENERGY_PIPE_TEXTURE);
-        event.addSprite(ItemPipe.ITEM_PIPE_TEXTURE);
-        event.addSprite(ItemFilterPipe.ITEM_FILTER_PIPE_TEXTURE);
-        event.addSprite(RedstonePipe.REDSTONE_PIPE_TEXTURE);
+        event.addSprite(RenderHelper.ENERGY_PIPE_TEXTURE);
+        event.addSprite(RenderHelper.ITEM_PIPE_TEXTURE);
+        event.addSprite(RenderHelper.ITEM_FILTER_PIPE_TEXTURE);
+        event.addSprite(RenderHelper.REDSTONE_PIPE_TEXTURE);
     }
 
     @SubscribeEvent

@@ -1,9 +1,9 @@
 package com.dannyandson.tinypipes.components.tiny;
 
 import com.dannyandson.tinypipes.Config;
-import com.dannyandson.tinypipes.TinyPipes;
 import com.dannyandson.tinypipes.caphandlers.ModCapabilityManager;
 import com.dannyandson.tinypipes.caphandlers.PushWrapper;
+import com.dannyandson.tinypipes.components.RenderHelper;
 import com.dannyandson.tinyredstone.blocks.PanelCellNeighbor;
 import com.dannyandson.tinyredstone.blocks.PanelCellPos;
 import com.dannyandson.tinyredstone.blocks.Side;
@@ -11,7 +11,6 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
@@ -22,13 +21,12 @@ public class FluidPipe  extends AbstractCapPipe<IFluidHandler> {
     private boolean disabled = false;
     private int priority = 0;//TODO
 
-    public static final ResourceLocation FLUID_PIPE_TEXTURE = new ResourceLocation(TinyPipes.MODID, "block/fluid_pipe");
     private static TextureAtlasSprite sprite = null;
 
     @Override
     protected TextureAtlasSprite getSprite() {
         if (sprite == null)
-            sprite = com.dannyandson.tinyredstone.blocks.RenderHelper.getSprite(FLUID_PIPE_TEXTURE);
+            sprite = com.dannyandson.tinyredstone.blocks.RenderHelper.getSprite(RenderHelper.FLUID_PIPE_TEXTURE);
         return sprite;
     }
 

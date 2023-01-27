@@ -1,11 +1,11 @@
-package com.dannyandson.tinypipes.components.tiny;
+package com.dannyandson.tinypipes.components.full;
 
+import com.dannyandson.tinypipes.blocks.PipeBlockEntity;
 import com.dannyandson.tinypipes.caphandlers.PushWrapper;
 import com.dannyandson.tinypipes.components.ICapPipe;
-import com.dannyandson.tinyredstone.blocks.PanelCellPos;
 
 
-public abstract class AbstractCapPipe<CapType> extends AbstractTinyPipe implements ICapPipe<CapType> {
+public abstract class AbstractCapFullPipe<CapType> extends AbstractFullPipe implements ICapPipe<CapType> {
     protected PushWrapper<CapType> pushWrapper = null;
     protected int amountPushed = 0;
 
@@ -17,7 +17,7 @@ public abstract class AbstractCapPipe<CapType> extends AbstractTinyPipe implemen
     }
 
     @Override
-    public boolean tick(PanelCellPos cellPos) {
+    public boolean tick(PipeBlockEntity pipeBlockEntity) {
         amountPushed=0;
         return false;
     }

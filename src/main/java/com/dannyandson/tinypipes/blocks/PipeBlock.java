@@ -18,6 +18,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Material;
 import net.minecraft.world.phys.BlockHitResult;
@@ -93,6 +95,75 @@ public class PipeBlock extends BaseEntityBlock {
     @Override
     public boolean isSignalSource(@NotNull BlockState p_60571_) {
         return true;
+    }
+
+    @Override
+    public VoxelShape getOcclusionShape(BlockState p_60578_, BlockGetter p_60579_, BlockPos p_60580_) {
+        return Shapes.empty();
+    }
+
+    @Override
+    protected void spawnDestroyParticles(Level p_152422_, Player p_152423_, BlockPos p_152424_, BlockState p_152425_) {
+        super.spawnDestroyParticles(p_152422_, p_152423_, p_152424_, Blocks.OBSIDIAN.defaultBlockState());
+    }
+
+    @Nullable
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        return (level1, blockPos, blockState, t) -> {
+            if (t instanceof PipeBlockEntity pipeBlockEntity)
+                pipeBlockEntity.tick();
+        };
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public InteractionResult use(BlockState blockState, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
+        if (level.getBlockEntity(pos) instanceof PipeBlockEntity pipeBlockEntity) {
+            ItemStack heldStack = player.getItemInHand(hand);
+            if (Registry.getFullPipeClassFromItem(heldStack.getItem()) != null) {
+                //using with a pipe in hand
+                if (pipeBlockEntity.addPipe(heldStack))
+                    return InteractionResult.CONSUME;
+            } else if (heldStack.is(ItemTags.create(new ResourceLocation("forge", "tools/wrench")))) {
+                //using with a wrench in hand
+                AbstractFullPipe[] pipes = pipeBlockEntity.getPipes();
+                Direction rayTraceDirection = hitResult.getDirection().getOpposite();
+                Vec3 hitVec = hitResult.getLocation().add((double) rayTraceDirection.getStepX() * .001d, (double) rayTraceDirection.getStepY() * .001d, (double) rayTraceDirection.getStepZ() * .001d);
+                double x = hitVec.x - pos.getX(),
+                        y = hitVec.y - pos.getY(),
+                        z = hitVec.z - pos.getZ();
+                if (pipes.length == 1) {
+                    Direction dir =
+                            (x > 0.5703125) ? Direction.EAST :
+                                    (x < 0.4296875) ? Direction.WEST :
+                                            (y > 0.5703125) ? Direction.UP :
+                                                    (y < 0.4296875) ? Direction.DOWN :
+                                                            (z > 0.5703125) ? Direction.SOUTH :
+                                                                    Direction.NORTH;
+                    pipes[0].togglePipeSide(dir);
+                } else {
+                    Direction dir =
+                            (x > 0.68) ? Direction.EAST :
+                                    (x < 0.32) ? Direction.WEST :
+                                            (y > 0.68) ? Direction.UP :
+                                                    (y < 0.32) ? Direction.DOWN :
+                                                            (z > 0.68) ? Direction.SOUTH :
+                                                                    Direction.NORTH;
+                    int slot = -1;
+                    if(dir==Direction.NORTH || dir==Direction.SOUTH){
+                        slot = (y>.5)?(x>.5)?1:0:(x>.5)?3:2;
+                    } else if (dir==Direction.EAST || dir==Direction.WEST){
+                        slot = (y>.5)?(z>.5)?0:1:(z>.5)?2:3;
+                    } else { //up or down
+                        slot = (z>.5)?(x>.5)?0:1:(x>.5)?2:3;
+                    }
+                    if (pipeBlockEntity.slotUsed(slot))
+                        pipeBlockEntity.getPipe(slot).togglePipeSide(dir);
+                }
+            }
+        }
+        return super.use(blockState, level, pos, player, hand, hitResult);
     }
 
     @SuppressWarnings("deprecation")
@@ -186,63 +257,4 @@ public class PipeBlock extends BaseEntityBlock {
         return super.getShape(state, level, pos, context);
     }
 
-    @Override
-    public VoxelShape getOcclusionShape(BlockState p_60578_, BlockGetter p_60579_, BlockPos p_60580_) {
-        return Shapes.empty();
-    }
-
-    @Override
-    protected void spawnDestroyParticles(Level p_152422_, Player p_152423_, BlockPos p_152424_, BlockState p_152425_) {
-        super.spawnDestroyParticles(p_152422_, p_152423_, p_152424_, Blocks.OBSIDIAN.defaultBlockState());
-    }
-
-    @SuppressWarnings("deprecation")
-    @Override
-    public InteractionResult use(BlockState blockState, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
-        if (level.getBlockEntity(pos) instanceof PipeBlockEntity pipeBlockEntity) {
-            ItemStack heldStack = player.getItemInHand(hand);
-            if (Registry.getFullPipeClassFromItem(heldStack.getItem()) != null) {
-                //using with a pipe in hand
-                if (pipeBlockEntity.addPipe(heldStack))
-                    return InteractionResult.CONSUME;
-            } else if (heldStack.is(ItemTags.create(new ResourceLocation("forge", "tools/wrench")))) {
-                //using with a wrench in hand
-                AbstractFullPipe[] pipes = pipeBlockEntity.getPipes();
-                Direction rayTraceDirection = hitResult.getDirection().getOpposite();
-                Vec3 hitVec = hitResult.getLocation().add((double) rayTraceDirection.getStepX() * .001d, (double) rayTraceDirection.getStepY() * .001d, (double) rayTraceDirection.getStepZ() * .001d);
-                double x = hitVec.x - pos.getX(),
-                        y = hitVec.y - pos.getY(),
-                        z = hitVec.z - pos.getZ();
-                if (pipes.length == 1) {
-                    Direction dir =
-                            (x > 0.5703125) ? Direction.EAST :
-                                    (x < 0.4296875) ? Direction.WEST :
-                                            (y > 0.5703125) ? Direction.UP :
-                                                    (y < 0.4296875) ? Direction.DOWN :
-                                                            (z > 0.5703125) ? Direction.SOUTH :
-                                                                    Direction.NORTH;
-                    pipes[0].togglePipeSide(dir);
-                } else {
-                    Direction dir =
-                            (x > 0.68) ? Direction.EAST :
-                                    (x < 0.32) ? Direction.WEST :
-                                            (y > 0.68) ? Direction.UP :
-                                                    (y < 0.32) ? Direction.DOWN :
-                                                            (z > 0.68) ? Direction.SOUTH :
-                                                                    Direction.NORTH;
-                    int slot = -1;
-                    if(dir==Direction.NORTH || dir==Direction.SOUTH){
-                        slot = (y>.5)?(x>.5)?1:0:(x>.5)?3:2;
-                    } else if (dir==Direction.EAST || dir==Direction.WEST){
-                        slot = (y>.5)?(z>.5)?0:1:(z>.5)?2:3;
-                    } else { //up or down
-                        slot = (z>.5)?(x>.5)?0:1:(x>.5)?2:3;
-                    }
-                    if (pipeBlockEntity.slotUsed(slot))
-                        pipeBlockEntity.getPipe(slot).togglePipeSide(dir);
-                }
-            }
-        }
-        return super.use(blockState, level, pos, player, hand, hitResult);
-    }
 }

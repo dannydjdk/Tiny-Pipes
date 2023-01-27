@@ -41,10 +41,12 @@ public class PipeBlockEntity extends BlockEntity {
     }
 
     public boolean hasPipe(Item item) {
-        Class itemPipeClass = Registry.getFullPipeClassFromItem(item);
-        if (itemPipeClass != null)
+        return hasPipe( Registry.getFullPipeClassFromItem(item) );
+    }
+    public boolean hasPipe(Class<? extends AbstractFullPipe> pipeClass) {
+        if (pipeClass != null)
             for (AbstractFullPipe pipe : pipes.values())
-                if (pipe.getClass() == itemPipeClass)
+                if (pipe.getClass() == pipeClass)
                     return true;
         return false;
     }
@@ -169,4 +171,8 @@ public class PipeBlockEntity extends BlockEntity {
         return pullSprite;
     }
 
+    public void tick() {
+        for (AbstractFullPipe pipe : pipes.values())
+            pipe.tick(this);
+    }
 }

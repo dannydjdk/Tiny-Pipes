@@ -1,6 +1,7 @@
 package com.dannyandson.tinypipes.components.full;
 
 import com.dannyandson.tinypipes.TinyPipes;
+import com.dannyandson.tinypipes.blocks.PipeBlockEntity;
 import com.dannyandson.tinypipes.blocks.PipeSideStatus;
 import com.dannyandson.tinypipes.setup.ClientSetup;
 import com.dannyandson.tinyredstone.blocks.RenderHelper;
@@ -8,18 +9,27 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public abstract class AbstractFullPipe {
 
     private final Map<Direction, PipeSideStatus> sideStatusMap = new HashMap<>();
 
+    protected int ticks = 0;
+    protected List<Long> pushIds = new ArrayList<>();
+
     private static TextureAtlasSprite sprite = null;
     public TextureAtlasSprite getSprite(){
         if (sprite==null)
             sprite = RenderHelper.getSprite(ClientSetup.PIPE_TEXTURE);
         return sprite;
+    }
+
+    protected int getColor() {
+        return 0xFFFFFFFF;
     }
 
     public abstract int slotPos();
@@ -41,6 +51,10 @@ public abstract class AbstractFullPipe {
             sideStatusMap.put(direction,PipeSideStatus.DISABLED);
         else
             sideStatusMap.put(direction,PipeSideStatus.ENABLED);
+    }
+
+    public boolean tick(PipeBlockEntity pipeBlockEntity){
+        return false;
     }
 
     public CompoundTag writeNBT() {

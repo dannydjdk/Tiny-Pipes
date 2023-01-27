@@ -16,4 +16,8 @@ public class ItemPipe extends AbstractFullPipe{
         return sprite;
     }
 
+    @Override
+    public int slotPos() {
+        return 0;
+    }
 }

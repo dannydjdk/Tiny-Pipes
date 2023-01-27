@@ -18,6 +18,8 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 public class ClientSetup {
 
     public static final ResourceLocation PIPE_TEXTURE = new ResourceLocation(TinyPipes.MODID, "block/pipe");
+    public static final ResourceLocation PIPE_PULL_TEXTURE = new ResourceLocation(TinyPipes.MODID, "block/pipe_pull");
+    public static final ResourceLocation PIPE_BUNDLE_TEXTURE = new ResourceLocation(TinyPipes.MODID, "block/pipe_bundle");
 
     public static void init(final FMLClientSetupEvent event) {
         MenuScreens.register(Registration.ITEM_FILTER_MENU_TYPE.get(), ItemFilterGUI::new);
@@ -31,6 +33,8 @@ public class ClientSetup {
             return;
         }
         event.addSprite(PIPE_TEXTURE);
+        event.addSprite(PIPE_PULL_TEXTURE);
+        event.addSprite(PIPE_BUNDLE_TEXTURE);
         event.addSprite(RenderHelper.ENERGY_PIPE_TEXTURE);
         event.addSprite(RenderHelper.ITEM_PIPE_TEXTURE);
         event.addSprite(RenderHelper.ITEM_FILTER_PIPE_TEXTURE);

@@ -99,47 +99,84 @@ public class PipeBlock extends BaseEntityBlock {
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         if (level.getBlockEntity(pos) instanceof PipeBlockEntity pipeBlockEntity) {
-            VoxelShape shape = Block.box(5, 5, 5, 11, 11, 11);
-
             AbstractFullPipe[] pipes = pipeBlockEntity.getPipes();
             boolean single = pipes.length == 1;
+            VoxelShape shape = (single)
+                    ?Block.box(6.4, 6.4, 6.4, 9.6, 9.6, 9.6)
+                    :Block.box(5, 5, 5, 11, 11, 11);
 
             for (AbstractFullPipe pipe : pipes) {
                 if(pipe.getPipeSideStatus(Direction.NORTH)!=PipeSideStatus.DISABLED){
-                    shape = Shapes.or(shape,Block.box(5.75, 5.75, 0, 10.25, 10.25, 5));
+                    shape = (single)
+                            ?Shapes.or(shape,Block.box(6.875, 6.875, 0, 9.125, 9.125, 6.875))
+                            :(pipe.slotPos()==0)?Shapes.or(shape,Block.box(5.75, 8, 0, 8, 10.25, 5))
+                            :(pipe.slotPos()==1)?Shapes.or(shape,Block.box(8, 8, 0, 10.25, 10.25, 5))
+                            :(pipe.slotPos()==2)?Shapes.or(shape,Block.box(5.75, 5.75, 0, 8, 8, 5))
+                            :(pipe.slotPos()==3)?Shapes.or(shape,Block.box(8, 5.75, 0, 10.25, 8, 5))
+                            :Shapes.or(shape,Block.box(5.75, 5.75, 0, 10.25, 10.25, 5));
                 }
                 if(pipe.getPipeSideStatus(Direction.NORTH)==PipeSideStatus.PULLING){
-                    shape = Shapes.or(shape,Block.box(4, 4, 0, 12, 12, 2));
+                    //shape = Shapes.or(shape,Block.box(4, 4, 0, 12, 12, 2));
                 }
                 if(pipe.getPipeSideStatus(Direction.SOUTH)!=PipeSideStatus.DISABLED){
-                    shape = Shapes.or(shape,Block.box(5.75, 5.75, 11, 10.25, 10.25, 16));
+                    shape = (single)
+                            ?Shapes.or(shape,Block.box(6.875, 6.875, 9.125, 9.125, 9.125, 16))
+                            :(pipe.slotPos()==0)?Shapes.or(shape,Block.box(5.75, 8, 11, 8, 10.25, 16))
+                            :(pipe.slotPos()==1)?Shapes.or(shape,Block.box(8, 8, 11, 10.25, 10.25, 16))
+                            :(pipe.slotPos()==2)?Shapes.or(shape,Block.box(5.75, 5.75, 11, 8, 8, 16))
+                            :(pipe.slotPos()==3)?Shapes.or(shape,Block.box(8, 5.75, 11, 10.25, 8, 16))
+                            :Shapes.or(shape,Block.box(5.75, 5.75, 11, 10.25, 10.25, 16));
                 }
                 if(pipe.getPipeSideStatus(Direction.SOUTH)==PipeSideStatus.PULLING){
-                    shape = Shapes.or(shape,Block.box(4, 4, 14, 12, 12, 16));
+                    //shape = Shapes.or(shape,Block.box(4, 4, 14, 12, 12, 16));
                 }
                 if(pipe.getPipeSideStatus(Direction.EAST)!=PipeSideStatus.DISABLED){
-                    shape = Shapes.or(shape,Block.box(11, 5.75, 5.75, 16, 10.25, 10.25));
+                    shape = (single)
+                            ?Shapes.or(shape,Block.box(9.125, 6.875, 6.875, 16, 9.125, 9.125))
+                            :(pipe.slotPos()==0)?Shapes.or(shape,Block.box(11, 8, 8, 16, 10.25, 10.25))
+                            :(pipe.slotPos()==1)?Shapes.or(shape,Block.box(11, 8, 5.75, 16, 10.25, 8))
+                            :(pipe.slotPos()==2)?Shapes.or(shape,Block.box(11, 5.75, 8, 16, 8, 10.25))
+                            :(pipe.slotPos()==3)?Shapes.or(shape,Block.box(11, 5.75, 5.75, 16, 8, 8))
+                            :Shapes.or(shape,Block.box(11, 5.75, 5.75, 16, 10.25, 10.25));
                 }
                 if(pipe.getPipeSideStatus(Direction.EAST)==PipeSideStatus.PULLING){
-                    shape = Shapes.or(shape,Block.box(14, 4, 4, 16, 12, 12));
+                    //shape = Shapes.or(shape,Block.box(14, 4, 4, 16, 12, 12));
                 }
                 if(pipe.getPipeSideStatus(Direction.WEST)!=PipeSideStatus.DISABLED){
-                    shape = Shapes.or(shape,Block.box(0, 5.75, 5.75, 5, 10.25, 10.25));
+                    shape = (single)
+                            ?Shapes.or(shape,Block.box(0, 6.875, 6.875, 6.875, 9.125, 9.125))
+                            :(pipe.slotPos()==0)?Shapes.or(shape,Block.box(0, 8, 8, 5, 10.25, 10.25))
+                            :(pipe.slotPos()==1)?Shapes.or(shape,Block.box(0, 8, 5.75, 5, 10.25, 8))
+                            :(pipe.slotPos()==2)?Shapes.or(shape,Block.box(0, 5.75, 8, 5, 8, 10.25))
+                            :(pipe.slotPos()==3)?Shapes.or(shape,Block.box(0, 5.75, 5.75, 5, 8, 8))
+                            :Shapes.or(shape,Block.box(0, 5.75, 5.75, 5, 10.25, 10.25));
                 }
                 if(pipe.getPipeSideStatus(Direction.WEST)==PipeSideStatus.PULLING){
-                    shape = Shapes.or(shape,Block.box(0, 4, 4, 2, 12, 12));
+                    //shape = Shapes.or(shape,Block.box(0, 4, 4, 2, 12, 12));
                 }
                 if(pipe.getPipeSideStatus(Direction.UP)!=PipeSideStatus.DISABLED){
-                    shape = Shapes.or(shape,Block.box(5.75, 11, 5.75, 10.25, 16, 10.25));
+                    shape = (single)
+                            ?Shapes.or(shape,Block.box(6.875, 9.125, 6.875, 9.125, 16, 9.125))
+                            :(pipe.slotPos()==0)?Shapes.or(shape,Block.box(8, 11,8, 10.25, 16,10.25))
+                            :(pipe.slotPos()==1)?Shapes.or(shape,Block.box(5.75, 11,8, 8, 16, 10.25))
+                            :(pipe.slotPos()==2)?Shapes.or(shape,Block.box(8, 11,5.75, 10.25, 16, 8))
+                            :(pipe.slotPos()==3)?Shapes.or(shape,Block.box(5.75, 11,5.75, 8, 16, 8))
+                            :Shapes.or(shape,Block.box(5.75, 11, 5.75, 10.25, 16, 10.25));
                 }
                 if(pipe.getPipeSideStatus(Direction.UP)==PipeSideStatus.PULLING){
-                    shape = Shapes.or(shape,Block.box(4, 14, 4, 12, 16, 12));
+                    //shape = Shapes.or(shape,Block.box(4, 14, 4, 12, 16, 12));
                 }
                 if(pipe.getPipeSideStatus(Direction.DOWN)!=PipeSideStatus.DISABLED){
-                    shape = Shapes.or(shape,Block.box(5.75, 0, 5.75, 10.25, 5, 10.25));
+                    shape = (single)
+                            ?Shapes.or(shape,Block.box(6.875, 0, 6.875, 9.125, 6.875, 9.125))
+                            :(pipe.slotPos()==0)?Shapes.or(shape,Block.box(8, 0,8, 10.25, 5,10.25))
+                            :(pipe.slotPos()==1)?Shapes.or(shape,Block.box(5.75, 0,8, 8, 5, 10.25))
+                            :(pipe.slotPos()==2)?Shapes.or(shape,Block.box(8, 0,5.75, 10.25, 5, 8))
+                            :(pipe.slotPos()==3)?Shapes.or(shape,Block.box(5.75, 0,5.75, 8, 5, 8))
+                            :Shapes.or(shape,Block.box(5.75, 0, 5.75, 10.25, 5, 10.25));
                 }
                 if(pipe.getPipeSideStatus(Direction.DOWN)==PipeSideStatus.PULLING){
-                    shape = Shapes.or(shape,Block.box(4, 0, 4, 12, 2, 12));
+                    //shape = Shapes.or(shape,Block.box(4, 0, 4, 12, 2, 12));
                 }
 
             }
@@ -168,29 +205,41 @@ public class PipeBlock extends BaseEntityBlock {
                 //using with a pipe in hand
                 if (pipeBlockEntity.addPipe(heldStack))
                     return InteractionResult.CONSUME;
-            }else if (heldStack.is(ItemTags.create(new ResourceLocation("forge", "tools/wrench")))){
+            } else if (heldStack.is(ItemTags.create(new ResourceLocation("forge", "tools/wrench")))) {
                 //using with a wrench in hand
                 AbstractFullPipe[] pipes = pipeBlockEntity.getPipes();
-                if (pipes.length==1){
-                    Direction rayTraceDirection = hitResult.getDirection().getOpposite();
-                    Vec3 hitVec = hitResult.getLocation().add((double)rayTraceDirection.getStepX()*.001d,(double)rayTraceDirection.getStepY()*.001d,(double)rayTraceDirection.getStepZ()*.001d);
-                    double x = hitVec.x-pos.getX(),
-                            y=hitVec.y-pos.getY(),
-                            z=hitVec.z-pos.getZ();
+                Direction rayTraceDirection = hitResult.getDirection().getOpposite();
+                Vec3 hitVec = hitResult.getLocation().add((double) rayTraceDirection.getStepX() * .001d, (double) rayTraceDirection.getStepY() * .001d, (double) rayTraceDirection.getStepZ() * .001d);
+                double x = hitVec.x - pos.getX(),
+                        y = hitVec.y - pos.getY(),
+                        z = hitVec.z - pos.getZ();
+                if (pipes.length == 1) {
                     Direction dir =
-                            (x>.875)?Direction.EAST:
-                                    (x<.125)?Direction.WEST:
-                                            (y>.875)?Direction.UP:
-                                                    (y<.125)?Direction.DOWN:
-                                                            (z>.875)?Direction.SOUTH:
-                                                                    (z<.125)?Direction.NORTH:
-                                                                            (x>=0.686)?Direction.EAST:
-                                                                                    (x<=0.314)?Direction.WEST:
-                                                                                            (y>=0.686)?Direction.UP:
-                                                                                                    (y<=0.314)?Direction.DOWN:
-                                                                                                            (z>=0.686)?Direction.SOUTH:
-                                                                                                                    Direction.NORTH;
+                            (x > 0.5703125) ? Direction.EAST :
+                                    (x < 0.4296875) ? Direction.WEST :
+                                            (y > 0.5703125) ? Direction.UP :
+                                                    (y < 0.4296875) ? Direction.DOWN :
+                                                            (z > 0.5703125) ? Direction.SOUTH :
+                                                                    Direction.NORTH;
                     pipes[0].togglePipeSide(dir);
+                } else {
+                    Direction dir =
+                            (x > 0.68) ? Direction.EAST :
+                                    (x < 0.32) ? Direction.WEST :
+                                            (y > 0.68) ? Direction.UP :
+                                                    (y < 0.32) ? Direction.DOWN :
+                                                            (z > 0.68) ? Direction.SOUTH :
+                                                                    Direction.NORTH;
+                    int slot = -1;
+                    if(dir==Direction.NORTH || dir==Direction.SOUTH){
+                        slot = (y>.5)?(x>.5)?1:0:(x>.5)?3:2;
+                    } else if (dir==Direction.EAST || dir==Direction.WEST){
+                        slot = (y>.5)?(z>.5)?0:1:(z>.5)?2:3;
+                    } else { //up or down
+                        slot = (z>.5)?(x>.5)?0:1:(x>.5)?2:3;
+                    }
+                    if (pipeBlockEntity.slotUsed(slot))
+                        pipeBlockEntity.getPipe(slot).togglePipeSide(dir);
                 }
             }
         }

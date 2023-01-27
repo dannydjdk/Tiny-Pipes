@@ -4,6 +4,8 @@ import com.dannyandson.tinypipes.TinyPipes;
 import com.dannyandson.tinypipes.api.Registry;
 import com.dannyandson.tinypipes.blocks.PipeBlock;
 import com.dannyandson.tinypipes.blocks.PipeBlockEntity;
+import com.dannyandson.tinypipes.components.full.EnergyPipe;
+import com.dannyandson.tinypipes.components.full.FluidPipe;
 import com.dannyandson.tinypipes.components.full.ItemPipe;
 import com.dannyandson.tinypipes.components.full.RedstonePipe;
 import com.dannyandson.tinypipes.gui.FluidFilterContainerMenu;
@@ -52,6 +54,8 @@ public class Registration {
     public static void registerFullPipeItems(){
         Registry.registerFullPipeItem(ItemPipe.class,ITEM_PIPE_ITEM.get());
         Registry.registerFullPipeItem(RedstonePipe.class,REDSTONE_PIPE_ITEM.get());
+        Registry.registerFullPipeItem(FluidPipe.class,FLUID_PIPE_ITEM.get());
+        Registry.registerFullPipeItem(EnergyPipe.class,ENERGY_PIPE_ITEM.get());
     }
 
 }

@@ -22,6 +22,8 @@ public abstract class AbstractFullPipe {
         return sprite;
     }
 
+    public abstract int slotPos();
+
     /**
      * get the status of a side of a pipe (DISABLED, ENABLED, PULLING)
      * @param direction side of pipe being queried

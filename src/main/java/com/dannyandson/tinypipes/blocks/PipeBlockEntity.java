@@ -24,34 +24,38 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class PipeBlockEntity extends BlockEntity {
 
-    private final List<AbstractFullPipe> pipes = new ArrayList();
+    private final Map<Integer,AbstractFullPipe> pipes = new HashMap<>();
     private TextureAtlasSprite centerSprite=null;
 
     public PipeBlockEntity(BlockPos pos, BlockState state) {
         super(Registration.PIPE_BLOCK_ENTITY.get(), pos, state);
     }
 
+    public boolean slotUsed(int slot){
+        return pipes.get(slot)!=null;
+    }
+
     public boolean hasPipe(Item item) {
         Class itemPipeClass = Registry.getFullPipeClassFromItem(item);
         if (itemPipeClass != null)
-            for (AbstractFullPipe pipe : pipes)
+            for (AbstractFullPipe pipe : pipes.values())
                 if (pipe.getClass() == itemPipeClass)
                     return true;
         return false;
     }
 
-    public AbstractFullPipe getPipe(int index)
+    public AbstractFullPipe getPipe(int slot)
     {
-        return pipes.get(index);
+        return pipes.get(slot);
     }
 
     public AbstractFullPipe[] getPipes(){
-        return pipes.toArray(new AbstractFullPipe[0]);
+        return pipes.values().toArray(new AbstractFullPipe[0]);
     }
 
     public int pipeCount(){return pipes.size();}
@@ -63,20 +67,18 @@ public class PipeBlockEntity extends BlockEntity {
      */
     public boolean addPipe(ItemStack itemStack)
     {
-        if (hasPipe(itemStack.getItem())) return false;
-
         AbstractFullPipe pipe = Registry.getFullPipeFromItem(itemStack.getItem());
-        if (pipe==null) return false;
+        if (pipe==null || slotUsed(pipe.slotPos())) return false;
 
         if (itemStack.hasTag())
             pipe.readNBT(itemStack.getTag().getCompound("pipe_data"));
-        pipes.add(pipe);
+        pipes.put(pipe.slotPos(),pipe);
         this.centerSprite=null;
         return true;
     }
 
     public boolean removePipe(AbstractFullPipe pipe){
-        if(pipes.remove(pipe)){
+        if(pipes.remove(pipe.slotPos())!=null){
             this.centerSprite=null;
             return true;
         }
@@ -120,7 +122,7 @@ public class PipeBlockEntity extends BlockEntity {
             try {
                 AbstractFullPipe pipe = (AbstractFullPipe) Class.forName(key).getConstructor().newInstance();
                 pipe.readNBT(pipesData.getCompound(key));
-                this.pipes.add(pipe);
+                this.pipes.put(pipe.slotPos(),pipe);
             } catch (Exception exception) {
                 TinyPipes.LOGGER.error("Exception attempting to construct Pipe object " + key, exception);
             }
@@ -131,7 +133,7 @@ public class PipeBlockEntity extends BlockEntity {
     protected void saveAdditional(CompoundTag nbt) {
         super.saveAdditional(nbt);
         CompoundTag pipeData = new CompoundTag();
-        for (AbstractFullPipe pipe : this.pipes) {
+        for (AbstractFullPipe pipe : this.pipes.values()) {
             pipeData.put(pipe.getClass().getCanonicalName(), pipe.writeNBT());
         }
         nbt.put("pipes", pipeData);
@@ -153,12 +155,18 @@ public class PipeBlockEntity extends BlockEntity {
     public TextureAtlasSprite getCenterSprite() {
         if (this.centerSprite==null) {
             if (pipeCount()==1)
-                this.centerSprite = pipes.get(0).getSprite();
+                this.centerSprite = this.getPipes()[0].getSprite();
             else
-                this.centerSprite = RenderHelper.getSprite(ClientSetup.PIPE_TEXTURE);
+                this.centerSprite = RenderHelper.getSprite(ClientSetup.PIPE_BUNDLE_TEXTURE);
         }
         return this.centerSprite;
     }
 
+    private static TextureAtlasSprite pullSprite;
+    public static TextureAtlasSprite getPullSprite() {
+        if (pullSprite==null)
+            pullSprite=RenderHelper.getSprite(ClientSetup.PIPE_PULL_TEXTURE);
+        return pullSprite;
+    }
 
 }

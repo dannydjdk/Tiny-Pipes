@@ -8,6 +8,7 @@ import com.dannyandson.tinypipes.components.ICapPipe;
 public abstract class AbstractCapFullPipe<CapType> extends AbstractFullPipe implements ICapPipe<CapType> {
     protected PushWrapper<CapType> pushWrapper = null;
     protected int amountPushed = 0;
+    protected boolean disabled = false;
 
 
     public abstract int canAccept(int amount);

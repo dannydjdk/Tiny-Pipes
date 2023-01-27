@@ -75,6 +75,7 @@ public class PipeBlockEntity extends BlockEntity {
         if (itemStack.hasTag())
             pipe.readNBT(itemStack.getTag().getCompound("pipe_data"));
         pipes.put(pipe.slotPos(),pipe);
+        pipe.onPlace(this);
         this.centerSprite=null;
         return true;
     }
@@ -174,5 +175,10 @@ public class PipeBlockEntity extends BlockEntity {
     public void tick() {
         for (AbstractFullPipe pipe : pipes.values())
             pipe.tick(this);
+    }
+
+    public void onNeighborChange() {
+        for (AbstractFullPipe pipe : pipes.values())
+            pipe.neighborChanged(this);
     }
 }

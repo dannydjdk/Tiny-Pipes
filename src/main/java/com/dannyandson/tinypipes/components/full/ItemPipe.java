@@ -19,7 +19,6 @@ import static com.dannyandson.tinypipes.components.RenderHelper.ITEM_PIPE_TEXTUR
 public class ItemPipe extends AbstractCapFullPipe<IItemHandler>{
 
     private static TextureAtlasSprite sprite = null;
-    private boolean disabled = false;
     private int priority = 0;//TODO
 
     @Override

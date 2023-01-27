@@ -28,6 +28,15 @@ public abstract class AbstractFullPipe {
         return sprite;
     }
 
+    public boolean onPlace(PipeBlockEntity pipeBlockEntity){
+        //TODO enable default sides
+        return false;
+    }
+
+    public boolean neighborChanged(PipeBlockEntity pipeBlockEntity) {
+        return false;
+    }
+
     protected int getColor() {
         return 0xFFFFFFFF;
     }

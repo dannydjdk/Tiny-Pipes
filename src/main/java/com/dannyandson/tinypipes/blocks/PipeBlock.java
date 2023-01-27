@@ -2,6 +2,7 @@ package com.dannyandson.tinypipes.blocks;
 
 import com.dannyandson.tinypipes.api.Registry;
 import com.dannyandson.tinypipes.components.full.AbstractFullPipe;
+import com.dannyandson.tinypipes.components.full.RedstonePipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
@@ -54,8 +55,8 @@ public class PipeBlock extends BaseEntityBlock {
     @SuppressWarnings("deprecation")
     @Override
     public void neighborChanged(BlockState state, Level level, BlockPos pos, Block p60512, BlockPos neighborPos, boolean p_60514_) {
-        if (level.getBlockEntity(pos) instanceof PipeBlockEntity) {
-            //TODO tell the pipes about the neighbor change
+        if (level.getBlockEntity(pos) instanceof PipeBlockEntity pipeBlockEntity) {
+            pipeBlockEntity.onNeighborChange();
         }
         super.neighborChanged(state, level, pos, p60512, neighborPos, p_60514_);
     }
@@ -71,8 +72,9 @@ public class PipeBlock extends BaseEntityBlock {
     @SuppressWarnings("deprecation")
     @Override
     public int getDirectSignal(BlockState state, BlockGetter level, BlockPos pos, Direction direction) {
-        if (level.getBlockEntity(pos) instanceof PipeBlockEntity) {
-            //TODO check for redstone pipe direct signal
+        if (level.getBlockEntity(pos) instanceof PipeBlockEntity pipeBlockEntity) {
+            if (pipeBlockEntity.getPipe(3) instanceof RedstonePipe pipe)
+                return pipe.getStrongRsOutput(direction);
         }
         return super.getDirectSignal(state, level, pos, direction);
     }
@@ -80,8 +82,9 @@ public class PipeBlock extends BaseEntityBlock {
     @SuppressWarnings("deprecation")
     @Override
     public int getSignal(BlockState state, BlockGetter level, BlockPos pos, Direction direction) {
-        if (level.getBlockEntity(pos) instanceof PipeBlockEntity) {
-            //TODO check for redstone pipe indirect signal
+        if (level.getBlockEntity(pos) instanceof PipeBlockEntity pipeBlockEntity) {
+            if (pipeBlockEntity.getPipe(3) instanceof RedstonePipe pipe)
+                return pipe.getWeakRsOutput(direction);
         }
         return super.getSignal(state, level, pos, direction);
     }

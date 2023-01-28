@@ -74,7 +74,7 @@ public class PipeBlock extends BaseEntityBlock {
     public int getDirectSignal(BlockState state, BlockGetter level, BlockPos pos, Direction direction) {
         if (level.getBlockEntity(pos) instanceof PipeBlockEntity pipeBlockEntity) {
             if (pipeBlockEntity.getPipe(3) instanceof RedstonePipe pipe)
-                return pipe.getStrongRsOutput(direction);
+                return pipe.getStrongRsOutput(direction.getOpposite());
         }
         return super.getDirectSignal(state, level, pos, direction);
     }
@@ -84,7 +84,7 @@ public class PipeBlock extends BaseEntityBlock {
     public int getSignal(BlockState state, BlockGetter level, BlockPos pos, Direction direction) {
         if (level.getBlockEntity(pos) instanceof PipeBlockEntity pipeBlockEntity) {
             if (pipeBlockEntity.getPipe(3) instanceof RedstonePipe pipe)
-                return pipe.getWeakRsOutput(direction);
+                return pipe.getWeakRsOutput(direction.getOpposite());
         }
         return super.getSignal(state, level, pos, direction);
     }
@@ -145,6 +145,7 @@ public class PipeBlock extends BaseEntityBlock {
                                                             (z > 0.5703125) ? Direction.SOUTH :
                                                                     Direction.NORTH;
                     pipes[0].togglePipeSide(dir);
+                    level.blockUpdated(pos,this);
                 } else {
                     Direction dir =
                             (x > 0.68) ? Direction.EAST :
@@ -161,8 +162,10 @@ public class PipeBlock extends BaseEntityBlock {
                     } else { //up or down
                         slot = (z>.5)?(x>.5)?0:1:(x>.5)?2:3;
                     }
-                    if (pipeBlockEntity.slotUsed(slot))
+                    if (pipeBlockEntity.slotUsed(slot)) {
                         pipeBlockEntity.getPipe(slot).togglePipeSide(dir);
+                        level.blockUpdated(pos,this);
+                    }
                 }
             }
         }

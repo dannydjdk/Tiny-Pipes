@@ -173,8 +173,14 @@ public class PipeBlockEntity extends BlockEntity {
     }
 
     public void tick() {
+        boolean update = false;
         for (AbstractFullPipe pipe : pipes.values())
-            pipe.tick(this);
+            if (pipe.tick(this)) update = true;
+
+        if (update){
+            getLevel().blockUpdated(getBlockPos(),getBlockState().getBlock());
+            sync();
+        }
     }
 
     public void onNeighborChange() {

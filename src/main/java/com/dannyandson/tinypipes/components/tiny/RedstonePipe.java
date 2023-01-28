@@ -282,12 +282,12 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
         super.readNBT(compoundTag);
         if (compoundTag.contains("outputs")) {
             for (String frequency : compoundTag.getCompound("outputs").getAllKeys()) {
-                outputSignals.put(Integer.getInteger(frequency), compoundTag.getCompound("outputs").getInt(frequency));
+                outputSignals.put(Integer.parseInt(frequency), compoundTag.getCompound("outputs").getInt(frequency));
             }
         }
         if (compoundTag.contains("inputs")) {
             for (String frequency : compoundTag.getCompound("inputs").getAllKeys()) {
-                inputSignals.put(Integer.getInteger(frequency), compoundTag.getCompound("inputs").getInt(frequency));
+                inputSignals.put(Integer.parseInt(frequency), compoundTag.getCompound("inputs").getInt(frequency));
             }
         }
         if (compoundTag.contains("frequencies")) {

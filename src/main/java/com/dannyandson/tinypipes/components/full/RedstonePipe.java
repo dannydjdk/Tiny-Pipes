@@ -87,7 +87,9 @@ public class RedstonePipe extends AbstractFullPipe{
                 if (!(pipeBlockEntity.getLevel().getBlockEntity(neighbor) instanceof PipeBlockEntity)) {
                     int signal = (neighborState.canRedstoneConnectTo(pipeBlockEntity.getLevel(),pipeBlockEntity.getBlockPos(),direction.getOpposite()))
                             ? pipeBlockEntity.getLevel().getSignal(neighbor,direction.getOpposite())
-                            : pipeBlockEntity.getLevel().getDirectSignal(neighbor,direction.getOpposite()) ;
+                            : (neighborState.isRedstoneConductor(pipeBlockEntity.getLevel(),neighbor))
+                                ?pipeBlockEntity.getLevel().getBestNeighborSignal(neighbor)
+                                :pipeBlockEntity.getLevel().getDirectSignal(neighbor,direction.getOpposite()) ;
                     int frequency = frequencies.getOrDefault(direction, defaultFrequency);
                     if (signal > 0) {
                         if (!signals.containsKey(frequency) || signal > signals.get(frequency))
@@ -149,7 +151,7 @@ public class RedstonePipe extends AbstractFullPipe{
             updateFlag=true;
 
             for (Direction direction : Direction.values()) {
-                if (getPipeSideStatus(direction) == PipeSideStatus.ENABLED) {
+                if (getPipeSideStatus(direction) == PipeSideStatus.ENABLED && direction!=side) {
                     BlockPos neighbor = pipeBlockEntity.getBlockPos().relative(direction);
                     if (pipeBlockEntity.getLevel().getBlockEntity(neighbor) instanceof PipeBlockEntity pipeBlockEntity2 && pipeBlockEntity2.hasPipe(RedstonePipe.class)) {
                         ((RedstonePipe)pipeBlockEntity2.getPipe(this.slotPos())).updateNetwork(pipeBlockEntity2, direction.getOpposite(), rsOutputs, queryId);
@@ -184,12 +186,12 @@ public class RedstonePipe extends AbstractFullPipe{
         super.readNBT(compoundTag);
         if (compoundTag.contains("outputs")) {
             for (String frequency : compoundTag.getCompound("outputs").getAllKeys()) {
-                outputSignals.put(Integer.getInteger(frequency), compoundTag.getCompound("outputs").getInt(frequency));
+                outputSignals.put(Integer.parseInt(frequency), compoundTag.getCompound("outputs").getInt(frequency));
             }
         }
         if (compoundTag.contains("inputs")) {
             for (String frequency : compoundTag.getCompound("inputs").getAllKeys()) {
-                inputSignals.put(Integer.getInteger(frequency), compoundTag.getCompound("inputs").getInt(frequency));
+                inputSignals.put(Integer.parseInt(frequency), compoundTag.getCompound("inputs").getInt(frequency));
             }
         }
         if (compoundTag.contains("frequencies")) {

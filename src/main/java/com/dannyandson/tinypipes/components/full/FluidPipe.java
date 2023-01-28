@@ -120,10 +120,9 @@ public class FluidPipe extends AbstractCapFullPipe<IFluidHandler>{
                 if (pipeBlockEntity.getLevel().getBlockEntity(pushToNeighbor) instanceof PipeBlockEntity pipeBlockEntity2) {
                     if (pipeBlockEntity2.getPipe(this.slotPos()) instanceof FluidPipe neighborPipe)
                     //check the next cell
-                    neighborPipe.populatePushWrapper(pipeBlockEntity, direction, fluidStack, pushWrapper, distance + 1);
+                    neighborPipe.populatePushWrapper(pipeBlockEntity2, direction.getOpposite(), fluidStack, pushWrapper, distance + 1);
                 } else {
-                    //edge of tile found, check for a neighboring tile entity
-
+                    //edge of pipeline found, check for a neighboring tile entity
                     pushWrapper.addPushTarget(ModCapabilityManager.getIFluidHandler(pipeBlockEntity.getLevel(),pushToNeighbor,direction.getOpposite()), this, distance, priority);
                 }
             }

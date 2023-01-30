@@ -1,5 +1,5 @@
 package com.dannyandson.tinypipes.blocks;
 
-public enum PipeSideStatus {
+public enum PipeConnectionState {
     DISABLED, ENABLED, PULLING
 }

@@ -1,25 +1,26 @@
 package com.dannyandson.tinypipes.network;
 
-import com.dannyandson.tinypipes.components.tiny.AbstractTinyPipe;
-import com.dannyandson.tinyredstone.blocks.PanelCellPos;
-import com.dannyandson.tinyredstone.blocks.PanelTile;
-import com.dannyandson.tinyredstone.blocks.Side;
+import com.dannyandson.tinypipes.blocks.PipeBlockEntity;
+import com.dannyandson.tinypipes.blocks.PipeConnectionState;
+import com.dannyandson.tinypipes.components.full.AbstractFullPipe;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
 public class PushPipeConnection {
     private final BlockPos pos;
-    private final int cellIndex;
-    private final AbstractTinyPipe.PipeConnectionState connectionState;
-    private final Side side;
+    private final int index;
+    private final PipeConnectionState connectionState;
+    private final Direction side;
 
-    public PushPipeConnection(PanelCellPos cellPos, Side side, AbstractTinyPipe.PipeConnectionState connectionState){
-        this.pos = cellPos.getPanelTile().getBlockPos();
-        this.cellIndex = cellPos.getIndex();
+    public PushPipeConnection(BlockPos pos, Integer index, Direction side, PipeConnectionState connectionState){
+        this.pos = pos;
+        this.index = index;
         this.connectionState = connectionState;
         this.side = side;
     }
@@ -27,15 +28,15 @@ public class PushPipeConnection {
     public PushPipeConnection(FriendlyByteBuf buffer)
     {
         this.pos= buffer.readBlockPos();
-        this.cellIndex=buffer.readInt();
-        this.connectionState =buffer.readEnum(AbstractTinyPipe.PipeConnectionState.class);
-        this.side =buffer.readEnum(Side.class);
+        this.index =buffer.readInt();
+        this.connectionState =buffer.readEnum(PipeConnectionState.class);
+        this.side =buffer.readEnum(Direction.class);
     }
 
     public void toBytes(FriendlyByteBuf buf)
     {
         buf.writeBlockPos(pos);
-        buf.writeInt(cellIndex);
+        buf.writeInt(index);
         buf.writeEnum(connectionState);
         buf.writeEnum(side);
     }
@@ -43,13 +44,13 @@ public class PushPipeConnection {
     public boolean handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(()-> {
             BlockEntity blockEntity = ctx.get().getSender().level.getBlockEntity(pos);
-            if (blockEntity instanceof PanelTile)
-            {
-                PanelCellPos cellPos = PanelCellPos.fromIndex((PanelTile) blockEntity,cellIndex);
-                if (cellPos.getIPanelCell() instanceof AbstractTinyPipe){
-                    ((AbstractTinyPipe)cellPos.getIPanelCell()).setConnectionState(cellPos,side, connectionState);
-                    cellPos.getPanelTile().sync();
+            if (blockEntity instanceof PipeBlockEntity pipeBlockEntity) {
+                AbstractFullPipe pipe = pipeBlockEntity.getPipe(index);
+                if (pipeBlockEntity.getPipe(index) != null) {
+                    pipe.setConnectionState(side,connectionState);
                 }
+            }else if(ModList.get().isLoaded("tinyredstone")) {
+                TinyPipeNetworkHelper.setTinyPipeSideState(ctx.get().getSender().level,pos,index,side,connectionState);
             }
             ctx.get().setPacketHandled(true);
         });

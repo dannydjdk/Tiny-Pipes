@@ -10,11 +10,11 @@
       "item": "minecraft:redstone"
     },
     "s": {
-      "tag": "forge:silicon"
+      "item": "minecraft:copper_ingot"
     }
   },
   "result": {
-    "item": "tinypipes:redstone_pipe",
+    "item": "tinypipes:full_redstone_pipe",
     "count": 8
   }
 }

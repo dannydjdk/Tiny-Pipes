@@ -1,6 +1,7 @@
 package com.dannyandson.tinypipes.components.tiny;
 
 import com.dannyandson.tinypipes.caphandlers.PushWrapper;
+import com.dannyandson.tinypipes.components.IFilterPipe;
 import com.dannyandson.tinypipes.components.RenderHelper;
 import com.dannyandson.tinypipes.gui.FluidFilterContainerMenu;
 import com.dannyandson.tinyredstone.blocks.PanelCellPos;

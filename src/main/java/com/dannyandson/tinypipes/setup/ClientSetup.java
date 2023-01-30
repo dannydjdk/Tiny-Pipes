@@ -22,8 +22,8 @@ public class ClientSetup {
     public static final ResourceLocation PIPE_BUNDLE_TEXTURE = new ResourceLocation(TinyPipes.MODID, "block/pipe_bundle");
 
     public static void init(final FMLClientSetupEvent event) {
-        MenuScreens.register(Registration.ITEM_FILTER_MENU_TYPE.get(), ItemFilterGUI::new);
-        MenuScreens.register(Registration.FLUID_FILTER_MENU_TYPE.get(), ItemFilterGUI::new);
+        MenuScreens.register(Registration.ITEM_FILTER_MENU_TYPE.get(), ItemFilterGUI::getItemFilterGUI);
+        MenuScreens.register(Registration.FLUID_FILTER_MENU_TYPE.get(), ItemFilterGUI::getItemFilterGUI);
     }
 
     @SuppressWarnings("unused")

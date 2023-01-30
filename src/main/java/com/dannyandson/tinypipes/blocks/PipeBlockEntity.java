@@ -4,10 +4,12 @@ import com.dannyandson.tinypipes.TinyPipes;
 import com.dannyandson.tinypipes.api.Registry;
 import com.dannyandson.tinypipes.components.RenderHelper;
 import com.dannyandson.tinypipes.components.full.AbstractFullPipe;
+import com.dannyandson.tinypipes.components.full.PipeSide;
 import com.dannyandson.tinypipes.setup.ClientSetup;
 import com.dannyandson.tinypipes.setup.Registration;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
@@ -23,6 +25,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
+import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
@@ -65,24 +68,30 @@ public class PipeBlockEntity extends BlockEntity {
     /**
      * Add pipe from itemstack
      * @param itemStack Item stack containing pipe item
-     * @return true if pipe was successfully added, false if not (for instance pipe type already exists or item is not valid pipe)
+     * @return pipe if successfully added, null if not (pipe type already exists or item is not valid pipe)
      */
-    public boolean addPipe(ItemStack itemStack)
+    @CheckForNull
+    public AbstractFullPipe addPipe(ItemStack itemStack)
     {
         AbstractFullPipe pipe = Registry.getFullPipeFromItem(itemStack.getItem());
-        if (pipe==null || slotUsed(pipe.slotPos())) return false;
+        if (pipe==null || slotUsed(pipe.slotPos())) return null;
 
         if (itemStack.hasTag())
             pipe.readNBT(itemStack.getTag().getCompound("pipe_data"));
         pipes.put(pipe.slotPos(),pipe);
-        pipe.onPlace(this);
+        pipe.onPlace(this, itemStack);
         this.centerSprite=null;
-        return true;
+        sync();
+        return pipe;
     }
 
     public boolean removePipe(AbstractFullPipe pipe){
         if(pipes.remove(pipe.slotPos())!=null){
             this.centerSprite=null;
+            if (pipes.size()==0)
+                level.removeBlock(worldPosition,false);
+            else
+                sync();
             return true;
         }
         return false;
@@ -92,7 +101,7 @@ public class PipeBlockEntity extends BlockEntity {
      * Loading and saving block entity data from disk and syncing to client
      */
 
-    protected void sync() {
+    public void sync() {
         if (!level.isClientSide)
             this.level.sendBlockUpdated(worldPosition, this.getBlockState(), this.getBlockState(), Block.UPDATE_CLIENTS);
         this.setChanged();
@@ -165,11 +174,59 @@ public class PipeBlockEntity extends BlockEntity {
         return this.centerSprite;
     }
 
+    private static TextureAtlasSprite whitePipeSprite;
+    public static TextureAtlasSprite getWhitePipeSprite() {
+        if (whitePipeSprite==null)
+            whitePipeSprite=RenderHelper.getSprite(ClientSetup.PIPE_TEXTURE);
+        return whitePipeSprite;
+    }
+
     private static TextureAtlasSprite pullSprite;
     public static TextureAtlasSprite getPullSprite() {
         if (pullSprite==null)
             pullSprite=RenderHelper.getSprite(ClientSetup.PIPE_PULL_TEXTURE);
         return pullSprite;
+    }
+
+    @CheckForNull
+    public PipeSide getPipeAtHitVector(BlockHitResult hitResult) {
+        Direction rayTraceDirection = hitResult.getDirection().getOpposite();
+        Vec3 hitVec = hitResult.getLocation().add((double) rayTraceDirection.getStepX() * .001d, (double) rayTraceDirection.getStepY() * .001d, (double) rayTraceDirection.getStepZ() * .001d);
+        double x = hitVec.x - this.worldPosition.getX(),
+                y = hitVec.y - this.worldPosition.getY(),
+                z = hitVec.z - this.worldPosition.getZ();
+        if (pipes.size() == 1) {
+            Direction dir =
+                    (x > 0.5703125) ? Direction.EAST :
+                            (x < 0.4296875) ? Direction.WEST :
+                                    (y > 0.5703125) ? Direction.UP :
+                                            (y < 0.4296875) ? Direction.DOWN :
+                                                    (z > 0.5703125) ? Direction.SOUTH :
+                                                            Direction.NORTH;
+            return new PipeSide(this,getPipes()[0],dir);
+            //getPipes()[0].togglePipeSide(dir);
+            //level.blockUpdated(this.worldPosition, this.getBlockState().getBlock());
+        } else {
+            Direction dir =
+                    (x > 0.68) ? Direction.EAST :
+                            (x < 0.32) ? Direction.WEST :
+                                    (y > 0.68) ? Direction.UP :
+                                            (y < 0.32) ? Direction.DOWN :
+                                                    (z > 0.68) ? Direction.SOUTH :
+                                                            Direction.NORTH;
+            int slot = -1;
+            if (dir == Direction.NORTH || dir == Direction.SOUTH) {
+                slot = (y > .5) ? (x > .5) ? 1 : 0 : (x > .5) ? 3 : 2;
+            } else if (dir == Direction.EAST || dir == Direction.WEST) {
+                slot = (y > .5) ? (z > .5) ? 0 : 1 : (z > .5) ? 2 : 3;
+            } else { //up or down
+                slot = (z > .5) ? (x > .5) ? 0 : 1 : (x > .5) ? 2 : 3;
+            }
+            if (this.slotUsed(slot)) {
+                return new PipeSide(this, getPipe(slot), dir);
+            }
+        }
+        return null;
     }
 
     public void tick() {
@@ -181,6 +238,10 @@ public class PipeBlockEntity extends BlockEntity {
             getLevel().blockUpdated(getBlockPos(),getBlockState().getBlock());
             sync();
         }
+
+        if (pipeCount()==0)
+            level.removeBlock(worldPosition,false);
+            //level.destroyBlock(worldPosition, false);
     }
 
     public void onNeighborChange() {

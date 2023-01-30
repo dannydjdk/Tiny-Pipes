@@ -1,5 +1,7 @@
 package com.dannyandson.tinypipes.components.tiny;
 
+import com.dannyandson.tinypipes.blocks.PipeConnectionState;
+import com.dannyandson.tinypipes.components.IPipe;
 import com.dannyandson.tinypipes.gui.TinyPipeConfigGUI;
 import com.dannyandson.tinypipes.setup.ClientSetup;
 import com.dannyandson.tinyredstone.api.IPanelCell;
@@ -24,7 +26,7 @@ import net.minecraft.world.phys.Vec3;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class AbstractTinyPipe implements IPanelCell {
+public abstract class AbstractTinyPipe implements IPanelCell, IPipe {
 
     protected List<Long> pushIds = new ArrayList<>();
     protected int ticks = 0;
@@ -389,7 +391,5 @@ public abstract class AbstractTinyPipe implements IPanelCell {
 
         return shapes.toArray(new PanelCellVoxelShape[0]);
     }
-
-    public enum PipeConnectionState{ DISABLED, ENABLED, PULLING }
 
 }

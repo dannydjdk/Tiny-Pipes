@@ -1,23 +1,19 @@
 {
   "type": "minecraft:crafting_shaped",
   "pattern": [
-    "isi",
-    "ici",
-    " i "
+    "i i",
+    " b "
   ],
   "key": {
     "i": {
       "item": "minecraft:iron_ingot"
     },
-    "s": {
-      "tag": "forge:silicon"
-    },
-    "c": {
-      "item": "minecraft:chest"
+    "b": {
+      "item": "minecraft:bucket"
     }
   },
   "result": {
-    "item": "tinypipes:item_pipe",
+    "item": "tinypipes:full_fluid_pipe",
     "count": 8
   }
 }

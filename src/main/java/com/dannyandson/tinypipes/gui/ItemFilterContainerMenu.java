@@ -1,6 +1,6 @@
 package com.dannyandson.tinypipes.gui;
 
-import com.dannyandson.tinypipes.components.tiny.IFilterPipe;
+import com.dannyandson.tinypipes.components.IFilterPipe;
 import com.dannyandson.tinypipes.setup.Registration;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.Container;
@@ -43,7 +43,7 @@ public class ItemFilterContainerMenu extends AbstractContainerMenu {
         this.container=container;
 
         int leftCol = 12;
-        int ySize = ItemFilterGUI.HEIGHT;
+        int ySize = TinyItemFilterGUI.HEIGHT;
 
         //filter slots
         for(int i = 0; i<container.getContainerSize(); i++){

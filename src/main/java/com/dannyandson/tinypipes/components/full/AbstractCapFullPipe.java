@@ -20,6 +20,6 @@ public abstract class AbstractCapFullPipe<CapType> extends AbstractFullPipe impl
     @Override
     public boolean tick(PipeBlockEntity pipeBlockEntity) {
         amountPushed=0;
-        return false;
+        return super.tick(pipeBlockEntity);
     }
 }

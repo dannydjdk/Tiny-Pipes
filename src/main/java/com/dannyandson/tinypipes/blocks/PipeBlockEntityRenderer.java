@@ -2,6 +2,7 @@ package com.dannyandson.tinypipes.blocks;
 
 import com.dannyandson.tinypipes.components.RenderHelper;
 import com.dannyandson.tinypipes.components.full.AbstractFullPipe;
+import com.dannyandson.tinypipes.components.full.RedstonePipe;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Vector3f;
@@ -34,24 +35,25 @@ public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEnt
             RenderHelper.drawCube(poseStack, builder, sprite, 0.3125f, 0.6875f, 0.3125f, 0.6875f, 0.3125f, 0.6875f, combinedLight, 0xFFFFFFFF, 1.0f);
 
         for (AbstractFullPipe pipe : pipes) {
+            RedstonePipe rsPipe = (pipe instanceof RedstonePipe)?(RedstonePipe) pipe:null;
             poseStack.pushPose();
 
 
             int slot = (single)?-1: pipe.slotPos();
             sprite = pipe.getSprite();
             for (Direction direction : new Direction[]{Direction.NORTH, Direction.WEST, Direction.SOUTH, Direction.EAST}) {
-                drawSide(pipe.getPipeSideStatus(direction), slot, poseStack, builder, sprite, combinedLight,direction.getAxisDirection());
+                drawSide(pipe.getPipeSideStatus(direction), slot, poseStack, builder, sprite, combinedLight,direction.getAxisDirection(),(rsPipe!=null)?rsPipe.getColor(direction):null, pipe.getNeighborIsPipeCluster(direction));
                 poseStack.translate(0, 0, 1);
                 poseStack.mulPose(Vector3f.YP.rotationDegrees(90));
             }
 
             poseStack.mulPose(Vector3f.XP.rotationDegrees(90));
             poseStack.translate(0, 0, -1);
-            drawSide(pipe.getPipeSideStatus(Direction.UP), slot, poseStack, builder, sprite, combinedLight, Direction.AxisDirection.POSITIVE);
+            drawSide(pipe.getPipeSideStatus(Direction.UP), slot, poseStack, builder, sprite, combinedLight, Direction.AxisDirection.POSITIVE,(rsPipe!=null)?rsPipe.getColor(Direction.UP):null, pipe.getNeighborIsPipeCluster(Direction.UP));
 
             poseStack.mulPose(Vector3f.YP.rotationDegrees(180));
             poseStack.translate(-1, 0, -1);
-            drawSide(pipe.getPipeSideStatus(Direction.DOWN), slot , poseStack, builder, sprite, combinedLight, Direction.AxisDirection.NEGATIVE);
+            drawSide(pipe.getPipeSideStatus(Direction.DOWN), slot , poseStack, builder, sprite, combinedLight, Direction.AxisDirection.NEGATIVE,(rsPipe!=null)?rsPipe.getColor(Direction.DOWN):null, pipe.getNeighborIsPipeCluster(Direction.DOWN));
 
             poseStack.popPose();
         }
@@ -59,26 +61,32 @@ public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEnt
         poseStack.popPose();
     }
 
-    private void drawSide(PipeSideStatus sideStatus, int slot, PoseStack poseStack, VertexConsumer builder, TextureAtlasSprite sprite, int combinedLight, Direction.AxisDirection dir) {
+    private void drawSide(PipeConnectionState sideStatus, int slot, PoseStack poseStack, VertexConsumer builder, TextureAtlasSprite sprite, int combinedLight, Direction.AxisDirection dir, Integer color, Boolean clusterNeighbor) {
         // 0.359375f 0.5f 0.640625f
         boolean alt = dir == Direction.AxisDirection.NEGATIVE;
         boolean xRight = (slot == 0 && alt) || (slot == 1 && !alt) || (slot == 2 && alt) || (slot == 3 && !alt);
         boolean yUpper = slot == 0 || slot == 1;
 
-        float xmin = slot==-1 ? 0.4296875f : xRight ? 0.5f: 0.359375f;
-        float xmax = slot==-1 ? 0.5703125f : xRight ? 0.640625f : 0.5f;
-        float zmin = slot==-1 ? 0.4296875f : yUpper ? 0.5f: 0.359375f;
-        float zmax = slot==-1 ? 0.5703125f : yUpper ? 0.640625f : 0.5f;
-        float ymax = slot==-1 ? 0.4296875f : 0.3125f;
+        float xmin = slot == -1 ? 0.4296875f : xRight ? 0.5f : 0.359375f;
+        float xmax = slot == -1 ? 0.5703125f : xRight ? 0.640625f : 0.5f;
+        float zmin = slot == -1 ? 0.4296875f : yUpper ? 0.5f : 0.359375f;
+        float zmax = slot == -1 ? 0.5703125f : yUpper ? 0.640625f : 0.5f;
+        float ymax = slot == -1 ? 0.4296875f : 0.3125f;
 
-        if (sideStatus == PipeSideStatus.ENABLED) {
-            RenderHelper.drawCube(poseStack, builder, sprite, xmin, xmax, 0, ymax, zmin, zmax, combinedLight, 0xFFFFFFFF, 1.0f);
-        }
-        else if (sideStatus == PipeSideStatus.PULLING) {
+        if (sideStatus == PipeConnectionState.ENABLED) {
+            if (slot==-1 && clusterNeighbor!=null && clusterNeighbor){
+                RenderHelper.drawCube(poseStack, builder, sprite, xmin, xmax, 0.0625f, ymax, zmin, zmax, combinedLight, 0xFFFFFFFF, 1.0f);
+                RenderHelper.drawCube(poseStack, builder, sprite, 0.359375f, 0.640625f, 0, 0.0625f, 0.359375f, 0.640625f, combinedLight, 0xFFFFFFFF, 1.0f);
+            }else if (color==null) {
+                RenderHelper.drawCube(poseStack, builder, sprite, xmin, xmax, 0, ymax, zmin, zmax, combinedLight, 0xFFFFFFFF, 1.0f);
+            }else{
+                RenderHelper.drawCube(poseStack, builder, sprite, xmin, xmax, 0.0625f, ymax, zmin, zmax, combinedLight, 0xFFFFFFFF, 1.0f);
+                RenderHelper.drawCube(poseStack, builder, PipeBlockEntity.getWhitePipeSprite(), xmin, xmax, 0, 0.0625f, zmin, zmax, combinedLight, color, 1.0f);
+            }
+        } else if (sideStatus == PipeConnectionState.PULLING) {
             RenderHelper.drawCube(poseStack, builder, sprite, xmin, xmax, 0.125f, ymax, zmin, zmax, combinedLight, 0xFFFFFFFF, 1.0f);
-            RenderHelper.drawCube(poseStack, builder, PipeBlockEntity.getPullSprite(), xmin, xmax, 0, 0.125f, zmin, zmax, combinedLight, 0xFFFFFFFF, 1.0f);
-        }
-        else if (slot != -1){
+            RenderHelper.drawCube(poseStack, builder, PipeBlockEntity.getPullSprite(), xmin, xmax, 0, 0.125f, zmin, zmax, combinedLight, (color==null)?0xFFFFFFFF:color, 1.0f);
+        } else if (slot != -1) {
             RenderHelper.drawCube(poseStack, builder, sprite, xmin, xmax, 0.28125f, 0.3125f, zmin, zmax, combinedLight, 0xFFFFFFFF, 1.0f);
         }
 

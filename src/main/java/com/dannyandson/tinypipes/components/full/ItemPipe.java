@@ -2,7 +2,7 @@ package com.dannyandson.tinypipes.components.full;
 
 import com.dannyandson.tinypipes.Config;
 import com.dannyandson.tinypipes.blocks.PipeBlockEntity;
-import com.dannyandson.tinypipes.blocks.PipeSideStatus;
+import com.dannyandson.tinypipes.blocks.PipeConnectionState;
 import com.dannyandson.tinypipes.caphandlers.ModCapabilityManager;
 import com.dannyandson.tinypipes.caphandlers.PushWrapper;
 import com.dannyandson.tinypipes.components.RenderHelper;
@@ -56,7 +56,7 @@ public class ItemPipe extends AbstractCapFullPipe<IItemHandler>{
         pushWrapper = null;
 
         for (Direction direction : Direction.values()) {
-            if (getPipeSideStatus(direction) == PipeSideStatus.PULLING) {
+            if (getPipeSideStatus(direction) == PipeConnectionState.PULLING) {
                 //if set to pull, check for connected neighbor with item capabilities
                 BlockPos neighborBlockPos = pipeBlockEntity.getBlockPos().relative(direction);
 
@@ -114,7 +114,7 @@ public class ItemPipe extends AbstractCapFullPipe<IItemHandler>{
             return;
         }
         //check if we're connected to the querying component
-        if (side != null && getPipeSideStatus(side) == PipeSideStatus.DISABLED)
+        if (side != null && getPipeSideStatus(side) == PipeConnectionState.DISABLED)
             return;
 
         //if checks pass, add id to list
@@ -122,7 +122,7 @@ public class ItemPipe extends AbstractCapFullPipe<IItemHandler>{
 
         //check if a destination exists on the side(s) set to push
         for (Direction direction : Direction.values()) {
-            if (getPipeSideStatus(direction) == PipeSideStatus.ENABLED) {
+            if (getPipeSideStatus(direction) == PipeConnectionState.ENABLED) {
                 BlockPos pushToNeighbor = pipeBlockEntity.getBlockPos().relative(direction);
                 if (pipeBlockEntity.getLevel().getBlockEntity(pushToNeighbor) instanceof PipeBlockEntity pipeBlockEntity2) {
                     if (pipeBlockEntity2.getPipe(this.slotPos()) instanceof ItemPipe neighborPipe)

@@ -29,12 +29,6 @@ public class ItemPipe extends AbstractCapFullPipe<IItemHandler>{
     }
 
     @Override
-    protected int getColor() {
-        if (disabled) return 0xFF888888;
-        return super.getColor();
-    }
-
-    @Override
     public int slotPos() {
         return 0;
     }

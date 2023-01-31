@@ -134,7 +134,7 @@ public class PipeBlock extends BaseEntityBlock {
     @SuppressWarnings("deprecation")
     @Override
     public InteractionResult use(BlockState blockState, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
-        if (level.getBlockEntity(pos) instanceof PipeBlockEntity pipeBlockEntity) {
+        if (hand==InteractionHand.MAIN_HAND && level.getBlockEntity(pos) instanceof PipeBlockEntity pipeBlockEntity) {
             ItemStack heldStack = player.getItemInHand(hand);
             if (Registry.getFullPipeClassFromItem(heldStack.getItem()) != null) {
                 //using with a pipe in hand
@@ -151,7 +151,6 @@ public class PipeBlock extends BaseEntityBlock {
                 PipeSide pipeSide = pipeBlockEntity.getPipeAtHitVector(hitResult);
                 if (pipeSide!=null){
                     pipeSide.toggleSideStatus();
-                    level.blockUpdated(pos,this);
                 }
                 return InteractionResult.CONSUME;
             } else if (heldStack.getItem() instanceof DyeItem dyeItem) {
@@ -165,8 +164,10 @@ public class PipeBlock extends BaseEntityBlock {
                 return InteractionResult.CONSUME;
             } else {
                 PipeSide pipeSide = pipeBlockEntity.getPipeAtHitVector(hitResult);
-                if (pipeSide.getPipe().openGUI(player))
+                if (pipeSide!=null) {
+                    pipeSide.getPipe().openGUI(pipeBlockEntity,player);
                     return InteractionResult.CONSUME;
+                }
             }
         }
         return super.use(blockState, level, pos, player, hand, hitResult);

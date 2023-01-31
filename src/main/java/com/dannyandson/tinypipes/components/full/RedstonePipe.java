@@ -183,7 +183,9 @@ public class RedstonePipe extends AbstractFullPipe{
 
     //@Override
     public int getStrongRsOutput(Direction side) {
-        return (this.getPipeSideStatus(side)== PipeConnectionState.ENABLED) ? outputSignals.getOrDefault(frequencies.getOrDefault(side, defaultFrequency), 0) : 0;
+        return (this.getPipeSideStatus(side)== PipeConnectionState.ENABLED && (getNeighborHasSamePipeType(side)==null || !getNeighborHasSamePipeType(side)))
+                ? outputSignals.getOrDefault(frequencies.getOrDefault(side, defaultFrequency), 0)
+                : 0;
     }
 
     //@Override

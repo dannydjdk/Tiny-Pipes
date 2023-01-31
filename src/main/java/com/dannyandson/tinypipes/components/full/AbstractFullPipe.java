@@ -4,6 +4,7 @@ import com.dannyandson.tinypipes.TinyPipes;
 import com.dannyandson.tinypipes.blocks.PipeBlockEntity;
 import com.dannyandson.tinypipes.blocks.PipeConnectionState;
 import com.dannyandson.tinypipes.components.IPipe;
+import com.dannyandson.tinypipes.gui.PipeConfigGUI;
 import com.dannyandson.tinypipes.setup.ClientSetup;
 import com.dannyandson.tinyredstone.blocks.RenderHelper;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
@@ -39,19 +40,27 @@ public abstract class AbstractFullPipe implements IPipe {
     }
 
     public boolean neighborChanged(PipeBlockEntity pipeBlockEntity) {
-        for(Direction direction : Direction.values()){
-
-            neighborIsPipeCluster.put(direction,false);
-            neighborHasSamePipeType.put(direction,false);
-
-            if (pipeBlockEntity.getLevel().getBlockEntity(pipeBlockEntity.getBlockPos().relative(direction)) instanceof PipeBlockEntity pipeBlockEntity2){
-                if(pipeBlockEntity2.pipeCount()>1)
-                    neighborIsPipeCluster.put(direction,true);
-                 if(pipeBlockEntity2.hasPipe(this.getClass()))
-                    neighborHasSamePipeType.put(direction,true);
+        boolean change = false;
+        for(Direction direction : Direction.values()) {
+            boolean pipeCluster = false;
+            boolean matchingPipe = false;
+            if (pipeBlockEntity.getLevel().getBlockEntity(pipeBlockEntity.getBlockPos().relative(direction)) instanceof PipeBlockEntity pipeBlockEntity2) {
+                pipeCluster = pipeBlockEntity2.pipeCount() > 1;
+                matchingPipe = pipeBlockEntity2.hasPipe(this.getClass());
             }
-        }
+            if (neighborIsPipeCluster.get(direction) == null || neighborIsPipeCluster.get(direction) != pipeCluster) {
+                neighborIsPipeCluster.put(direction, pipeCluster);
+                change = true;
+            }
+            if (neighborHasSamePipeType.get(direction) == null || neighborHasSamePipeType.get(direction) != matchingPipe) {
+                neighborHasSamePipeType.put(direction, matchingPipe);
+                change = true;
+            }
 
+        }
+        if (change) {
+            pipeBlockEntity.sync();
+        }
         return false;
     }
 
@@ -63,11 +72,15 @@ public abstract class AbstractFullPipe implements IPipe {
         return neighborHasSamePipeType.get(direction);
     }
 
-    protected int getColor() {
+    public int getColor() {
         return 0xFFFFFFFF;
     }
 
-    public boolean openGUI(Player player){return false;}
+    public void openGUI(PipeBlockEntity pipeBlockEntity,Player player){
+        if (player.level.isClientSide){
+            PipeConfigGUI.open(pipeBlockEntity,this);
+        }
+    }
 
     //TODO
     public CompoundTag getItemTag(){return new CompoundTag();}
@@ -103,15 +116,25 @@ public abstract class AbstractFullPipe implements IPipe {
     public boolean tick(PipeBlockEntity pipeBlockEntity){
         if (toggled) {
             toggled=false;
-            return neighborChanged(pipeBlockEntity);
+            boolean change = neighborChanged(pipeBlockEntity);
+            pipeBlockEntity.sync();
+            if (change){
+                pipeBlockEntity.getLevel().blockUpdated(pipeBlockEntity.getBlockPos(),pipeBlockEntity.getBlockState().getBlock());
+            }
+            pipeBlockEntity.getLevel().updateNeighborsAt(pipeBlockEntity.getBlockPos(),pipeBlockEntity.getBlockState().getBlock());
+            return change;
         }
         return false;
     }
 
     public CompoundTag writeNBT() {
         CompoundTag nbt = new CompoundTag();
-        for (Direction direction: sideStatusMap.keySet()){
-            nbt.putString(direction.name(), sideStatusMap.get(direction).name());
+        if (!sideStatusMap.isEmpty()) {
+            CompoundTag sideStatusNbt = new CompoundTag();
+            for (Direction direction : sideStatusMap.keySet()) {
+                sideStatusNbt.putString(direction.name(), sideStatusMap.get(direction).name());
+            }
+            nbt.put("sideStatus", sideStatusNbt);
         }
         if (!neighborIsPipeCluster.isEmpty()) {
             CompoundTag neighborInfoNBT = new CompoundTag();
@@ -132,11 +155,14 @@ public abstract class AbstractFullPipe implements IPipe {
     }
 
     public void readNBT(CompoundTag compoundTag) {
-        for (String key : compoundTag.getAllKeys()){
             try {
-                Direction direction = Direction.valueOf(key);
-                PipeConnectionState status = PipeConnectionState.valueOf(compoundTag.getString(key));
-                sideStatusMap.put(direction, status);
+                if (compoundTag.contains("sideStatus")) {
+                    for (String key : compoundTag.getCompound("sideStatus").getAllKeys()) {
+                        Direction direction = Direction.valueOf(key);
+                        PipeConnectionState status = PipeConnectionState.valueOf(compoundTag.getCompound("sideStatus").getString(key));
+                        sideStatusMap.put(direction, status);
+                    }
+                }
                 if (compoundTag.contains("neighborIsPipeCluster")){
                     for (String side : compoundTag.getCompound("neighborIsPipeCluster").getAllKeys()) {
                         neighborIsPipeCluster.put(Direction.valueOf(side), compoundTag.getCompound("neighborIsPipeCluster").getBoolean(side));
@@ -149,8 +175,7 @@ public abstract class AbstractFullPipe implements IPipe {
                 }
 
             }catch (IllegalArgumentException exception){
-                TinyPipes.LOGGER.error("Exception attempting to read pipe direction from NBT " + key, exception);
+                TinyPipes.LOGGER.error("Exception attempting to read pipe direction from NBT.", exception);
             }
-        }
     }
 }

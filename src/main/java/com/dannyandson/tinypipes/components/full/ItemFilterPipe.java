@@ -76,11 +76,10 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe {
     }
 
     @Override
-    public boolean openGUI(Player player) {
+    public void openGUI(PipeBlockEntity pipeBlockEntity, Player player) {
         if (player instanceof ServerPlayer serverPlayer) {
             NetworkHooks.openScreen(serverPlayer,new ItemFilterContainerMenu.Provider(this));
         }
-        return true;
     }
 
     @Override

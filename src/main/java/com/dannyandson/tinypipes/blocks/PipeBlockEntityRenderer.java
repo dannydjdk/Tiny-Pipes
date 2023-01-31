@@ -36,24 +36,25 @@ public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEnt
 
         for (AbstractFullPipe pipe : pipes) {
             RedstonePipe rsPipe = (pipe instanceof RedstonePipe)?(RedstonePipe) pipe:null;
+            int color = pipe.getColor();
             poseStack.pushPose();
 
 
             int slot = (single)?-1: pipe.slotPos();
             sprite = pipe.getSprite();
             for (Direction direction : new Direction[]{Direction.NORTH, Direction.WEST, Direction.SOUTH, Direction.EAST}) {
-                drawSide(pipe.getPipeSideStatus(direction), slot, poseStack, builder, sprite, combinedLight,direction.getAxisDirection(),(rsPipe!=null)?rsPipe.getColor(direction):null, pipe.getNeighborIsPipeCluster(direction));
+                drawSide(pipe.getPipeSideStatus(direction), slot, poseStack, builder, sprite, combinedLight,direction.getAxisDirection(), color, (rsPipe!=null)?rsPipe.getColor(direction):null, pipe.getNeighborIsPipeCluster(direction));
                 poseStack.translate(0, 0, 1);
                 poseStack.mulPose(Vector3f.YP.rotationDegrees(90));
             }
 
             poseStack.mulPose(Vector3f.XP.rotationDegrees(90));
             poseStack.translate(0, 0, -1);
-            drawSide(pipe.getPipeSideStatus(Direction.UP), slot, poseStack, builder, sprite, combinedLight, Direction.AxisDirection.POSITIVE,(rsPipe!=null)?rsPipe.getColor(Direction.UP):null, pipe.getNeighborIsPipeCluster(Direction.UP));
+            drawSide(pipe.getPipeSideStatus(Direction.UP), slot, poseStack, builder, sprite, combinedLight, Direction.AxisDirection.POSITIVE,color, (rsPipe!=null)?rsPipe.getColor(Direction.UP):null, pipe.getNeighborIsPipeCluster(Direction.UP));
 
             poseStack.mulPose(Vector3f.YP.rotationDegrees(180));
             poseStack.translate(-1, 0, -1);
-            drawSide(pipe.getPipeSideStatus(Direction.DOWN), slot , poseStack, builder, sprite, combinedLight, Direction.AxisDirection.NEGATIVE,(rsPipe!=null)?rsPipe.getColor(Direction.DOWN):null, pipe.getNeighborIsPipeCluster(Direction.DOWN));
+            drawSide(pipe.getPipeSideStatus(Direction.DOWN), slot , poseStack, builder, sprite, combinedLight, Direction.AxisDirection.NEGATIVE,color, (rsPipe!=null)?rsPipe.getColor(Direction.DOWN):null, pipe.getNeighborIsPipeCluster(Direction.DOWN));
 
             poseStack.popPose();
         }
@@ -61,7 +62,7 @@ public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEnt
         poseStack.popPose();
     }
 
-    private void drawSide(PipeConnectionState sideStatus, int slot, PoseStack poseStack, VertexConsumer builder, TextureAtlasSprite sprite, int combinedLight, Direction.AxisDirection dir, Integer color, Boolean clusterNeighbor) {
+    private void drawSide(PipeConnectionState sideStatus, int slot, PoseStack poseStack, VertexConsumer builder, TextureAtlasSprite sprite, int combinedLight, Direction.AxisDirection dir, int pipeColor, Integer connectionColor, Boolean clusterNeighbor) {
         // 0.359375f 0.5f 0.640625f
         boolean alt = dir == Direction.AxisDirection.NEGATIVE;
         boolean xRight = (slot == 0 && alt) || (slot == 1 && !alt) || (slot == 2 && alt) || (slot == 3 && !alt);
@@ -75,19 +76,19 @@ public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEnt
 
         if (sideStatus == PipeConnectionState.ENABLED) {
             if (slot==-1 && clusterNeighbor!=null && clusterNeighbor){
-                RenderHelper.drawCube(poseStack, builder, sprite, xmin, xmax, 0.0625f, ymax, zmin, zmax, combinedLight, 0xFFFFFFFF, 1.0f);
-                RenderHelper.drawCube(poseStack, builder, sprite, 0.359375f, 0.640625f, 0, 0.0625f, 0.359375f, 0.640625f, combinedLight, 0xFFFFFFFF, 1.0f);
-            }else if (color==null) {
-                RenderHelper.drawCube(poseStack, builder, sprite, xmin, xmax, 0, ymax, zmin, zmax, combinedLight, 0xFFFFFFFF, 1.0f);
+                RenderHelper.drawCube(poseStack, builder, sprite, xmin, xmax, 0.0625f, ymax, zmin, zmax, combinedLight, pipeColor, 1.0f);
+                RenderHelper.drawCube(poseStack, builder, sprite, 0.359375f, 0.640625f, 0, 0.0625f, 0.359375f, 0.640625f, combinedLight, pipeColor, 1.0f);
+            }else if (connectionColor==null) {
+                RenderHelper.drawCube(poseStack, builder, sprite, xmin, xmax, 0, ymax, zmin, zmax, combinedLight, pipeColor, 1.0f);
             }else{
-                RenderHelper.drawCube(poseStack, builder, sprite, xmin, xmax, 0.0625f, ymax, zmin, zmax, combinedLight, 0xFFFFFFFF, 1.0f);
-                RenderHelper.drawCube(poseStack, builder, PipeBlockEntity.getWhitePipeSprite(), xmin, xmax, 0, 0.0625f, zmin, zmax, combinedLight, color, 1.0f);
+                RenderHelper.drawCube(poseStack, builder, sprite, xmin, xmax, 0.0625f, ymax, zmin, zmax, combinedLight, pipeColor, 1.0f);
+                RenderHelper.drawCube(poseStack, builder, PipeBlockEntity.getWhitePipeSprite(), xmin, xmax, 0, 0.0625f, zmin, zmax, combinedLight, connectionColor, 1.0f);
             }
         } else if (sideStatus == PipeConnectionState.PULLING) {
-            RenderHelper.drawCube(poseStack, builder, sprite, xmin, xmax, 0.125f, ymax, zmin, zmax, combinedLight, 0xFFFFFFFF, 1.0f);
-            RenderHelper.drawCube(poseStack, builder, PipeBlockEntity.getPullSprite(), xmin, xmax, 0, 0.125f, zmin, zmax, combinedLight, (color==null)?0xFFFFFFFF:color, 1.0f);
+            RenderHelper.drawCube(poseStack, builder, sprite, xmin, xmax, 0.125f, ymax, zmin, zmax, combinedLight, pipeColor, 1.0f);
+            RenderHelper.drawCube(poseStack, builder, PipeBlockEntity.getPullSprite(), xmin, xmax, 0, 0.125f, zmin, zmax, combinedLight, (connectionColor==null)?0xFFFFFFFF:connectionColor, 1.0f);
         } else if (slot != -1) {
-            RenderHelper.drawCube(poseStack, builder, sprite, xmin, xmax, 0.28125f, 0.3125f, zmin, zmax, combinedLight, 0xFFFFFFFF, 1.0f);
+            RenderHelper.drawCube(poseStack, builder, sprite, xmin, xmax, 0.28125f, 0.3125f, zmin, zmax, combinedLight, pipeColor, 1.0f);
         }
 
     }

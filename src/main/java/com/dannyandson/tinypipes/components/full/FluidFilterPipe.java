@@ -86,11 +86,10 @@ public class FluidFilterPipe extends FluidPipe implements IFilterPipe {
 
 
     @Override
-    public boolean openGUI(Player player) {
+    public void openGUI(PipeBlockEntity pipeBlockEntity, Player player) {
         if (player instanceof ServerPlayer) {
             NetworkHooks.openScreen((ServerPlayer) player,new FluidFilterContainerMenu.Provider(this));
         }
-        return true;
     }
 
     @Override

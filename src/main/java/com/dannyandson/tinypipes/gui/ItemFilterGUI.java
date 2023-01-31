@@ -75,7 +75,7 @@ public class ItemFilterGUI extends AbstractContainerScreen<ItemFilterContainerMe
         addRenderableWidget(blackListButton);
 
         addRenderableWidget(new Button(leftPos+73, topPos+3, 50, 16, Component.translatable("tinypipes.pipe_config_button"), button -> {
-            PipeConfigGUI.open(pipeBlockEntity, pipe);
+            PipeConfigGUI.open(pipeBlockEntity, (AbstractFullPipe) pipe);
         }));
 
     }

@@ -65,6 +65,8 @@ public class PipeBlockEntity extends BlockEntity {
 
     public int pipeCount(){return pipes.size();}
 
+    private boolean refresh = false;
+
     /**
      * Add pipe from itemstack
      * @param itemStack Item stack containing pipe item
@@ -81,6 +83,7 @@ public class PipeBlockEntity extends BlockEntity {
         pipes.put(pipe.slotPos(),pipe);
         pipe.onPlace(this, itemStack);
         this.centerSprite=null;
+        refresh=true;
         sync();
         return pipe;
     }
@@ -90,8 +93,11 @@ public class PipeBlockEntity extends BlockEntity {
             this.centerSprite=null;
             if (pipes.size()==0)
                 level.removeBlock(worldPosition,false);
-            else
+            else {
+                refresh=true;
                 sync();
+                getLevel().updateNeighborsAt(getBlockPos(),getBlockState().getBlock());
+            }
             return true;
         }
         return false;
@@ -234,14 +240,18 @@ public class PipeBlockEntity extends BlockEntity {
         for (AbstractFullPipe pipe : pipes.values())
             if (pipe.tick(this)) update = true;
 
-        if (update){
-            getLevel().blockUpdated(getBlockPos(),getBlockState().getBlock());
+        if (refresh) {
+            update=true;
+            onNeighborChange();
+        }
+        if (update) {
+            getLevel().blockUpdated(getBlockPos(), getBlockState().getBlock());
             sync();
         }
 
-        if (pipeCount()==0)
-            level.removeBlock(worldPosition,false);
-            //level.destroyBlock(worldPosition, false);
+        if (pipeCount() == 0)
+            level.removeBlock(worldPosition, false);
+        //level.destroyBlock(worldPosition, false);
     }
 
     public void onNeighborChange() {

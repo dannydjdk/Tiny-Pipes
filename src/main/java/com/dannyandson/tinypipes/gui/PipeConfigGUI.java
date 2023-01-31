@@ -110,9 +110,9 @@ public class PipeConfigGUI extends Screen {
     }
 
 
-    public static void open(PipeBlockEntity pipeBlockEntity, IFilterPipe tinyPipe) {
+    public static void open(PipeBlockEntity pipeBlockEntity, AbstractFullPipe tinyPipe) {
         if(pipeBlockEntity!=null && tinyPipe!=null)
-            Minecraft.getInstance().setScreen(new PipeConfigGUI(pipeBlockEntity,(AbstractFullPipe) tinyPipe));
+            Minecraft.getInstance().setScreen(new PipeConfigGUI(pipeBlockEntity, tinyPipe));
     }
 
 }

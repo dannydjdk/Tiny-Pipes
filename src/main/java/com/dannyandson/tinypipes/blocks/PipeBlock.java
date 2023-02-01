@@ -222,9 +222,11 @@ public class PipeBlock extends BaseEntityBlock {
                 if (pipeBlockEntity.getCamouflageBlockState() != null) {
                     ItemStack itemStack = pipeBlockEntity.getCamouflageBlockState().getBlock().asItem().getDefaultInstance();
                     pipeBlockEntity.setCamouflage(null);
-                    ItemEntity itemEntity = new ItemEntity(level, pos.getX(), pos.getY() + .5, pos.getZ(), itemStack);
-                    level.addFreshEntity(itemEntity);
-                    itemEntity.setPos(player.getX(), player.getY(), player.getZ());
+                    if (!player.isCreative()) {
+                        ItemEntity itemEntity = new ItemEntity(level, pos.getX(), pos.getY() + .5, pos.getZ(), itemStack);
+                        level.addFreshEntity(itemEntity);
+                        itemEntity.setPos(player.getX(), player.getY(), player.getZ());
+                    }
                 } else {
                     PipeSide pipeSide = pipeBlockEntity.getPipeAtHitVector(PipeBlockEntity.getPlayerCollisionHitResult(player, level));
                     if (pipeSide != null) {

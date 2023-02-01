@@ -57,7 +57,10 @@ public class RedstonePipe extends AbstractFullPipe{
 
     public void setColor(Direction side, Integer color){
         if (getNeighborHasSamePipeType(side)!=null && !getNeighborHasSamePipeType(side))
-            this.frequencies.put(side,color);
+            if (color == DyeColor.RED.getId())
+                this.frequencies.put(side,defaultFrequency);
+            else
+                this.frequencies.put(side,color);
     }
 
     @Override

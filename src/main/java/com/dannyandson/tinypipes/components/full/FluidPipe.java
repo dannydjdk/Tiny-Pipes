@@ -63,7 +63,7 @@ public class FluidPipe extends AbstractCapFullPipe<IFluidHandler>{
                             //we found a stack that can be extracted
                             //see if there's a place to put it
                             FluidStack fluidStack2 = fluidStack.copy();
-                            fluidStack2.setAmount(Math.min(fluidStack2.getAmount(), Config.FLUID_THROUGHPUT.get()/4));
+                            fluidStack2.setAmount((int) Math.min(fluidStack2.getAmount(), Config.FLUID_THROUGHPUT.get()*getSpeedMultiplier()/4));
                             PushWrapper<IFluidHandler> pushWrapper = getPushWrapper(pipeBlockEntity, fluidStack2);
                             for (PushWrapper.PushTarget<IFluidHandler> pushTarget : pushWrapper.getSortedTargets()) {
                                 //grab capabilities and push
@@ -131,7 +131,7 @@ public class FluidPipe extends AbstractCapFullPipe<IFluidHandler>{
 
     @Override
     public int canAccept(int amount) {
-        return Math.min(amount,(Config.FLUID_THROUGHPUT.get()/4-amountPushed));
+        return (int) Math.min(amount,(Config.FLUID_THROUGHPUT.get()*getSpeedMultiplier()/4-amountPushed));
     }
 
 }

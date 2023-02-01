@@ -1,9 +1,12 @@
 package com.dannyandson.tinypipes.blocks;
 
 import com.dannyandson.tinypipes.api.Registry;
+import com.dannyandson.tinypipes.components.full.AbstractCapFullPipe;
 import com.dannyandson.tinypipes.components.full.AbstractFullPipe;
 import com.dannyandson.tinypipes.components.full.PipeSide;
 import com.dannyandson.tinypipes.components.full.RedstonePipe;
+import com.dannyandson.tinypipes.items.SpeedUpgradeItem;
+import com.dannyandson.tinypipes.setup.Registration;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
@@ -69,6 +72,16 @@ public class PipeBlock extends BaseEntityBlock {
         if (level.getBlockEntity(pos) instanceof PipeBlockEntity pipeBlockEntity) {
             if (!player.isCreative()) {
                 for (AbstractFullPipe pipe : pipeBlockEntity.getPipes()) {
+                    if (pipe instanceof AbstractCapFullPipe abstractCapFullPipe && abstractCapFullPipe.getSpeedUpgradeCount()>0){
+                        Item item = Registration.SPEED_UPGRADE_ITEM.get();
+                        ItemStack itemStack = item.getDefaultInstance();
+                        itemStack.setCount(abstractCapFullPipe.getSpeedUpgradeCount());
+                        ItemEntity itemEntity = new ItemEntity(level, pos.getX(), pos.getY() + .5, pos.getZ(), itemStack);
+                        level.addFreshEntity(itemEntity);
+                        if (player != null)
+                            itemEntity.setPos(player.getX(), player.getY(), player.getZ());
+                    }
+
                     Item item = Registry.getFullPipeItemFromClass(pipe.getClass());
                     ItemStack itemStack = item.getDefaultInstance();
                     ItemEntity itemEntity = new ItemEntity(level, pos.getX(), pos.getY() + .5, pos.getZ(), itemStack);
@@ -162,6 +175,14 @@ public class PipeBlock extends BaseEntityBlock {
                     level.blockUpdated(pos,this);
                 }
                 return InteractionResult.CONSUME;
+            } else if (heldStack.getItem() instanceof SpeedUpgradeItem) {
+                //using with a speed upgrade in hand
+                PipeSide pipeSide = pipeBlockEntity.getPipeAtHitVector(hitResult);
+                if (pipeSide.applySpeedUpgrade() && !player.isCreative()
+                ){
+                    heldStack.setCount(heldStack.getCount()-1);
+                    return InteractionResult.CONSUME;
+                }
             } else {
                 PipeSide pipeSide = pipeBlockEntity.getPipeAtHitVector(hitResult);
                 if (pipeSide!=null) {
@@ -179,14 +200,25 @@ public class PipeBlock extends BaseEntityBlock {
         if (level.getBlockEntity(pos) instanceof PipeBlockEntity pipeBlockEntity) {
             ItemStack heldStack = player.getMainHandItem();
             if (heldStack.is(ItemTags.create(new ResourceLocation("forge", "tools/wrench"))) || Registry.getFullPipeClassFromItem(heldStack.getItem()) != null) {
-                PipeSide side = pipeBlockEntity.getPipeAtHitVector(PipeBlockEntity.getPlayerCollisionHitResult(player, level));
-                if (side != null && side.removePipe() && !player.isCreative()) {
-                    Item item = Registry.getFullPipeItemFromClass(side.getPipe().getClass());
-                    ItemStack itemStack = item.getDefaultInstance();
-                    ItemEntity itemEntity = new ItemEntity(level, pos.getX(), pos.getY() + .5, pos.getZ(), itemStack);
-                    level.addFreshEntity(itemEntity);
-                    if (player != null)
+                PipeSide pipeSide = pipeBlockEntity.getPipeAtHitVector(PipeBlockEntity.getPlayerCollisionHitResult(player, level));
+                if (pipeSide != null) {
+                    if (player.isCrouching()) {
+                        pipeSide.getPipe().openGUI(pipeBlockEntity,player);
+                    }else if (pipeSide.removeSpeedUpgrade()){
+                        if (!player.isCreative()) {
+                            Item item = Registration.SPEED_UPGRADE_ITEM.get();
+                            ItemStack itemStack = item.getDefaultInstance();
+                            ItemEntity itemEntity = new ItemEntity(level, pos.getX(), pos.getY() + .5, pos.getZ(), itemStack);
+                            level.addFreshEntity(itemEntity);
+                            itemEntity.setPos(player.getX(), player.getY(), player.getZ());
+                        }
+                    }else if(pipeSide.removePipe() && !player.isCreative()){
+                        Item item = Registry.getFullPipeItemFromClass(pipeSide.getPipe().getClass());
+                        ItemStack itemStack = item.getDefaultInstance();
+                        ItemEntity itemEntity = new ItemEntity(level, pos.getX(), pos.getY() + .5, pos.getZ(), itemStack);
+                        level.addFreshEntity(itemEntity);
                         itemEntity.setPos(player.getX(), player.getY(), player.getZ());
+                    }
                 }
             }
         }

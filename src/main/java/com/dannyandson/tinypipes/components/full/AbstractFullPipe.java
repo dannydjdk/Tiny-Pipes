@@ -65,11 +65,11 @@ public abstract class AbstractFullPipe implements IPipe {
     }
 
     public Boolean getNeighborIsPipeCluster(Direction direction) {
-        return neighborIsPipeCluster.get(direction);
+        return neighborIsPipeCluster.get(direction)!=null && neighborIsPipeCluster.get(direction);
     }
 
     public Boolean getNeighborHasSamePipeType(Direction direction) {
-        return neighborHasSamePipeType.get(direction);
+        return neighborHasSamePipeType.get(direction) != null && neighborHasSamePipeType.get(direction);
     }
 
     public int getColor() {

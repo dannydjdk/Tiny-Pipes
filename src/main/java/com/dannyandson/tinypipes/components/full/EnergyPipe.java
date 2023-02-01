@@ -47,7 +47,7 @@ public class EnergyPipe extends AbstractCapFullPipe<IEnergyStorage>{
 
                 IEnergyStorage iEnergyStorage = ModCapabilityManager.getIEnergyStorage(pipeBlockEntity.getLevel(), neighborBlockPos, direction.getOpposite());
                 if (iEnergyStorage != null) {
-                    int toExtract = Config.ENERGY_THROUGHPUT.get();
+                    int toExtract = (int) (Config.ENERGY_THROUGHPUT.get()*getSpeedMultiplier());
                     int energy = iEnergyStorage.extractEnergy(toExtract, true);
                     if (energy > 0) {
                         int remainingEnergy = energy;
@@ -115,7 +115,7 @@ public class EnergyPipe extends AbstractCapFullPipe<IEnergyStorage>{
 
     @Override
     public int canAccept(int amount) {
-        return Math.min(amount,(Config.ENERGY_THROUGHPUT.get()-amountPushed));
+        return (int) Math.min(amount,(Config.ENERGY_THROUGHPUT.get()*getSpeedMultiplier()-amountPushed));
     }
 
 }

@@ -9,6 +9,7 @@ import com.dannyandson.tinypipes.gui.FluidFilterContainerMenu;
 import com.dannyandson.tinypipes.gui.ItemFilterContainerMenu;
 import com.dannyandson.tinypipes.items.FullPipeItem;
 import com.dannyandson.tinypipes.items.PipeWrenchItem;
+import com.dannyandson.tinypipes.items.SpeedUpgradeItem;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
@@ -37,7 +38,8 @@ public class Registration {
     public static final RegistryObject<Item> ENERGY_PIPE_ITEM = Registration.ITEMS.register("full_energy_pipe", FullPipeItem::new);
     public static final RegistryObject<Item> REDSTONE_PIPE_ITEM = Registration.ITEMS.register("full_redstone_pipe", FullPipeItem::new);
 
-    public static final RegistryObject<Item> Pipe_Wrench_Item = Registration.ITEMS.register("pipe_wrench", PipeWrenchItem::new);
+    public static final RegistryObject<Item> PIPE_WRENCH_ITEM = Registration.ITEMS.register("pipe_wrench", PipeWrenchItem::new);
+    public static final RegistryObject<Item> SPEED_UPGRADE_ITEM = Registration.ITEMS.register("speed_upgrade", SpeedUpgradeItem::new);
 
     public static final RegistryObject<MenuType<ItemFilterContainerMenu>> ITEM_FILTER_MENU_TYPE = MENU_TYPES.register("item_filter", () -> new MenuType<>(ItemFilterContainerMenu::createMenu));
     public static final RegistryObject<MenuType<FluidFilterContainerMenu>> FLUID_FILTER_MENU_TYPE = MENU_TYPES.register("fluid_filter", () -> new MenuType<>(FluidFilterContainerMenu::createFluidMenu));

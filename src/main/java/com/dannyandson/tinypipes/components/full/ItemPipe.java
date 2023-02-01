@@ -37,7 +37,9 @@ public class ItemPipe extends AbstractCapFullPipe<IItemHandler>{
     public boolean tick(PipeBlockEntity pipeBlockEntity) {
         if (disabled) return false;
 
-        if (ticks < ((Config.ITEM_THROUGHPUT.get() < 4) ? 20 / Config.ITEM_THROUGHPUT.get() : 5)) {
+        int itemThroughput = (int) (Config.ITEM_THROUGHPUT.get()*getSpeedMultiplier());
+
+        if (ticks < ((itemThroughput < 4) ? 20 / itemThroughput : 5)) {
             ticks++;
             return false;
         }
@@ -59,7 +61,7 @@ public class ItemPipe extends AbstractCapFullPipe<IItemHandler>{
                     boolean itemMoved = false;
                     for (int slot = 0; slot < iItemHandler.getSlots() && !itemMoved; slot++) {
                         //if an item stack exists that can be pulled, ask connected ItemPipe neighbors if a destination exists
-                        ItemStack itemStack = iItemHandler.extractItem(slot, (Config.ITEM_THROUGHPUT.get() < 4) ? 1 : Config.ITEM_THROUGHPUT.get() / 4, true);
+                        ItemStack itemStack = iItemHandler.extractItem(slot, (itemThroughput < 4) ? 1 : (int) (itemThroughput / 4), true);
                         if (!itemStack.isEmpty()) {
                             //we found a stack that can be extracted
                             //see if there's a place to put it
@@ -132,6 +134,6 @@ public class ItemPipe extends AbstractCapFullPipe<IItemHandler>{
 
     @Override
     public int canAccept(int amount) {
-        return Math.min(amount,(((Config.ITEM_THROUGHPUT.get()<4)?1:Config.ITEM_THROUGHPUT.get()/4)-amountPushed));
+        return (int) Math.min(amount,(((Config.ITEM_THROUGHPUT.get()*getSpeedMultiplier()<4)?1:Config.ITEM_THROUGHPUT.get()*getSpeedMultiplier()/4)-amountPushed));
     }
 }

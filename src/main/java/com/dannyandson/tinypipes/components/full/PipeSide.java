@@ -36,6 +36,27 @@ public class PipeSide<T extends AbstractFullPipe> {
         return pipeBlockEntity.removePipe(pipe);
     }
 
+    public boolean applySpeedUpgrade() {
+        if (pipe instanceof AbstractCapFullPipe abstractCapFullPipe
+                && !abstractCapFullPipe.getNeighborHasSamePipeType(direction)
+        )
+            return abstractCapFullPipe.applySpeedUpgrade();
+        return false;
+    }
+
+    public boolean removeSpeedUpgrade() {
+        if (pipe instanceof AbstractCapFullPipe abstractCapFullPipe)
+            return abstractCapFullPipe.removeSpeedUpgrade();
+        return false;
+    }
+
+
+    public int getSpeedUpgradeCount(){
+        if (pipe instanceof AbstractCapFullPipe abstractCapFullPipe)
+            return abstractCapFullPipe.getSpeedUpgradeCount();
+        return 0;
+    }
+
     public Direction getDirection() {
         return direction;
     }

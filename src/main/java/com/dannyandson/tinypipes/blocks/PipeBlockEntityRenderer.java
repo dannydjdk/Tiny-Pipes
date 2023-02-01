@@ -1,6 +1,8 @@
 package com.dannyandson.tinypipes.blocks;
 
+import com.dannyandson.tinypipes.Config;
 import com.dannyandson.tinypipes.components.RenderHelper;
+import com.dannyandson.tinypipes.components.full.AbstractCapFullPipe;
 import com.dannyandson.tinypipes.components.full.AbstractFullPipe;
 import com.dannyandson.tinypipes.components.full.RedstonePipe;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -37,24 +39,29 @@ public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEnt
         for (AbstractFullPipe pipe : pipes) {
             RedstonePipe rsPipe = (pipe instanceof RedstonePipe)?(RedstonePipe) pipe:null;
             int color = pipe.getColor();
+            int upgrades = (pipe instanceof AbstractCapFullPipe)?((AbstractCapFullPipe<?>) pipe).getSpeedUpgradeCount():0;
+            Integer upgradeColor = (upgrades>0)?0xFF226600+0xFF/Config.SPEED_UPGRADE_MAX.get()*upgrades :0xFF222222;
             poseStack.pushPose();
 
 
             int slot = (single)?-1: pipe.slotPos();
             sprite = pipe.getSprite();
             for (Direction direction : new Direction[]{Direction.NORTH, Direction.WEST, Direction.SOUTH, Direction.EAST}) {
-                drawSide(pipe.getPipeSideStatus(direction), slot, poseStack, builder, sprite, combinedLight,direction.getAxisDirection(), color, (rsPipe!=null)?rsPipe.getColor(direction):null, pipe.getNeighborIsPipeCluster(direction));
+                Integer connectionColor = (rsPipe!=null)?rsPipe.getColor(direction):(!pipe.getNeighborHasSamePipeType(direction))?upgradeColor:null;
+                drawSide(pipe.getPipeSideStatus(direction), slot, poseStack, builder, sprite, combinedLight,direction.getAxisDirection(), color, connectionColor, pipe.getNeighborIsPipeCluster(direction));
                 poseStack.translate(0, 0, 1);
                 poseStack.mulPose(Vector3f.YP.rotationDegrees(90));
             }
 
+            Integer connectionColor = (rsPipe!=null)?rsPipe.getColor(Direction.UP):(!pipe.getNeighborHasSamePipeType(Direction.UP))?upgradeColor:null;
             poseStack.mulPose(Vector3f.XP.rotationDegrees(90));
             poseStack.translate(0, 0, -1);
-            drawSide(pipe.getPipeSideStatus(Direction.UP), slot, poseStack, builder, sprite, combinedLight, Direction.AxisDirection.POSITIVE,color, (rsPipe!=null)?rsPipe.getColor(Direction.UP):null, pipe.getNeighborIsPipeCluster(Direction.UP));
+            drawSide(pipe.getPipeSideStatus(Direction.UP), slot, poseStack, builder, sprite, combinedLight, Direction.AxisDirection.POSITIVE,color, connectionColor, pipe.getNeighborIsPipeCluster(Direction.UP));
 
+            connectionColor = (rsPipe!=null)?rsPipe.getColor(Direction.DOWN):(!pipe.getNeighborHasSamePipeType(Direction.DOWN))?upgradeColor:null;
             poseStack.mulPose(Vector3f.YP.rotationDegrees(180));
             poseStack.translate(-1, 0, -1);
-            drawSide(pipe.getPipeSideStatus(Direction.DOWN), slot , poseStack, builder, sprite, combinedLight, Direction.AxisDirection.NEGATIVE,color, (rsPipe!=null)?rsPipe.getColor(Direction.DOWN):null, pipe.getNeighborIsPipeCluster(Direction.DOWN));
+            drawSide(pipe.getPipeSideStatus(Direction.DOWN), slot , poseStack, builder, sprite, combinedLight, Direction.AxisDirection.NEGATIVE,color, connectionColor, pipe.getNeighborIsPipeCluster(Direction.DOWN));
 
             poseStack.popPose();
         }
@@ -81,8 +88,8 @@ public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEnt
             }else if (connectionColor==null) {
                 RenderHelper.drawCube(poseStack, builder, sprite, xmin, xmax, 0, ymax, zmin, zmax, combinedLight, pipeColor, 1.0f);
             }else{
-                RenderHelper.drawCube(poseStack, builder, sprite, xmin, xmax, 0.0625f, ymax, zmin, zmax, combinedLight, pipeColor, 1.0f);
-                RenderHelper.drawCube(poseStack, builder, PipeBlockEntity.getWhitePipeSprite(), xmin, xmax, 0, 0.0625f, zmin, zmax, combinedLight, connectionColor, 1.0f);
+                RenderHelper.drawCube(poseStack, builder, sprite, xmin, xmax, 0, ymax, zmin, zmax, combinedLight, pipeColor, 1.0f);
+                RenderHelper.drawCube(poseStack, builder, PipeBlockEntity.getWhitePipeSprite(), xmin-.005f, xmax+.005f, 0.0625f, 0.125f, zmin-.005f, zmax+.005f, combinedLight, connectionColor, 1.0f);
             }
         } else if (sideStatus == PipeConnectionState.PULLING) {
             RenderHelper.drawCube(poseStack, builder, sprite, xmin, xmax, 0.125f, ymax, zmin, zmax, combinedLight, pipeColor, 1.0f);

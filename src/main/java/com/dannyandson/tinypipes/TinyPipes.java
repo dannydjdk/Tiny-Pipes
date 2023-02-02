@@ -16,6 +16,7 @@ import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 
 // The value here should match an entry in the META-INF/mods.toml file
 @Mod(TinyPipes.MODID)
@@ -53,8 +54,8 @@ public class TinyPipes
 
     public static final CreativeModeTab ITEM_GROUP = new CreativeModeTab(MODID) {
         @Override
-        public ItemStack makeIcon() {
-            return new ItemStack(RegistrationTinyRedstone.REDSTONE_PIPE_ITEM.get());
+        public @NotNull ItemStack makeIcon() {
+            return new ItemStack(Registration.REDSTONE_PIPE_ITEM.get());
         }
     };
 }

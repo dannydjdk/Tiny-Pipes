@@ -54,6 +54,7 @@ public class PipeBlockEntity extends BlockEntity {
         return false;
     }
 
+    @CheckForNull
     public AbstractFullPipe getPipe(int slot)
     {
         return pipes.get(slot);
@@ -136,6 +137,7 @@ public class PipeBlockEntity extends BlockEntity {
         super.load(nbt);
 
         CompoundTag pipesData = nbt.getCompound("pipes");
+        this.pipes.clear();
         for (String key : pipesData.getAllKeys()) {
             try {
                 AbstractFullPipe pipe = (AbstractFullPipe) Class.forName(key).getConstructor().newInstance();

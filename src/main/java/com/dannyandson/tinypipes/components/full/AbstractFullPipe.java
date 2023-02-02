@@ -46,7 +46,7 @@ public abstract class AbstractFullPipe implements IPipe {
             boolean matchingPipe = false;
             if (pipeBlockEntity.getLevel().getBlockEntity(pipeBlockEntity.getBlockPos().relative(direction)) instanceof PipeBlockEntity pipeBlockEntity2) {
                 pipeCluster = pipeBlockEntity2.pipeCount() > 1;
-                matchingPipe = pipeBlockEntity2.hasPipe(this.getClass());
+                matchingPipe = pipeBlockEntity2.getPipe(this.slotPos())!=null;
             }
             if (neighborIsPipeCluster.get(direction) == null || neighborIsPipeCluster.get(direction) != pipeCluster) {
                 neighborIsPipeCluster.put(direction, pipeCluster);
@@ -54,6 +54,8 @@ public abstract class AbstractFullPipe implements IPipe {
             }
             if (neighborHasSamePipeType.get(direction) == null || neighborHasSamePipeType.get(direction) != matchingPipe) {
                 neighborHasSamePipeType.put(direction, matchingPipe);
+                if (matchingPipe && sideStatusMap.get(direction)==PipeConnectionState.PULLING)
+                    sideStatusMap.put(direction,PipeConnectionState.ENABLED);
                 change = true;
             }
 

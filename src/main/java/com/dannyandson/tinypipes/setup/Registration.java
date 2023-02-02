@@ -10,6 +10,8 @@ import com.dannyandson.tinypipes.gui.ItemFilterContainerMenu;
 import com.dannyandson.tinypipes.items.FullPipeItem;
 import com.dannyandson.tinypipes.items.PipeWrenchItem;
 import com.dannyandson.tinypipes.items.SpeedUpgradeItem;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
@@ -43,6 +45,8 @@ public class Registration {
 
     public static final RegistryObject<MenuType<ItemFilterContainerMenu>> ITEM_FILTER_MENU_TYPE = MENU_TYPES.register("item_filter", () -> new MenuType<>(ItemFilterContainerMenu::createMenu));
     public static final RegistryObject<MenuType<FluidFilterContainerMenu>> FLUID_FILTER_MENU_TYPE = MENU_TYPES.register("fluid_filter", () -> new MenuType<>(FluidFilterContainerMenu::createFluidMenu));
+
+    public static final TagKey<Block> MINEABLE_WITH_WRENCH = TagKey.create(net.minecraft.core.Registry.BLOCK_REGISTRY, new ResourceLocation(TinyPipes.MODID,"mineable/wrench"));
 
     //called from main mod constructor
     public static void register() {

@@ -20,6 +20,7 @@
   "item.tinypipes.full_redstone_pipe": "Redstone Pipe",
   "item.tinypipes.redstone_pipe": "Tiny Redstone Pipe",
   "message.item.tinypipes.redstone_pipe": "Transfers multiple redstone signals with no signal loss.\nRight click connection with a Dye to change frequency.\nOutput will only output signals from matching colored inputs.\nRight click with a wrench to change input and output sides.\nRight click with an empty hand for a GUI.",
+  "block.tinypipes.pipe_block": "Pipe",
   "tinypipes:item_filter": "Item Filter",
   "tinypipes:fluid_filter": "Fluid Filter",
   "tinypipes.blacklist": "Blacklist",

@@ -15,9 +15,11 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.DyeItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
@@ -160,6 +162,10 @@ public class PipeBlock extends BaseEntityBlock {
                     return InteractionResult.CONSUME;
                 }
             } else if (heldStack.is(ItemTags.create(new ResourceLocation("forge", "tools/wrench")))) {
+                if (player.getOffhandItem().getItem() instanceof BlockItem blockItem){
+                    pipeBlockEntity.setCamouflage(blockItem.getBlock().getStateForPlacement(new BlockPlaceContext(level,player,hand,player.getOffhandItem(),hitResult)));
+                    return InteractionResult.CONSUME;
+                }
                 //using with a wrench in hand
                 PipeSide pipeSide = pipeBlockEntity.getPipeAtHitVector(hitResult);
                 if (pipeSide!=null){
@@ -200,24 +206,28 @@ public class PipeBlock extends BaseEntityBlock {
         if (level.getBlockEntity(pos) instanceof PipeBlockEntity pipeBlockEntity) {
             ItemStack heldStack = player.getMainHandItem();
             if (heldStack.is(ItemTags.create(new ResourceLocation("forge", "tools/wrench"))) || Registry.getFullPipeClassFromItem(heldStack.getItem()) != null) {
-                PipeSide pipeSide = pipeBlockEntity.getPipeAtHitVector(PipeBlockEntity.getPlayerCollisionHitResult(player, level));
-                if (pipeSide != null) {
-                    if (player.isCrouching()) {
-                        pipeSide.getPipe().openGUI(pipeBlockEntity,player);
-                    }else if (pipeSide.removeSpeedUpgrade()){
-                        if (!player.isCreative()) {
-                            Item item = Registration.SPEED_UPGRADE_ITEM.get();
+                if (pipeBlockEntity.getCamouflageBlockState() != null) {
+                    pipeBlockEntity.setCamouflage(null);
+                } else {
+                    PipeSide pipeSide = pipeBlockEntity.getPipeAtHitVector(PipeBlockEntity.getPlayerCollisionHitResult(player, level));
+                    if (pipeSide != null) {
+                        if (player.isCrouching()) {
+                            pipeSide.getPipe().openGUI(pipeBlockEntity, player);
+                        } else if (pipeSide.removeSpeedUpgrade()) {
+                            if (!player.isCreative()) {
+                                Item item = Registration.SPEED_UPGRADE_ITEM.get();
+                                ItemStack itemStack = item.getDefaultInstance();
+                                ItemEntity itemEntity = new ItemEntity(level, pos.getX(), pos.getY() + .5, pos.getZ(), itemStack);
+                                level.addFreshEntity(itemEntity);
+                                itemEntity.setPos(player.getX(), player.getY(), player.getZ());
+                            }
+                        } else if (pipeSide.removePipe() && !player.isCreative()) {
+                            Item item = Registry.getFullPipeItemFromClass(pipeSide.getPipe().getClass());
                             ItemStack itemStack = item.getDefaultInstance();
                             ItemEntity itemEntity = new ItemEntity(level, pos.getX(), pos.getY() + .5, pos.getZ(), itemStack);
                             level.addFreshEntity(itemEntity);
                             itemEntity.setPos(player.getX(), player.getY(), player.getZ());
                         }
-                    }else if(pipeSide.removePipe() && !player.isCreative()){
-                        Item item = Registry.getFullPipeItemFromClass(pipeSide.getPipe().getClass());
-                        ItemStack itemStack = item.getDefaultInstance();
-                        ItemEntity itemEntity = new ItemEntity(level, pos.getX(), pos.getY() + .5, pos.getZ(), itemStack);
-                        level.addFreshEntity(itemEntity);
-                        itemEntity.setPos(player.getX(), player.getY(), player.getZ());
                     }
                 }
             }
@@ -228,6 +238,10 @@ public class PipeBlock extends BaseEntityBlock {
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         if (level.getBlockEntity(pos) instanceof PipeBlockEntity pipeBlockEntity) {
+            BlockState camouflage = pipeBlockEntity.getCamouflageBlockState();
+            if (camouflage!=null)
+                return Shapes.block();
+
             AbstractFullPipe[] pipes = pipeBlockEntity.getPipes();
             boolean single = pipes.length == 1;
             VoxelShape shape = (single)

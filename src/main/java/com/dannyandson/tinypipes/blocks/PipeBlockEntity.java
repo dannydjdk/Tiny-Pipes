@@ -11,6 +11,7 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.util.Mth;
@@ -24,6 +25,9 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.client.model.data.ModelData;
+import net.minecraftforge.client.model.data.ModelProperty;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
@@ -34,6 +38,9 @@ public class PipeBlockEntity extends BlockEntity {
 
     private final Map<Integer,AbstractFullPipe> pipes = new HashMap<>();
     private TextureAtlasSprite centerSprite=null;
+    private BlockState camouflageBlockState=null;
+    public static final ModelProperty<BlockState> CAMO_MODEL_PROPERTY = new ModelProperty<>();
+    private Map<Direction,TextureAtlasSprite> camouflageSprites =new HashMap<>();
 
     public PipeBlockEntity(BlockPos pos, BlockState state) {
         super(Registration.PIPE_BLOCK_ENTITY.get(), pos, state);
@@ -104,6 +111,16 @@ public class PipeBlockEntity extends BlockEntity {
         return false;
     }
 
+    public void setCamouflage(BlockState camouflageBlockState){
+        this.camouflageBlockState=camouflageBlockState;
+        camouflageSprites.clear();
+        sync();
+    }
+
+    public BlockState getCamouflageBlockState() {
+        return camouflageBlockState;
+    }
+
     /**
      * Loading and saving block entity data from disk and syncing to client
      */
@@ -123,7 +140,7 @@ public class PipeBlockEntity extends BlockEntity {
     @Override
     public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
         this.load(pkt.getTag());
-    }
+     }
 
     @Override
     public CompoundTag getUpdateTag() {
@@ -147,6 +164,13 @@ public class PipeBlockEntity extends BlockEntity {
                 TinyPipes.LOGGER.error("Exception attempting to construct Pipe object " + key, exception);
             }
         }
+        if (nbt.contains("camouflage")){
+            try {
+                this.camouflageBlockState = NbtUtils.readBlockState(nbt.getCompound("camouflage"));
+            } catch (Exception exception) {
+                TinyPipes.LOGGER.error("Exception attempting to read camouflage nbt.", exception);
+            }
+        }
     }
 
     @Override
@@ -157,6 +181,8 @@ public class PipeBlockEntity extends BlockEntity {
             pipeData.put(pipe.getClass().getCanonicalName(), pipe.writeNBT());
         }
         nbt.put("pipes", pipeData);
+        if (camouflageBlockState!=null)
+            nbt.put("camouflage",NbtUtils.writeBlockState(camouflageBlockState));
     }
 
     public static BlockHitResult getPlayerCollisionHitResult(Player player, Level level) {
@@ -180,6 +206,15 @@ public class PipeBlockEntity extends BlockEntity {
                 this.centerSprite = RenderHelper.getSprite(ClientSetup.PIPE_BUNDLE_TEXTURE);
         }
         return this.centerSprite;
+    }
+
+    public TextureAtlasSprite getCamouflageSprite(Direction direction){
+        if (camouflageBlockState==null)
+            return null;
+
+        if(camouflageSprites.get(direction)==null)
+            camouflageSprites.put(direction,RenderHelper.getSprite(camouflageBlockState,direction));
+        return camouflageSprites.get(direction);
     }
 
     private static TextureAtlasSprite whitePipeSprite;
@@ -245,6 +280,7 @@ public class PipeBlockEntity extends BlockEntity {
         if (refresh) {
             update=true;
             onNeighborChange();
+            refresh=false;
         }
         if (update) {
             getLevel().blockUpdated(getBlockPos(), getBlockState().getBlock());

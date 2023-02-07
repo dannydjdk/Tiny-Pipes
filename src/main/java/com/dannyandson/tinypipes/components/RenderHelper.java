@@ -6,9 +6,18 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Matrix4f;
 import com.mojang.math.Vector3f;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.renderer.texture.TextureManager;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.inventory.InventoryMenu;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.client.model.data.ModelData;
+
+import java.util.List;
 
 public class RenderHelper {
 
@@ -73,6 +82,15 @@ public class RenderHelper {
         add(builder, matrix4f, x1, y2, 0, u0, v1, combinedLight, color, alpha);
     }
 
+    public static void drawRectangle2(VertexConsumer builder, PoseStack matrixStack, float x1, float x2, float y1, float y2, TextureAtlasSprite sprite, int combinedLight , int color, float alpha){
+        Matrix4f matrix4f = matrixStack.last().pose();
+        add(builder, matrix4f, x1, y1, 0, sprite.getU0(), sprite.getV1(), combinedLight, color, alpha);
+        add(builder, matrix4f, x2, y1, 0, sprite.getU1(), sprite.getV1(), combinedLight, color, alpha);
+        add(builder, matrix4f, x2, y2, 0, sprite.getU1(), sprite.getV0(), combinedLight, color, alpha);
+        add(builder, matrix4f, x1, y2, 0, sprite.getU0(), sprite.getV0(), combinedLight, color, alpha);
+    }
+
+
     public static void add(VertexConsumer renderer, Matrix4f matrix4f, float x, float y, float z, float u, float v, int combinedLightIn, int color, float alpha) {
         renderer.vertex(matrix4f, x, y, z)
                 .color(color >> 16 & 255,color >> 8 & 255, color & 255, (int)(alpha*255f))
@@ -85,5 +103,14 @@ public class RenderHelper {
     public static TextureAtlasSprite getSprite(ResourceLocation resourceLocation)
     {
         return Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(resourceLocation);
+    }
+
+    public static TextureAtlasSprite getSprite(BlockState state, Direction direction){
+        List<BakedQuad> bakedQuads =  Minecraft.getInstance().getBlockRenderer().getBlockModel(state)
+                .getQuads(state,direction, RandomSource.create(), ModelData.EMPTY, RenderType.solid() );
+        if (bakedQuads.size()>0)
+            return bakedQuads.get(0).getSprite();
+
+        return getSprite(TextureManager.INTENTIONAL_MISSING_TEXTURE);
     }
 }

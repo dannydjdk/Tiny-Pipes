@@ -14,6 +14,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.state.BlockState;
 
 public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEntity> {
 
@@ -22,8 +23,31 @@ public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEnt
 
     @Override
     public void render(PipeBlockEntity pipeBlockEntity, float p_112308_, PoseStack poseStack, MultiBufferSource buffer, int combinedLight, int combinedOverlay) {
-        if(false)return;
         VertexConsumer builder = buffer.getBuffer(RenderType.solid());
+
+        if(pipeBlockEntity.getCamouflageBlockState()!=null) {
+            poseStack.pushPose();
+
+            poseStack.translate(0,0,1);
+
+            for (Direction direction : new Direction[]{Direction.SOUTH, Direction.EAST, Direction.NORTH, Direction.WEST}) {
+                RenderHelper.drawRectangle2(builder,poseStack,0,1,0,1,pipeBlockEntity.getCamouflageSprite(direction),combinedLight,0xFFFFFFFF,1);
+                poseStack.mulPose(Vector3f.YP.rotationDegrees(90));
+                poseStack.translate(0, 0, 1);
+            }
+            poseStack.mulPose(Vector3f.XP.rotationDegrees(90));
+            poseStack.mulPose(Vector3f.ZP.rotationDegrees(90));
+            poseStack.translate(-1, -1, -1);
+            RenderHelper.drawRectangle2(builder,poseStack,0,1,1,0,pipeBlockEntity.getCamouflageSprite(Direction.UP),combinedLight,0xFFFFFFFF,1);
+
+            poseStack.mulPose(Vector3f.YP.rotationDegrees(180));
+            poseStack.translate(-1, 0, -1);
+            RenderHelper.drawRectangle2(builder,poseStack,0,1,1,0,pipeBlockEntity.getCamouflageSprite(Direction.DOWN),combinedLight,0xFFFFFFFF,1);
+
+            poseStack.popPose();
+
+            return;
+        }
         TextureAtlasSprite sprite = pipeBlockEntity.getCenterSprite();
         AbstractFullPipe[] pipes = pipeBlockEntity.getPipes();
         boolean single = pipes.length == 1;

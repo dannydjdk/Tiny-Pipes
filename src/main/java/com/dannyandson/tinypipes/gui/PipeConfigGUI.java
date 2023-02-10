@@ -1,12 +1,11 @@
 package com.dannyandson.tinypipes.gui;
 
 import com.dannyandson.tinypipes.TinyPipes;
+import com.dannyandson.tinypipes.blocks.PipeBlockEntity;
 import com.dannyandson.tinypipes.blocks.PipeConnectionState;
-import com.dannyandson.tinypipes.components.tiny.AbstractTinyPipe;
+import com.dannyandson.tinypipes.components.full.AbstractFullPipe;
 import com.dannyandson.tinypipes.network.ModNetworkHandler;
 import com.dannyandson.tinypipes.network.PushPipeConnection;
-import com.dannyandson.tinyredstone.blocks.PanelCellPos;
-import com.dannyandson.tinyredstone.blocks.Side;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
@@ -21,23 +20,23 @@ import net.minecraft.resources.ResourceLocation;
 import java.util.HashMap;
 import java.util.Map;
 
-public class TinyPipeConfigGUI extends Screen {
+public class PipeConfigGUI extends Screen {
 
     private static final int WIDTH = 244;
     private static final int HEIGHT = 160;
 
-    private final PanelCellPos cellPos;
-    private final AbstractTinyPipe tinyPipe;
-    private Map<Side, AbstractWidget> sideButtons = new HashMap<>();
-    private Map<Side,Integer> xLocations = new HashMap<>();
-    private Map<Side,Integer> yLocations = new HashMap<>();
+    private final PipeBlockEntity pipeBlockEntity;
+    private final AbstractFullPipe pipe;
+    private Map<Direction, AbstractWidget> sideButtons = new HashMap<>();
+    private Map<Direction,Integer> xLocations = new HashMap<>();
+    private Map<Direction,Integer> yLocations = new HashMap<>();
 
     private final ResourceLocation GUI = new ResourceLocation(TinyPipes.MODID, "textures/gui/transparent.png");
 
-    protected TinyPipeConfigGUI(PanelCellPos cellPos, AbstractTinyPipe tinyPipe) {
+    protected PipeConfigGUI(PipeBlockEntity pipeBlockEntity, AbstractFullPipe tinyPipe) {
         super(Component.translatable("tinypipes:pipeconfiggui"));
-        this.cellPos = cellPos;
-        this.tinyPipe = tinyPipe;
+        this.pipeBlockEntity = pipeBlockEntity;
+        this.pipe = tinyPipe;
     }
 
     @Override
@@ -50,19 +49,18 @@ public class TinyPipeConfigGUI extends Screen {
 
         addRenderableWidget(new ModWidget(relX,relY+2,WIDTH-2,40,Component.translatable("tinypipes.gui.pipe_config")).setTextHAlignment(ModWidget.HAlignment.CENTER));
 
-        for (Direction direction : Direction.values()) {
-            int dRelX = relX + ((direction == Direction.UP) ? 2 : (direction == Direction.DOWN) ? 2 : (direction == Direction.NORTH) ? 122 : (direction == Direction.WEST) ? 62 : (direction == Direction.EAST) ? 182 : 122);
-            int dRelY = relY + ((direction == Direction.UP) ? 20 : (direction == Direction.DOWN) ? 60 : (direction == Direction.NORTH) ? 20 : (direction == Direction.WEST) ? 40 : (direction == Direction.EAST) ? 40 : 60);
-            Side side = cellPos.getPanelTile().getPanelCellSide(cellPos, cellPos.getPanelTile().getSideFromDirection(direction));
+        for (Direction side : Direction.values()) {
+            int dRelX = relX + ((side == Direction.UP) ? 2 : (side == Direction.DOWN) ? 2 : (side == Direction.NORTH) ? 122 : (side == Direction.WEST) ? 62 : (side == Direction.EAST) ? 182 : 122);
+            int dRelY = relY + ((side == Direction.UP) ? 20 : (side == Direction.DOWN) ? 60 : (side == Direction.NORTH) ? 20 : (side == Direction.WEST) ? 40 : (side == Direction.EAST) ? 40 : 60);
 
             xLocations.put(side, dRelX);
             yLocations.put(side, dRelY);
 
             //label
-            addRenderableWidget(new ModWidget(dRelX, dRelY, 60, 20, Component.nullToEmpty(direction.name())).setTextHAlignment(ModWidget.HAlignment.CENTER));
+            addRenderableWidget(new ModWidget(dRelX, dRelY, 60, 20, Component.nullToEmpty(side.name())).setTextHAlignment(ModWidget.HAlignment.CENTER));
 
             //side toggle button
-            Button toggleButton = ModWidget.buildButton(dRelX, dRelY + 10, 60, 20, Component.nullToEmpty(tinyPipe.getSideConnection(side).name()), button -> toggleConnection(side));
+            Button toggleButton = ModWidget.buildButton(dRelX, dRelY + 10, 60, 20, Component.nullToEmpty(pipe.getPipeSideStatus(side).name()), button -> toggleConnection(side));
             sideButtons.put(side, toggleButton);
             addRenderableWidget(toggleButton);
         }
@@ -81,23 +79,16 @@ public class TinyPipeConfigGUI extends Screen {
         minecraft.setScreen(null);
     }
 
-    private void toggleConnection(Side side)
-    {
-        PipeConnectionState state = tinyPipe.toggleSideConnection(cellPos,side);
-        Direction direction = null;
-        for(Direction iDir : Direction.values()){
-            if (side==cellPos.getPanelTile().getSideFromDirection(iDir))
-                direction=iDir;
-        }
-        if (direction!=null) {
-            ModNetworkHandler.sendToServer(new PushPipeConnection(cellPos.getPanelTile().getBlockPos(), cellPos.getIndex(), direction, state));
+    private void toggleConnection(Direction side) {
+        PipeConnectionState state = pipe.togglePipeSide(side);
 
-            Button widget = ModWidget.buildButton(xLocations.get(side), yLocations.get(side) + 10, 60, 20, Component.nullToEmpty(state.name()), button -> toggleConnection(side));
+        ModNetworkHandler.sendToServer(new PushPipeConnection(pipeBlockEntity.getBlockPos(), pipe.slotPos(), side, state));
 
-            this.removeWidget(sideButtons.get(side));
-            sideButtons.put(side, widget);
-            addRenderableWidget(sideButtons.get(side));
-        }
+        Button widget = ModWidget.buildButton(xLocations.get(side), yLocations.get(side) + 10, 60, 20, Component.nullToEmpty(state.name()), button -> toggleConnection(side));
+
+        this.removeWidget(sideButtons.get(side));
+        sideButtons.put(side, widget);
+        addRenderableWidget(sideButtons.get(side));
     }
 
     @Override
@@ -118,9 +109,9 @@ public class TinyPipeConfigGUI extends Screen {
     }
 
 
-    public static void open(PanelCellPos cellPos, AbstractTinyPipe tinyPipe) {
-        if(cellPos!=null && tinyPipe!=null)
-            Minecraft.getInstance().setScreen(new TinyPipeConfigGUI(cellPos,tinyPipe));
+    public static void open(PipeBlockEntity pipeBlockEntity, AbstractFullPipe tinyPipe) {
+        if(pipeBlockEntity!=null && tinyPipe!=null)
+            Minecraft.getInstance().setScreen(new PipeConfigGUI(pipeBlockEntity, tinyPipe));
     }
 
 }

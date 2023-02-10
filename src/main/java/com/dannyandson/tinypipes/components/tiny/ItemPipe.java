@@ -1,6 +1,5 @@
-package com.dannyandson.tinypipes.components;
+package com.dannyandson.tinypipes.components.tiny;
 
-import com.dannyandson.tinypipes.TinyPipes;
 import com.dannyandson.tinypipes.Config;
 import com.dannyandson.tinypipes.caphandlers.ModCapabilityManager;
 import com.dannyandson.tinypipes.caphandlers.PushWrapper;
@@ -9,7 +8,6 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.IItemHandler;
 
@@ -20,13 +18,12 @@ public class ItemPipe extends AbstractCapPipe<IItemHandler> {
     private boolean disabled = false;
     private int priority = 0;//TODO
 
-    public static final ResourceLocation ITEM_PIPE_TEXTURE = new ResourceLocation(TinyPipes.MODID, "block/item_pipe");
     private static TextureAtlasSprite sprite = null;
 
     @Override
     protected TextureAtlasSprite getSprite() {
         if (sprite == null)
-            sprite = com.dannyandson.tinyredstone.blocks.RenderHelper.getSprite(ITEM_PIPE_TEXTURE);
+            sprite = RenderHelper.getSprite(com.dannyandson.tinypipes.components.RenderHelper.ITEM_PIPE_TEXTURE);
         return sprite;
     }
 

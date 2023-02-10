@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "tinypipes:pipe_wrench",
+    {
+      "id": "tinyredstone:redstone_wrench",
+      "required": false
+    }
+  ]
+}

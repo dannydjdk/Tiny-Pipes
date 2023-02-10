@@ -1,6 +1,6 @@
 package com.dannyandson.tinypipes.caphandlers;
 
-import com.dannyandson.tinypipes.components.AbstractCapPipe;
+import com.dannyandson.tinypipes.components.ICapPipe;
 
 import java.util.Set;
 import java.util.SortedSet;
@@ -16,11 +16,11 @@ public class PushWrapper<T> {
         return id;
     }
 
-    public void addPushTarget(T target, AbstractCapPipe<T> pipe, int distance) {
+    public void addPushTarget(T target, ICapPipe<T> pipe, int distance) {
         addPushTarget(target, pipe, distance, 0);
     }
 
-    public void addPushTarget(T target, AbstractCapPipe<T> pipe, int distance, int priority) {
+    public void addPushTarget(T target, ICapPipe<T> pipe, int distance, int priority) {
         pushTargets.add(new PushTarget<>(target, pipe, distance, priority));
     }
 
@@ -30,11 +30,11 @@ public class PushWrapper<T> {
 
     public static class PushTarget<T> implements Comparable<PushTarget<T>>{
         private final T target;
-        private final AbstractCapPipe<T> pipe;
+        private final ICapPipe<T> pipe;
         private final int distance;
         private final int priority;
 
-        private PushTarget(T capability, AbstractCapPipe<T> pipe, int distance, int priority){
+        private PushTarget(T capability, ICapPipe<T> pipe, int distance, int priority){
             this.target =capability;
             this.pipe=pipe;
             this.distance=distance;
@@ -46,7 +46,7 @@ public class PushWrapper<T> {
              return target;
         }
 
-        public AbstractCapPipe<T> getPipe() {
+        public ICapPipe<T> getPipe() {
             return pipe;
         }
 

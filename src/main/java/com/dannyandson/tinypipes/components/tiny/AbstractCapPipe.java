@@ -1,10 +1,11 @@
-package com.dannyandson.tinypipes.components;
+package com.dannyandson.tinypipes.components.tiny;
 
 import com.dannyandson.tinypipes.caphandlers.PushWrapper;
+import com.dannyandson.tinypipes.components.ICapPipe;
 import com.dannyandson.tinyredstone.blocks.PanelCellPos;
 
 
-public abstract class AbstractCapPipe<CapType> extends AbstractTinyPipe{
+public abstract class AbstractCapPipe<CapType> extends AbstractTinyPipe implements ICapPipe<CapType> {
     protected PushWrapper<CapType> pushWrapper = null;
     protected int amountPushed = 0;
 

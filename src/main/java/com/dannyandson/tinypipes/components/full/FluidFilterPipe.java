@@ -1,13 +1,12 @@
-package com.dannyandson.tinypipes.components;
+package com.dannyandson.tinypipes.components.full;
 
-import com.dannyandson.tinypipes.TinyPipes;
+import com.dannyandson.tinypipes.blocks.PipeBlockEntity;
 import com.dannyandson.tinypipes.caphandlers.PushWrapper;
+import com.dannyandson.tinypipes.components.IFilterPipe;
+import com.dannyandson.tinypipes.components.RenderHelper;
 import com.dannyandson.tinypipes.gui.FluidFilterContainerMenu;
-import com.dannyandson.tinyredstone.blocks.PanelCellPos;
-import com.dannyandson.tinyredstone.blocks.PanelCellSegment;
-import com.dannyandson.tinyredstone.blocks.Side;
-import com.dannyandson.tinyredstone.setup.Registration;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -33,42 +32,36 @@ public class FluidFilterPipe extends FluidPipe implements IFilterPipe {
     private String[] filters = new String[filterSlots];
     boolean blacklist = false;
 
-    public static final ResourceLocation FLUID_FILTER_PIPE_TEXTURE = new ResourceLocation(TinyPipes.MODID, "block/fluid_filter_pipe");
     private static TextureAtlasSprite sprite = null;
 
     @Override
-    protected TextureAtlasSprite getSprite() {
+    public TextureAtlasSprite getSprite() {
         if (sprite == null)
-            sprite = com.dannyandson.tinyredstone.blocks.RenderHelper.getSprite(FLUID_FILTER_PIPE_TEXTURE);
+            sprite = RenderHelper.getSprite(RenderHelper.FLUID_FILTER_PIPE_TEXTURE);
         return sprite;
     }
 
     @Override
-    public boolean onPlace(PanelCellPos cellPos, Player player) {
-        ItemStack stack = ItemStack.EMPTY;
-        if (player.getUsedItemHand()!=null)
-            stack = player.getItemInHand(player.getUsedItemHand());
-        if (stack == ItemStack.EMPTY)
-            stack = player.getMainHandItem();
-        if (stack.hasTag()) {
+    public boolean onPlace(PipeBlockEntity pipeBlockEntity, ItemStack stack) {
+        if (stack != ItemStack.EMPTY && stack.hasTag()) {
             CompoundTag itemNBT = stack.getTag();
             String filterString = itemNBT.getString("filters");
             filters = Arrays.copyOf(filterString.split("\n",filterSlots),filterSlots);
             blacklist = itemNBT.getBoolean("blacklist");
         }
 
-        return super.onPlace(cellPos, player);
+        return super.onPlace(pipeBlockEntity, stack);
     }
 
     @Override
-    protected void populatePushWrapper(PanelCellPos cellPos, @Nullable Side side, FluidStack fluidStack, PushWrapper<IFluidHandler> pushWrapper, int distance) {
+    protected void populatePushWrapper(PipeBlockEntity pipeBlockEntity, @Nullable Direction side, FluidStack fluidStack, PushWrapper<IFluidHandler> pushWrapper, int distance) {
         ResourceLocation fluidReg = ForgeRegistries.ITEMS.getKey(fluidStack.getFluid().getBucket());
         boolean hasFluid = fluidReg != null && hasFluid(fluidReg.toString());
         if ((!blacklist && !hasFluid) || (blacklist && hasFluid)) {
             return;
         }
 
-        super.populatePushWrapper(cellPos, side, fluidStack, pushWrapper, distance);
+        super.populatePushWrapper(pipeBlockEntity, side, fluidStack, pushWrapper, distance);
     }
 
     public boolean hasFluid(String itemRegistryName){
@@ -91,24 +84,21 @@ public class FluidFilterPipe extends FluidPipe implements IFilterPipe {
     }
     //end IFilterPipe
 
-    @Override
-    public boolean onBlockActivated(PanelCellPos cellPos, PanelCellSegment segmentClicked, Player player) {
-        if (player.getMainHandItem().getItem() == Registration.REDSTONE_WRENCH.get())
-            return super.onBlockActivated(cellPos, segmentClicked, player);
 
+    @Override
+    public void openGUI(PipeBlockEntity pipeBlockEntity, Player player) {
         if (player instanceof ServerPlayer) {
             NetworkHooks.openScreen((ServerPlayer) player,new FluidFilterContainerMenu.Provider(this));
         }
-        return false;
     }
 
     @Override
-    public boolean tick(PanelCellPos cellPos) {
+    public boolean tick(PipeBlockEntity pipeBlockEntity) {
         if (changed){
-            cellPos.getPanelTile().sync();
+            pipeBlockEntity.sync();
             changed=false;
         }
-        return super.tick(cellPos);
+        return super.tick(pipeBlockEntity);
     }
 
     @Override

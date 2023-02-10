@@ -73,8 +73,14 @@ public class PipeBlock extends BaseEntityBlock {
     public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         if (level.getBlockEntity(pos) instanceof PipeBlockEntity pipeBlockEntity) {
             if (!player.isCreative()) {
+                if (pipeBlockEntity.getCamouflageBlockState() != null) {
+                    ItemStack itemStack = pipeBlockEntity.getCamouflageBlockState().getBlock().asItem().getDefaultInstance();
+                    ItemEntity itemEntity = new ItemEntity(level, pos.getX(), pos.getY() + .5, pos.getZ(), itemStack);
+                    level.addFreshEntity(itemEntity);
+                    itemEntity.setPos(player.getX(), player.getY(), player.getZ());
+                }
                 for (AbstractFullPipe pipe : pipeBlockEntity.getPipes()) {
-                    if (pipe instanceof AbstractCapFullPipe abstractCapFullPipe && abstractCapFullPipe.getSpeedUpgradeCount()>0){
+                    if (pipe instanceof AbstractCapFullPipe abstractCapFullPipe && abstractCapFullPipe.getSpeedUpgradeCount() > 0) {
                         Item item = Registration.SPEED_UPGRADE_ITEM.get();
                         ItemStack itemStack = item.getDefaultInstance();
                         itemStack.setCount(abstractCapFullPipe.getSpeedUpgradeCount());
@@ -163,7 +169,14 @@ public class PipeBlock extends BaseEntityBlock {
                 }
             } else if (heldStack.is(ItemTags.create(new ResourceLocation("forge", "tools/wrench")))) {
                 if (player.getOffhandItem().getItem() instanceof BlockItem blockItem){
-                    pipeBlockEntity.setCamouflage(blockItem.getBlock().getStateForPlacement(new BlockPlaceContext(level,player,hand,player.getOffhandItem(),hitResult)));
+                    BlockState blockState1 = blockItem.getBlock().getStateForPlacement(new BlockPlaceContext(level,player,hand,player.getOffhandItem(),hitResult));
+                    boolean isFullBlock = blockState1.isCollisionShapeFullBlock(level, pos);
+                    if (isFullBlock && !blockState1.hasBlockEntity()) {
+                        pipeBlockEntity.setCamouflage(blockItem.getBlock().getStateForPlacement(new BlockPlaceContext(level, player, hand, player.getOffhandItem(), hitResult)));
+                        if (!player.isCreative()) {
+                            player.getOffhandItem().setCount(player.getOffhandItem().getCount() - 1);
+                        }
+                    }
                     return InteractionResult.CONSUME;
                 }
                 //using with a wrench in hand
@@ -207,7 +220,11 @@ public class PipeBlock extends BaseEntityBlock {
             ItemStack heldStack = player.getMainHandItem();
             if (heldStack.is(ItemTags.create(new ResourceLocation("forge", "tools/wrench"))) || Registry.getFullPipeClassFromItem(heldStack.getItem()) != null) {
                 if (pipeBlockEntity.getCamouflageBlockState() != null) {
+                    ItemStack itemStack = pipeBlockEntity.getCamouflageBlockState().getBlock().asItem().getDefaultInstance();
                     pipeBlockEntity.setCamouflage(null);
+                    ItemEntity itemEntity = new ItemEntity(level, pos.getX(), pos.getY() + .5, pos.getZ(), itemStack);
+                    level.addFreshEntity(itemEntity);
+                    itemEntity.setPos(player.getX(), player.getY(), player.getZ());
                 } else {
                     PipeSide pipeSide = pipeBlockEntity.getPipeAtHitVector(PipeBlockEntity.getPlayerCollisionHitResult(player, level));
                     if (pipeSide != null) {

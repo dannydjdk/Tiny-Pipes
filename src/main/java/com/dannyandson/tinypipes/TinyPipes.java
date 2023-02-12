@@ -3,9 +3,11 @@ package com.dannyandson.tinypipes;
 import com.dannyandson.tinypipes.network.ModNetworkHandler;
 import com.dannyandson.tinypipes.setup.ClientSetup;
 import com.dannyandson.tinypipes.setup.Registration;
+import com.dannyandson.tinypipes.setup.RegistrationTinyRedstone;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
@@ -21,7 +23,7 @@ public class TinyPipes
 {
     public static final String MODID = "tinypipes";
     // Directly reference a log4j logger.
-    private static final Logger LOGGER = LogManager.getLogger();
+    public static final Logger LOGGER = LogManager.getLogger();
 
     public TinyPipes() {
 
@@ -37,13 +39,16 @@ public class TinyPipes
 
         ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, Config.SERVER_CONFIG);
         Registration.register();
-
+        if (ModList.get().isLoaded("tinyredstone"))
+            RegistrationTinyRedstone.register();
     }
 
     private void setup(final FMLCommonSetupEvent event)
     {
         ModNetworkHandler.registerMessages();
-        Registration.registerPanelCells();
+        if (ModList.get().isLoaded("tinyredstone"))
+            RegistrationTinyRedstone.registerPanelCells();
+        Registration.registerFullPipeItems();
     }
 
     public static final CreativeModeTab ITEM_GROUP = new CreativeModeTab(MODID) {

@@ -1,25 +1,29 @@
-package com.dannyandson.tinypipes.components;
+package com.dannyandson.tinypipes.components.full;
 
-import com.dannyandson.tinypipes.TinyPipes;
+import com.dannyandson.tinypipes.blocks.PipeBlockEntity;
 import com.dannyandson.tinypipes.caphandlers.PushWrapper;
-import com.dannyandson.tinypipes.gui.ItemFilterContainerMenu;
-import com.dannyandson.tinyredstone.blocks.PanelCellPos;
-import com.dannyandson.tinyredstone.blocks.PanelCellSegment;
-import com.dannyandson.tinyredstone.blocks.Side;
-import com.dannyandson.tinyredstone.setup.Registration;
+import com.dannyandson.tinypipes.components.IFilterPipe;
+import com.dannyandson.tinypipes.components.RenderHelper;
+import com.dannyandson.tinypipes.gui.FluidFilterContainerMenu;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.items.IItemHandler;
+import net.minecraft.world.item.MobBucketItem;
+import net.minecraft.world.level.material.Fluids;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.network.NetworkHooks;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
 
-public class ItemFilterPipe extends ItemPipe implements IFilterPipe{
+public class FluidFilterPipe extends FluidPipe implements IFilterPipe {
 
     boolean changed = false;
 
@@ -28,44 +32,39 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe{
     private String[] filters = new String[filterSlots];
     boolean blacklist = false;
 
-    public static final ResourceLocation ITEM_FILTER_PIPE_TEXTURE = new ResourceLocation(TinyPipes.MODID, "block/item_filter_pipe");
     private static TextureAtlasSprite sprite = null;
 
     @Override
-    protected TextureAtlasSprite getSprite() {
+    public TextureAtlasSprite getSprite() {
         if (sprite == null)
-            sprite = com.dannyandson.tinyredstone.blocks.RenderHelper.getSprite(ITEM_FILTER_PIPE_TEXTURE);
+            sprite = RenderHelper.getSprite(RenderHelper.FLUID_FILTER_PIPE_TEXTURE);
         return sprite;
     }
 
-
     @Override
-    public boolean onPlace(PanelCellPos cellPos, Player player) {
-        ItemStack stack = ItemStack.EMPTY;
-        if (player.getUsedItemHand()!=null)
-            stack = player.getItemInHand(player.getUsedItemHand());
-        if (stack == ItemStack.EMPTY)
-            stack = player.getMainHandItem();
-        if (stack.hasTag()) {
+    public boolean onPlace(PipeBlockEntity pipeBlockEntity, ItemStack stack) {
+        if (stack != ItemStack.EMPTY && stack.hasTag()) {
             CompoundTag itemNBT = stack.getTag();
             String filterString = itemNBT.getString("filters");
             filters = Arrays.copyOf(filterString.split("\n",filterSlots),filterSlots);
+            blacklist = itemNBT.getBoolean("blacklist");
         }
 
-        return super.onPlace(cellPos, player);
+        return super.onPlace(pipeBlockEntity, stack);
     }
 
     @Override
-    protected void populatePushWrapper(PanelCellPos cellPos, @Nullable Side side, ItemStack itemStack, PushWrapper<IItemHandler> pushWrapper, int distance) {
-        ResourceLocation itemReg = itemStack.getItem().getRegistryName();
-        boolean hasItem = itemReg != null && hasItem(itemReg.toString());
-        if ((!blacklist && !hasItem) || (blacklist && hasItem)) {
+    protected void populatePushWrapper(PipeBlockEntity pipeBlockEntity, @Nullable Direction side, FluidStack fluidStack, PushWrapper<IFluidHandler> pushWrapper, int distance) {
+        ResourceLocation fluidReg = ForgeRegistries.ITEMS.getKey(fluidStack.getFluid().getBucket());
+        boolean hasFluid = fluidReg != null && hasFluid(fluidReg.toString());
+        if ((!blacklist && !hasFluid) || (blacklist && hasFluid)) {
             return;
         }
-        super.populatePushWrapper(cellPos, side, itemStack, pushWrapper, distance);
+
+        super.populatePushWrapper(pipeBlockEntity, side, fluidStack, pushWrapper, distance);
     }
 
-    public boolean hasItem(String itemRegistryName){
+    public boolean hasFluid(String itemRegistryName){
         for (String filter : filters) {
             if(filter!=null && filter.equals(itemRegistryName))
                 return true;
@@ -73,6 +72,8 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe{
         return false;
     }
 
+    //IFilterPipe interface implementation
+    @Override
     public boolean getBlackList(){
         return blacklist;
     }
@@ -81,25 +82,23 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe{
         this.blacklist = blacklist;
         setChanged();
     }
+    //end IFilterPipe
+
 
     @Override
-    public boolean onBlockActivated(PanelCellPos cellPos, PanelCellSegment segmentClicked, Player player) {
-        if (player.getMainHandItem().getItem() == Registration.REDSTONE_WRENCH.get())
-            return super.onBlockActivated(cellPos, segmentClicked, player);
-
-        if (player instanceof ServerPlayer serverPlayer) {
-            NetworkHooks.openGui(serverPlayer,new ItemFilterContainerMenu.Provider(this));
+    public void openGUI(PipeBlockEntity pipeBlockEntity, Player player) {
+        if (player instanceof ServerPlayer) {
+            NetworkHooks.openGui((ServerPlayer) player,new FluidFilterContainerMenu.Provider(this));
         }
-        return false;
     }
 
     @Override
-    public boolean tick(PanelCellPos cellPos) {
+    public boolean tick(PipeBlockEntity pipeBlockEntity) {
         if (changed){
-            cellPos.getPanelTile().sync();
+            pipeBlockEntity.sync();
             changed=false;
         }
-        return super.tick(cellPos);
+        return super.tick(pipeBlockEntity);
     }
 
     @Override
@@ -136,6 +135,7 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe{
         if (empty)return null;
 
         nbt.putString("filters",filterString);
+        nbt.putBoolean("blacklist",blacklist);
         return nbt;
     }
 
@@ -149,6 +149,11 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe{
     @Override
     public boolean isEmpty() {
         return false;
+    }
+
+    @Override
+    public int getMaxStackSize() {
+        return 1;
     }
 
     @Override
@@ -177,11 +182,18 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe{
 
     @Override
     public void setItem(int slot, ItemStack itemStack) {
-        if (slot<filters.length && itemStack.getItem().getRegistryName()!=null) {
-            String itemName = itemStack.getItem().getRegistryName().toString();
-            if(hasItem(itemName))
+        BucketItem bucketItem;
+        if (!(itemStack.getItem() instanceof BucketItem))
+            return;
+        bucketItem=(BucketItem) itemStack.getItem();
+        if (slot<filters.length && ForgeRegistries.ITEMS.getKey(bucketItem)!=null &&
+                !bucketItem.getFluid().equals(Fluids.EMPTY) &&
+                !(bucketItem instanceof MobBucketItem)
+        ) {
+            String itemName = ForgeRegistries.ITEMS.getKey(itemStack.getItem()).toString();
+            if(hasFluid(itemName))
                 return;
-            filters[slot] = itemStack.getItem().getRegistryName().toString();
+            filters[slot] = ForgeRegistries.ITEMS.getKey(itemStack.getItem()).toString();
         }
         setChanged();
     }
@@ -203,4 +215,5 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe{
     }
 
     //End Container Implementation
+
 }

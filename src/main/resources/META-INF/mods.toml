@@ -58,7 +58,7 @@ Tiny advanced pipes for transfer of items, energy and redstone that can be assem
     side="BOTH"
 [[dependencies.tinypipes]]
     modId="tinyredstone"
-    mandatory=true
-    versionRange="[1.18-3.0.1,)"
+    mandatory=false
+    versionRange="[1.18.2-3.2.5,)"
     ordering="AFTER"
     side="BOTH"

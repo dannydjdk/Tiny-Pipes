@@ -44,7 +44,7 @@ public class ItemFilterContainerMenu extends AbstractContainerMenu {
         this.container=container;
 
         int leftCol = 12;
-        int ySize = ItemFilterGUI.HEIGHT;
+        int ySize = TinyItemFilterGUI.HEIGHT;
 
         //filter slots
         for(int i = 0; i<container.getContainerSize(); i++){

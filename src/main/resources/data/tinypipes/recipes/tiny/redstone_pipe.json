@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "psp"
+  ],
+  "key": {
+    "p": {
+      "item": "tinypipes:full_redstone_pipe"
+    },
+    "s": {
+      "tag": "forge:silicon"
+    }
+  },
+  "result": {
+    "item": "tinypipes:redstone_pipe",
+    "count": 8
+  }
+}

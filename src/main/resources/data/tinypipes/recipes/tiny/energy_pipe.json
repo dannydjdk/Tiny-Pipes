@@ -1,22 +1,18 @@
 {
   "type": "minecraft:crafting_shaped",
   "pattern": [
-    "isi",
-    " b "
+    "psp"
   ],
   "key": {
-    "i": {
-      "item": "minecraft:iron_ingot"
+    "p": {
+      "item": "tinypipes:full_energy_pipe"
     },
     "s": {
       "tag": "forge:silicon"
-    },
-    "b": {
-      "item": "minecraft:bucket"
     }
   },
   "result": {
-    "item": "tinypipes:fluid_pipe",
+    "item": "tinypipes:energy_pipe",
     "count": 8
   }
 }

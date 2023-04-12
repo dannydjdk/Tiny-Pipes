@@ -14,6 +14,7 @@ public class Config {
     public static ForgeConfigSpec.IntValue ITEM_THROUGHPUT;
     public static ForgeConfigSpec.DoubleValue SPEED_UPGRADE_MULTIPLIER;
     public static ForgeConfigSpec.IntValue SPEED_UPGRADE_MAX;
+    public static ForgeConfigSpec.BooleanValue DEBUG_LOGGING;
 
     static {
         ForgeConfigSpec.Builder serverBuilder = new ForgeConfigSpec.Builder();
@@ -54,6 +55,12 @@ public class Config {
                         How many speed upgrades can be applied to a single pipe?
                         (default: 5 )""")
                 .defineInRange("speed_upgrade_max", 5, 1, 64);
+
+        DEBUG_LOGGING = serverBuilder.comment("""
+                        Add specific debugging information to the log file for troubleshooting.
+                        No need to enable this unless asked to by a dev.
+                        (default: false)""")
+                .define("debug_logging", false);
 
         serverBuilder.pop();
 

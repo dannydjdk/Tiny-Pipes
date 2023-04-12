@@ -1,5 +1,7 @@
 package com.dannyandson.tinypipes.blocks;
 
+import com.dannyandson.tinypipes.Config;
+import com.dannyandson.tinypipes.TinyPipes;
 import com.dannyandson.tinypipes.api.Registry;
 import com.dannyandson.tinypipes.components.full.AbstractCapFullPipe;
 import com.dannyandson.tinypipes.components.full.AbstractFullPipe;
@@ -157,6 +159,11 @@ public class PipeBlock extends BaseEntityBlock {
     public InteractionResult use(BlockState blockState, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
         if (hand==InteractionHand.MAIN_HAND && level.getBlockEntity(pos) instanceof PipeBlockEntity pipeBlockEntity) {
             ItemStack heldStack = player.getItemInHand(hand);
+            if (Config.DEBUG_LOGGING.get()){
+                TinyPipes.LOGGER.debug(
+                        "Use on pipe. Main hand: " + heldStack.getItem().getDescriptionId() +
+                                ". Off hand: " + player.getItemInHand(InteractionHand.OFF_HAND).getItem().getDescriptionId());
+            }
             if (Registry.getFullPipeClassFromItem(heldStack.getItem()) != null) {
                 //using with a pipe in hand
                 AbstractFullPipe pipe = pipeBlockEntity.addPipe(heldStack);

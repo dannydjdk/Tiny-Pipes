@@ -15,7 +15,7 @@ plugins {
 }
 apply plugin: 'net.minecraftforge.gradle'
 
-version = '2.0.4'
+version = '2.0.5'
 group = 'com.dannyandson.tinypipes' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'tinypipes'
 

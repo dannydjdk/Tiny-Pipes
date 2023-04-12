@@ -98,10 +98,11 @@ public class RedstonePipe extends AbstractFullPipe{
                 BlockState neighborState = pipeBlockEntity.getLevel().getBlockState(neighbor);
                 if (!(pipeBlockEntity.getLevel().getBlockEntity(neighbor) instanceof PipeBlockEntity)) {
                     int signal = (neighborState.canRedstoneConnectTo(pipeBlockEntity.getLevel(),pipeBlockEntity.getBlockPos(),direction.getOpposite()))
-                            ? pipeBlockEntity.getLevel().getSignal(neighbor,direction.getOpposite())
-                            : (neighborState.isRedstoneConductor(pipeBlockEntity.getLevel(),neighbor))
+                            ? pipeBlockEntity.getLevel().getSignal(neighbor,direction)
+                            : ((neighborState.isRedstoneConductor(pipeBlockEntity.getLevel(),neighbor))
                                 ?pipeBlockEntity.getLevel().getBestNeighborSignal(neighbor)
-                                :pipeBlockEntity.getLevel().getDirectSignal(neighbor,direction.getOpposite()) ;
+                                :pipeBlockEntity.getLevel().getDirectSignal(neighbor,direction)
+                            );
                     int frequency = frequencies.getOrDefault(direction, defaultFrequency);
                     if (signal > 0) {
                         if (!signals.containsKey(frequency) || signal > signals.get(frequency))

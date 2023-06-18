@@ -75,7 +75,7 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
     }
 
     private int getColor(Side side) {
-        return (frequencies.containsKey(side)) ? DyeColor.byId(frequencies.get(side)).getMaterialColor().col : defaultFrequency;
+        return (frequencies.containsKey(side)) ? DyeColor.byId(frequencies.get(side)).getMapColor().col : defaultFrequency;
     }
 
     @Override

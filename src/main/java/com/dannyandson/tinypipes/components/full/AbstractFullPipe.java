@@ -79,7 +79,7 @@ public abstract class AbstractFullPipe implements IPipe {
     }
 
     public void openGUI(PipeBlockEntity pipeBlockEntity,Player player){
-        if (player.level.isClientSide){
+        if (player.level().isClientSide){
             PipeConfigGUI.open(pipeBlockEntity,this);
         }
     }

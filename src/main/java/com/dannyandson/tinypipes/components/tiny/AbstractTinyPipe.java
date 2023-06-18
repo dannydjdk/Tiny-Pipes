@@ -101,7 +101,7 @@ public abstract class AbstractTinyPipe implements IPanelCell, IPipe {
             if (sideOfCell != null) {
                 toggleSideConnection(cellPos, sideOfCell);
             }
-        } else if (player.level.isClientSide){
+        } else if (player.level().isClientSide){
             TinyPipeConfigGUI.open(cellPos,this);
         }
         return false;

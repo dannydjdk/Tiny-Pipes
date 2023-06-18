@@ -35,7 +35,7 @@ public class FullPipeItem extends Item {
         //otherwise, place it in world
         BlockPos placePos = context.getClickedPos().relative(context.getClickedFace());
         BlockState placeState = context.getLevel().getBlockState(placePos);
-        if (placeState.getMaterial().isReplaceable()) {
+        if (placeState.canBeReplaced()) {
             context.getLevel().setBlock(placePos, Registration.PIPE_BLOCK.get().defaultBlockState(), 2);
             if (context.getLevel().getBlockEntity(context.getClickedPos().offset(context.getClickedFace().getNormal())) instanceof PipeBlockEntity pipeBlockEntity && context.getPlayer() != null) {
                 Registration.PIPE_BLOCK.get().use(pipeBlockEntity.getBlockState(), context.getLevel(), pipeBlockEntity.getBlockPos(), context.getPlayer(), context.getHand(), PipeBlockEntity.getPlayerCollisionHitResult(context.getPlayer(), context.getLevel()));

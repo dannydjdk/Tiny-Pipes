@@ -37,7 +37,7 @@ public class PushItemFilterFlags {
 
     public boolean handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(()-> {
-            BlockEntity blockEntity = ctx.get().getSender().level.getBlockEntity(pos);
+            BlockEntity blockEntity = ctx.get().getSender().level().getBlockEntity(pos);
             IFilterPipe iFilterPipe = null;
             if (blockEntity instanceof PipeBlockEntity pipeBlockEntity)
             {
@@ -46,7 +46,7 @@ public class PushItemFilterFlags {
             }
             else if(ModList.get().isLoaded("tinyredstone"))
             {
-                if(TinyPipeNetworkHelper.getPipe(ctx.get().getSender().level,pos, index) instanceof IFilterPipe pipe)
+                if(TinyPipeNetworkHelper.getPipe(ctx.get().getSender().level(),pos, index) instanceof IFilterPipe pipe)
                     iFilterPipe = pipe;
             }
             if (iFilterPipe!=null)

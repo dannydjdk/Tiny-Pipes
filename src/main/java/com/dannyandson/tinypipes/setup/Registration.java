@@ -11,10 +11,14 @@ import com.dannyandson.tinypipes.items.FullPipeItem;
 import com.dannyandson.tinypipes.items.PipeWrenchItem;
 import com.dannyandson.tinypipes.items.SpeedUpgradeItem;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -28,6 +32,7 @@ public class Registration {
     private static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITY_TYPES = DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, TinyPipes.MODID);
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, TinyPipes.MODID);
     private static final DeferredRegister<MenuType<?>> MENU_TYPES = DeferredRegister.create(ForgeRegistries.MENU_TYPES,TinyPipes.MODID);
+    private static final DeferredRegister<CreativeModeTab> TAB = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, TinyPipes.MODID);
 
     public static final RegistryObject<PipeBlock> PIPE_BLOCK = BLOCKS.register("pipe_block", PipeBlock::new);
     public static final RegistryObject<BlockEntityType<PipeBlockEntity>> PIPE_BLOCK_ENTITY =
@@ -44,10 +49,18 @@ public class Registration {
     public static final RegistryObject<Item> PIPE_WRENCH_ITEM = Registration.ITEMS.register("pipe_wrench", PipeWrenchItem::new);
     public static final RegistryObject<Item> SPEED_UPGRADE_ITEM = Registration.ITEMS.register("speed_upgrade", SpeedUpgradeItem::new);
 
-    public static final RegistryObject<MenuType<ItemFilterContainerMenu>> ITEM_FILTER_MENU_TYPE = MENU_TYPES.register("item_filter", () -> new MenuType<>(ItemFilterContainerMenu::createMenu));
-    public static final RegistryObject<MenuType<FluidFilterContainerMenu>> FLUID_FILTER_MENU_TYPE = MENU_TYPES.register("fluid_filter", () -> new MenuType<>(FluidFilterContainerMenu::createFluidMenu));
+    public static final RegistryObject<MenuType<ItemFilterContainerMenu>> ITEM_FILTER_MENU_TYPE = MENU_TYPES.register("item_filter", () -> new MenuType<>(ItemFilterContainerMenu::createMenu, FeatureFlags.DEFAULT_FLAGS));
+    public static final RegistryObject<MenuType<FluidFilterContainerMenu>> FLUID_FILTER_MENU_TYPE = MENU_TYPES.register("fluid_filter", () -> new MenuType<>(FluidFilterContainerMenu::createFluidMenu, FeatureFlags.DEFAULT_FLAGS));
 
     public static final TagKey<Block> MINEABLE_WITH_WRENCH = TagKey.create(Registries.BLOCK, new ResourceLocation(TinyPipes.MODID,"mineable/wrench"));
+
+    public static RegistryObject<CreativeModeTab> CREATIVE_TAB = TAB.register("tinypipestab", () ->
+            CreativeModeTab.builder()
+                    .title(Component.translatable("tinypipes"))
+                    .icon(() -> new ItemStack(Registration.REDSTONE_PIPE_ITEM.get()))
+                    .displayItems((parameters,output) ->ITEMS.getEntries().forEach(o -> output.accept(o.get())))
+                    .build());
+
 
     //called from main mod constructor
     public static void register() {
@@ -55,6 +68,7 @@ public class Registration {
         BLOCK_ENTITY_TYPES.register(FMLJavaModLoadingContext.get().getModEventBus());
         ITEMS.register(FMLJavaModLoadingContext.get().getModEventBus());
         MENU_TYPES.register(FMLJavaModLoadingContext.get().getModEventBus());
+        TAB.register(FMLJavaModLoadingContext.get().getModEventBus());
     }
 
     public static void registerFullPipeItems(){

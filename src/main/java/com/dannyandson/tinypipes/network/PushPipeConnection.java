@@ -43,14 +43,14 @@ public class PushPipeConnection {
 
     public boolean handle(Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(()-> {
-            BlockEntity blockEntity = ctx.get().getSender().level.getBlockEntity(pos);
+            BlockEntity blockEntity = ctx.get().getSender().level().getBlockEntity(pos);
             if (blockEntity instanceof PipeBlockEntity pipeBlockEntity) {
                 AbstractFullPipe pipe = pipeBlockEntity.getPipe(index);
                 if (pipeBlockEntity.getPipe(index) != null) {
                     pipe.setConnectionState(side,connectionState);
                 }
             }else if(ModList.get().isLoaded("tinyredstone")) {
-                TinyPipeNetworkHelper.setTinyPipeSideState(ctx.get().getSender().level,pos,index,side,connectionState);
+                TinyPipeNetworkHelper.setTinyPipeSideState(ctx.get().getSender().level(),pos,index,side,connectionState);
             }
             ctx.get().setPacketHandled(true);
         });

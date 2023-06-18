@@ -52,7 +52,7 @@ public class RedstonePipe extends AbstractFullPipe{
     public Integer getColor(Direction side) {
         if (getNeighborHasSamePipeType(side)==null || getNeighborHasSamePipeType(side)) return null;
 
-        return (frequencies.containsKey(side)) ? DyeColor.byId(frequencies.get(side)).getMaterialColor().col : defaultFrequency;
+        return (frequencies.containsKey(side)) ? DyeColor.byId(frequencies.get(side)).getMapColor().col : defaultFrequency;
     }
 
     public void setColor(Direction side, Integer color){

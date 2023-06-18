@@ -27,13 +27,13 @@ public class ModNetworkHandler {
         INSTANCE.messageBuilder(PushItemFilterFlags.class,nextID())
                 .encoder(PushItemFilterFlags::toBytes)
                 .decoder(PushItemFilterFlags::new)
-                .consumer(PushItemFilterFlags::handle)
+                .consumerNetworkThread(PushItemFilterFlags::handle)
                 .add();
 
         INSTANCE.messageBuilder(PushPipeConnection.class,nextID())
                 .encoder(PushPipeConnection::toBytes)
                 .decoder(PushPipeConnection::new)
-                .consumer(PushPipeConnection::handle)
+                .consumerNetworkThread(PushPipeConnection::handle)
                 .add();
 
     }

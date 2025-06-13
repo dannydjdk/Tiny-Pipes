@@ -66,27 +66,23 @@ public class RedstonePipe extends AbstractFullPipe{
     @Override
     public boolean onPlace(PipeBlockEntity pipeBlockEntity, ItemStack itemStack) {
         super.onPlace(pipeBlockEntity, itemStack);
+        return updateSignal(pipeBlockEntity);
+    }
 
+    public boolean updateSignal(PipeBlockEntity pipeBlockEntity) {
         updateInputSignal(pipeBlockEntity);
-        Map<Integer,Integer> outputs = getNetworkRsOutput(pipeBlockEntity, null, getNextId());
+        Map<Integer, Integer> outputs = getNetworkRsOutput(pipeBlockEntity, null, getNextId());
         if (!outputs.equals(outputSignals)) {
             updateNetwork(pipeBlockEntity, null, outputs, getNextId());
+            return true;
         }
-
         return false;
     }
 
     @Override
     public boolean neighborChanged(PipeBlockEntity pipeBlockEntity) {
-
         super.neighborChanged(pipeBlockEntity);
-        updateInputSignal(pipeBlockEntity);
-        Map<Integer, Integer> outputs = getNetworkRsOutput(pipeBlockEntity, null, getNextId());
-        if (!outputs.equals(outputSignals)) {
-            updateNetwork(pipeBlockEntity, null, outputs, getNextId());
-        }
-
-        return false;
+        return updateSignal(pipeBlockEntity);
     }
 
     private boolean updateInputSignal(PipeBlockEntity pipeBlockEntity) {

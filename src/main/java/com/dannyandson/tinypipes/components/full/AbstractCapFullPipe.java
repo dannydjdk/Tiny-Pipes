@@ -4,7 +4,10 @@ import com.dannyandson.tinypipes.Config;
 import com.dannyandson.tinypipes.blocks.PipeBlockEntity;
 import com.dannyandson.tinypipes.caphandlers.PushWrapper;
 import com.dannyandson.tinypipes.components.ICapPipe;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+
+import javax.annotation.Nullable;
 
 
 public abstract class AbstractCapFullPipe<CapType> extends AbstractFullPipe implements ICapPipe<CapType> {
@@ -53,13 +56,13 @@ public abstract class AbstractCapFullPipe<CapType> extends AbstractFullPipe impl
     }
 
     @Override
-    public boolean neighborChanged(PipeBlockEntity pipeBlockEntity) {
+    public boolean neighborChanged(PipeBlockEntity pipeBlockEntity,@Nullable Direction direction) {
         boolean change = disabled != pipeBlockEntity.getLevel().getDirectSignalTo(pipeBlockEntity.getBlockPos())>0;
         if (change){
             disabled=!disabled;
             pipeBlockEntity.sync();
         }
-        return super.neighborChanged(pipeBlockEntity) || change;
+        return super.neighborChanged(pipeBlockEntity,null) || change;
     }
 
     @Override

@@ -57,16 +57,34 @@ public class PipeBlock extends BaseEntityBlock {
 
     @Override
     public boolean canConnectRedstone(BlockState state, BlockGetter level, BlockPos pos, @Nullable Direction direction) {
-        return true;
+        //return true;
+        return false;
     }
 
     @SuppressWarnings("deprecation")
     @Override
-    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block p60512, BlockPos neighborPos, boolean p_60514_) {
-        if (level.getBlockEntity(pos) instanceof PipeBlockEntity pipeBlockEntity) {
-            pipeBlockEntity.onNeighborChange();
+    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, BlockPos neighborPos, boolean p_60514_) {
+        // the condition below is to avoid triggering the neighborChanged event when redstone update are done (too many calls)
+        // we need to check that the neighbor block is matching the blockstate of the level
+        if (level.getBlockState(neighborPos).getBlock() != block && level.getBlockState(neighborPos).getBlock() != Blocks.AIR)
+            return;
+        // if the neighbor block is a pipe as argument and is null by blockstate, we uodate using the onRemoveNeighbor method
+        Direction direction = Direction.getNearest(
+                neighborPos.getX() - pos.getX(),
+                neighborPos.getY() - pos.getY(),
+                neighborPos.getZ() - pos.getZ()
+        );
+        if (level.getBlockState(neighborPos).getBlock() == Blocks.AIR && block instanceof PipeBlock && level.getBlockEntity(pos) instanceof PipeBlockEntity pipeBlockEntity) {
+            if (pipeBlockEntity.getPipe(3) != null) { // if the pipe is a redstone pipe, we call the onRemoveNeighbor method
+                RedstonePipe redstonePipe = (RedstonePipe) pipeBlockEntity.getPipe(3);
+                redstonePipe.onRemoveNeighbor(pipeBlockEntity,direction);
+            }
+            return;
         }
-        super.neighborChanged(state, level, pos, p60512, neighborPos, p_60514_);
+        if (level.getBlockEntity(pos) instanceof PipeBlockEntity pipeBlockEntity) {
+            pipeBlockEntity.onNeighborChange(direction);
+        }
+        super.neighborChanged(state, level, pos, block, neighborPos, p_60514_);
     }
 
     @Override
@@ -163,8 +181,8 @@ public class PipeBlock extends BaseEntityBlock {
                 if (pipe!=null) {
                     if (!player.isCreative())
                         heldStack.setCount(heldStack.getCount()-1);
-                    pipe.togglePipeSide(Direction.orderedByNearest(player)[0]);
-                    pipe.togglePipeSide(Direction.orderedByNearest(player)[0].getOpposite());
+                    pipe.togglePipeSide(pipeBlockEntity,Direction.orderedByNearest(player)[0]);
+                    pipe.togglePipeSide(pipeBlockEntity,Direction.orderedByNearest(player)[0].getOpposite());
                     return InteractionResult.CONSUME;
                 }
             } else if (heldStack.is(ItemTags.create(new ResourceLocation("forge", "tools/wrench")))) {
@@ -182,15 +200,17 @@ public class PipeBlock extends BaseEntityBlock {
                 //using with a wrench in hand
                 PipeSide pipeSide = pipeBlockEntity.getPipeAtHitVector(hitResult);
                 if (pipeSide!=null){
-                    pipeSide.toggleSideStatus();
+                    pipeSide.toggleSideStatus(pipeBlockEntity);
                 }
                 return InteractionResult.CONSUME;
             } else if (heldStack.getItem() instanceof DyeItem dyeItem) {
                 //using with a wrench in hand
                 PipeSide pipeSide = pipeBlockEntity.getPipeAtHitVector(hitResult);
                 if (pipeSide!=null && pipeSide.getPipe() instanceof RedstonePipe redstonePipe){
-                    redstonePipe.setColor(pipeSide.getDirection(),dyeItem.getDyeColor().getId());
-                    redstonePipe.neighborChanged(pipeBlockEntity);
+                    // set the new frequency signal and update the pipe block regarding the old frequency signal in the pipe network
+                    redstonePipe.setColor(pipeBlockEntity, pipeSide.getDirection(), dyeItem.getDyeColor().getId());
+                    // update the pipe block regarding the new frequency signal in the pipe network
+                    redstonePipe.neighborChanged(pipeBlockEntity,pipeSide.getDirection());
                     level.blockUpdated(pos,this);
                 }
                 return InteractionResult.CONSUME;

@@ -57,8 +57,7 @@ public class PipeBlock extends BaseEntityBlock {
 
     @Override
     public boolean canConnectRedstone(BlockState state, BlockGetter level, BlockPos pos, @Nullable Direction direction) {
-        //return true;
-        return false;
+        return true;
     }
 
     @SuppressWarnings("deprecation")

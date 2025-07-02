@@ -219,15 +219,15 @@ public class RedstonePipe extends AbstractFullPipe{
         return false; // no change
     }
 
-    public boolean updateOutput(PipeBlockEntity pipeBlockEntity, Direction direction, int frequency,int signal,long queryId,boolean allowDisabled) {
+    public void updateOutput(PipeBlockEntity pipeBlockEntity, Direction direction, int frequency,int signal,long queryId,boolean allowDisabled) {
         if (pushIds.contains(queryId)) {
             // if we've already replied to this query, we don't need to do anything
-            return false;
+            return;
         }
         //allowDisabled is used to allow the update of the output signal even if the pipe is not enabled : it is true only when toggle is done
         if (getPipeSideStatus(direction) == PipeConnectionState.DISABLED && !allowDisabled) {
             // if the pipe is not enabled, we don't need to do anything
-            return false;
+            return;
         }
         pushIds.add(queryId);
         // update signal in the network in all directions (except the one that is the origin of the update)
@@ -242,8 +242,6 @@ public class RedstonePipe extends AbstractFullPipe{
                 }
             }
         }
-
-        return false; // no change
     }
 
     @Override

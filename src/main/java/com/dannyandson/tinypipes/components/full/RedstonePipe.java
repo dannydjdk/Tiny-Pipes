@@ -1,5 +1,6 @@
 package com.dannyandson.tinypipes.components.full;
 
+import com.dannyandson.tinypipes.TinyPipes;
 import com.dannyandson.tinypipes.blocks.PipeBlockEntity;
 import com.dannyandson.tinypipes.blocks.PipeConnectionState;
 import com.dannyandson.tinypipes.components.RenderHelper;
@@ -20,14 +21,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.dannyandson.tinypipes.components.RenderHelper.REDSTONE_PIPE_TEXTURE;
 
 public class RedstonePipe extends AbstractFullPipe{
-
-    private static final int defaultFrequency = 0x810E0C;
-
-    // list of frequencies that can be used in the pipe : [0x810E0C,0,1,2,3,4,5,6,7,8,9,10,11,12,13,15]
-    private final List<Integer> possibleFrequencies = Arrays.stream(DyeColor.values()).map(dyeColor -> {
-        if (dyeColor == DyeColor.RED) return defaultFrequency; // red is the default frequency
-        return dyeColor.getId();
-    }).toList();
 
     private static final AtomicLong NEXT_ID = new AtomicLong(0);
     private static long getNextId() {
@@ -58,16 +51,17 @@ public class RedstonePipe extends AbstractFullPipe{
     public Integer getColor(Direction side) {
         if (getNeighborHasSamePipeType(side)==null || getNeighborHasSamePipeType(side)) return null;
 
-        return (frequencies.containsKey(side)) ? DyeColor.byId(frequencies.get(side)).getMapColor().col : defaultFrequency;
+        return (frequencies.containsKey(side)) ? DyeColor.byId(frequencies.get(side)).getMapColor().col : TinyPipes.defaultFrequency;
     }
 
     public void setColor(PipeBlockEntity pipeBlockEntity,Direction side, Integer color){
         // update of the pipe for the old frequency (update as if the input signal is 0)
         if (this.getPipeSideStatus(side) == PipeConnectionState.PULLING){
-            int frequency = frequencies.getOrDefault(side, defaultFrequency);
+            int frequency = frequencies.getOrDefault(side, TinyPipes.defaultFrequency);
             int sint = outputSignals.getOrDefault(frequency, 0);
-            onInputSignalChange(pipeBlockEntity, side, frequency, sint, 0,true);
+            onInputSignalChange(pipeBlockEntity, side, frequency, sint, 0,true, false);
         }
+
         if (getNeighborHasSamePipeType(side)!=null && !getNeighborHasSamePipeType(side))
             if (color == DyeColor.RED.getId())
                 this.frequencies.remove(side);
@@ -94,32 +88,33 @@ public class RedstonePipe extends AbstractFullPipe{
                 if (level.getBlockEntity(neighbor) instanceof PipeBlockEntity neighborPipeBE) {
                     // if the neighbor is a pipe,
                     RedstonePipe neighborPipe = (RedstonePipe) neighborPipeBE.getPipe(this.slotPos());
-                    for (int frequency : possibleFrequencies) {
+                    for (int frequency : TinyPipes.possibleFrequencies) {
                         int sp = neighborPipe.outputSignals.getOrDefault(frequency,0);
                         int sint = this.outputSignals.getOrDefault(frequency, 0);
                         // update of the toggled pipe as if input signal is 0
-                        onInputSignalChange(pipeBlockEntity, direction, frequency, sint, 0,false);
+                        onInputSignalChange(pipeBlockEntity, direction, frequency, sint, 0,false,true);
                         // update of the neighbor pipe as if input signal is 0
-                        neighborPipe.onInputSignalChange(neighborPipeBE, direction.getOpposite(), frequency, sp, 0,false);
+                        neighborPipe.onInputSignalChange(neighborPipeBE, direction.getOpposite(), frequency, sp, 0,false,false);
                     }
                 }
             } else {
                 // if the neighbor does not have the same pipe type, the last state is pulling, and we need to update the input signal
-                int frequency = frequencies.getOrDefault(direction, defaultFrequency);
+                int frequency = frequencies.getOrDefault(direction, TinyPipes.defaultFrequency);
                 int sinp = getInputSignal(pipeBlockEntity,direction);
                 if (sinp != 0){
                     int sint = outputSignals.getOrDefault(frequency, 0);
-                    onInputSignalChange(pipeBlockEntity, direction, frequency, sint, 0,true);
+                    onInputSignalChange(pipeBlockEntity, direction, frequency, sint, 0,true,true);
                 }
             }
         } else if (currentState == PipeConnectionState.PULLING) {
             // the old state was enabled, so we need to update if the input signal is not zero as first if condition
-            int frequency = frequencies.getOrDefault(direction, defaultFrequency);
+            int frequency = frequencies.getOrDefault(direction, TinyPipes.defaultFrequency);
             int sinp = getInputSignal(pipeBlockEntity,direction);
             if (sinp != 0) {
                 int sint = outputSignals.getOrDefault(frequency, 0);
-                onInputSignalChange(pipeBlockEntity, direction, frequency, sint, sinp, true);
+                onInputSignalChange(pipeBlockEntity, direction, frequency, sint, sinp, true,false);
             }
+            updateFlag = true; // we need to update the redstone component as the pipe is not enabled anymore (no signal will come from it)
         } else { //currentState == PipeConnectionState.ENABLED
             // the old state was disabled,
             // we need to update both pipe if the nearby block is a pipe
@@ -131,7 +126,7 @@ public class RedstonePipe extends AbstractFullPipe{
                 // if the neighbor has the same pipe type, the last state is enabled,
                 // and it is as if an input signal was not 0 for the pipe with the lower signal (for each frequency)
                 if (neighborPipeBE.getPipe(this.slotPos()) instanceof RedstonePipe neighborPipe && neighborPipe.getPipeSideStatus(direction.getOpposite()) == PipeConnectionState.ENABLED) {
-                    for (int frequency : possibleFrequencies) {
+                    for (int frequency : TinyPipes.possibleFrequencies) {
                         int sp = neighborPipe.outputSignals.getOrDefault(frequency,0);
                         int sint = this.outputSignals.getOrDefault(frequency, 0);
                         if (sp == sint){
@@ -139,24 +134,27 @@ public class RedstonePipe extends AbstractFullPipe{
                         }
                         if (sp > sint) {
                             // if the neighbor pipe has a higher signal, we need to update the signal of the toggled pipe
-                            onInputSignalChange(pipeBlockEntity, direction, frequency, sint, sp,false);
+                            onInputSignalChange(pipeBlockEntity, direction, frequency, sint, sp,false,false);
                         } else { // sp < sint
                             // if the toggled pipe has a higher signal, we need to update the input signal of the neighbor pipe
-                            neighborPipe.onInputSignalChange(neighborPipeBE, direction.getOpposite(), frequency, sp, sint,false);
+                            neighborPipe.onInputSignalChange(neighborPipeBE, direction.getOpposite(), frequency, sp, sint,false,false);
                         }
                     }
                 }
-            } // if the neighbor does not have the same pipe type, we don't update the input signal
+            } else {
+                // if the neighbor is not a pipe, we need to update the potential redstone component as the pipe can deliver a signal
+                updateFlag = true;
+            }
         }
     }
 
     public boolean onRemoveNeighbor(PipeBlockEntity pipeBlockEntity, Direction direction) {
         // on remove is called when a neighbor pipe is removed
-        for (int frequency : possibleFrequencies) {
+        for (int frequency : TinyPipes.possibleFrequencies) {
             // if the neighbor pipe was enabled, we need to update the signal considering that the signal is now 0
             if (getPipeSideStatus(direction) == PipeConnectionState.ENABLED) {
                 int sint = outputSignals.getOrDefault(frequency, 0);
-                onInputSignalChange(pipeBlockEntity, direction, frequency, sint, 0,false);
+                onInputSignalChange(pipeBlockEntity, direction, frequency, sint, 0,false, false);
             }
         }
         return false;
@@ -176,11 +174,11 @@ public class RedstonePipe extends AbstractFullPipe{
         // update on input signal change
         boolean isPulling = getPipeSideStatus(direction) == PipeConnectionState.PULLING;
         if (isPulling){
-            int frequency = frequencies.getOrDefault(direction, defaultFrequency);
+            int frequency = frequencies.getOrDefault(direction, TinyPipes.defaultFrequency);
             // signal inside the pipe
             int sint = outputSignals.getOrDefault(frequency, 0);
             int sinp = getInputSignal(pipeBlockEntity,direction);
-            onInputSignalChange(pipeBlockEntity, direction, frequency, sint, sinp,true);
+            onInputSignalChange(pipeBlockEntity, direction, frequency, sint, sinp,true,false);
         }
         return false;
     }
@@ -196,35 +194,39 @@ public class RedstonePipe extends AbstractFullPipe{
         );
     }
 
-    public boolean onInputSignalChange(PipeBlockEntity pipeBlockEntity, @Nullable Direction direction,int frequency, int sint, int sinp,boolean updateInputList) {
+    public boolean onInputSignalChange(PipeBlockEntity pipeBlockEntity, @Nullable Direction direction,int frequency, int sint, int sinp,boolean updateInputList,boolean allowDisabled) {
         if (updateInputList){
             inputSignals.put(frequency, sinp); // update input signal
         }
         // update on input signal change
-        if (sint == sinp){
-            return false; // no change
-        } else if (sint > sinp) { // signal decreased
-            Map<Integer, Integer> p = getNetworkRsOutput(pipeBlockEntity, direction, getNextId());
+        if (sint > sinp) { // signal decreased
+            Map<Integer, Integer> p = getNetworkRsOutput(pipeBlockEntity, null, getNextId());
             int spul = p.getOrDefault(frequency, 0);
             // spul is the signal that was pulled from the neighbor pulling
             // spul can only be equals to or less than sint
             if (spul < sint) {
                 // if the pulled signal is less than the input signal, we need to update the output of the network with the pulled signal
-                updateOutput(pipeBlockEntity, direction, frequency, spul, getNextId());
+                updateOutput(pipeBlockEntity, direction, frequency, spul, getNextId(),allowDisabled);
                 return true; // signal changed
             } else {
                 // if the pulled signal is equal to the input signal, we don't need to update the network
                 return false; // no change
             }
-        } else { // sint < sinp : signal increased
-            updateOutput(pipeBlockEntity, direction, frequency, sinp, getNextId());
+        } else if (sint < sinp){ // signal increased
+            updateOutput(pipeBlockEntity, direction, frequency, sinp, getNextId(),allowDisabled);
             return true; // signal changed
         }
+        return false; // no change
     }
 
-    public boolean updateOutput(PipeBlockEntity pipeBlockEntity, @Nullable Direction direction, int frequency,int signal,long queryId) {
+    public boolean updateOutput(PipeBlockEntity pipeBlockEntity, Direction direction, int frequency,int signal,long queryId,boolean allowDisabled) {
         if (pushIds.contains(queryId)) {
             // if we've already replied to this query, we don't need to do anything
+            return false;
+        }
+        //allowDisabled is used to allow the update of the output signal even if the pipe is not enabled : it is true only when toggle is done
+        if (getPipeSideStatus(direction) == PipeConnectionState.DISABLED && !allowDisabled) {
+            // if the pipe is not enabled, we don't need to do anything
             return false;
         }
         pushIds.add(queryId);
@@ -236,7 +238,7 @@ public class RedstonePipe extends AbstractFullPipe{
             if (getPipeSideStatus(dir) == PipeConnectionState.ENABLED && dir != direction) {
                 BlockPos neighbor = pipeBlockEntity.getBlockPos().relative(dir);
                 if (pipeBlockEntity.getLevel().getBlockEntity(neighbor) instanceof PipeBlockEntity pipeBlockEntity2 && pipeBlockEntity2.hasPipe(RedstonePipe.class)) {
-                    ((RedstonePipe)pipeBlockEntity2.getPipe(this.slotPos())).updateOutput(pipeBlockEntity2, dir.getOpposite(), frequency, signal,queryId);
+                    ((RedstonePipe)pipeBlockEntity2.getPipe(this.slotPos())).updateOutput(pipeBlockEntity2, dir.getOpposite(), frequency, signal,queryId,false);
                 }
             }
         }
@@ -292,7 +294,7 @@ public class RedstonePipe extends AbstractFullPipe{
     //@Override
     public int getStrongRsOutput(Direction side) {
         return (this.getPipeSideStatus(side)== PipeConnectionState.ENABLED && (getNeighborHasSamePipeType(side)==null || !getNeighborHasSamePipeType(side)))
-                ? outputSignals.getOrDefault(frequencies.getOrDefault(side, defaultFrequency), 0)
+                ? outputSignals.getOrDefault(frequencies.getOrDefault(side, TinyPipes.defaultFrequency), 0)
                 : 0;
     }
 

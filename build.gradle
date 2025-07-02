@@ -144,6 +144,8 @@ dependencies {
     implementation fg.deobf('curse.maven:tinyredstone-453746:4410859')
     //implementation fg.deobf('curse.maven:tinygates-522875:3829123')
 
+    implementation fg.deobf('curse.maven:shrink-426386:4479694')
+
     //implementation fg.deobf('curse.maven:jei-238222:4175833')
     implementation fg.deobf('curse.maven:theoneprobe-245211:4159743')
     //implementation fg.deobf('curse.maven:jade-324717:3824831')

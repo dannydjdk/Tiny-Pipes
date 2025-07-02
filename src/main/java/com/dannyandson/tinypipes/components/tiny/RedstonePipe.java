@@ -195,16 +195,12 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
         return false;
     }
 
-    public boolean updateSignal(PanelCellPos cellPos, @Nullable Side side) {
+    public void updateSignal(PanelCellPos cellPos, @Nullable Side side) {
         if (side == null) {
             // update all directions
-            boolean changed = false;
             for (Side sid : Side.values()) {
-                if (updateSignal(cellPos, sid)) {
-                    changed = true;
-                }
+                updateSignal(cellPos, sid);
             }
-            return changed;
         }
         // update on input signal change
 
@@ -213,8 +209,6 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
         int sint = outputSignals.getOrDefault(frequency, 0);
         int sinp = getInputSignal(cellPos,side);
         onInputSignalChange(cellPos, getGlobalSide(side,cellPos.getCellFacing()), frequency, sint, sinp,true,false);
-        //todo : return true only if the input signal changed or return void
-        return true;
     }
 
     public int getInputSignal(PanelCellPos cellPos,Side side){
@@ -245,14 +239,14 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
         }
     }
 
-    public boolean updateOutput(PanelCellPos cellPos, Side side, int frequency,int signal,long queryId,boolean allowDisabled) {
+    public void updateOutput(PanelCellPos cellPos, Side side, int frequency,int signal,long queryId,boolean allowDisabled) {
         if (pushIds.contains(queryId)) {
             // if we've already replied to this query, we don't need to do anything
-            return false;
+            return;
         }
         if (!connectedSides.contains(getInternSide(side, cellPos.getCellFacing())) && !allowDisabled) {
             // if the side is not connected, we don't need to do anything
-            return false;
+            return;
         }
         pushIds.add(queryId);
         // update signal in the network in all directions (except the one that is the origin of the update)
@@ -265,8 +259,6 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
                 redstonePipe.updateOutput(neighbor.getCellPos(), globalSide.getOpposite(), frequency, signal,queryId,false);
             }
         }
-
-        return false; // no change
     }
 
     private boolean updateInputSignal(PanelCellPos cellPos) {

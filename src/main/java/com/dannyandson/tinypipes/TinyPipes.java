@@ -6,6 +6,7 @@ import com.dannyandson.tinypipes.setup.Registration;
 import com.dannyandson.tinypipes.setup.RegistrationTinyRedstone;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.DyeColor;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.ModLoadingContext;
@@ -17,6 +18,9 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Arrays;
+import java.util.List;
+
 // The value here should match an entry in the META-INF/mods.toml file
 @Mod(TinyPipes.MODID)
 public class TinyPipes
@@ -24,6 +28,14 @@ public class TinyPipes
     public static final String MODID = "tinypipes";
     // Directly reference a log4j logger.
     public static final Logger LOGGER = LogManager.getLogger();
+
+    // The default frequency for the pipes, used for redstone pipes
+    public static final int defaultFrequency = 0x810E0C;
+    // list of frequencies that can be used in the pipe : [0x810E0C,0,1,2,3,4,5,6,7,8,9,10,11,12,13,15]
+    public static final List<Integer> possibleFrequencies = Arrays.stream(DyeColor.values()).map(dyeColor -> {
+        if (dyeColor == DyeColor.RED) return defaultFrequency; // red is the default frequency
+        return dyeColor.getId();
+    }).toList();
 
     public TinyPipes() {
 

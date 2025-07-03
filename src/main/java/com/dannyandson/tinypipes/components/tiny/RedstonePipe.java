@@ -110,9 +110,9 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
             if (nei1IsPipe && nei2IsPipe) {
                 // if both neighbors are pipes, we need to update the pipes with the minimum signal
                 if (s1 < s2) {
-                    neighborPipe1.onInputSignalChange(neighbor1.getCellPos(), getGlobalSide(side1.getOpposite(), cellPos.getCellFacing()), frequency, s1, signal, false,false);
+                    neighborPipe1.onInputSignalChange(neighbor1.getCellPos(), getGlobalSide(side1.getOpposite(), cellPos.getCellFacing()), frequency, s1, signal, false,false,false);
                 } else if (s2 < s1) {
-                    neighborPipe2.onInputSignalChange(neighbor2.getCellPos(), getGlobalSide(side2.getOpposite(), cellPos.getCellFacing()), frequency, s2, signal, false,false);
+                    neighborPipe2.onInputSignalChange(neighbor2.getCellPos(), getGlobalSide(side2.getOpposite(), cellPos.getCellFacing()), frequency, s2, signal, false,false,false);
                 }
             }
         }
@@ -179,7 +179,7 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
         for (int frequency : TinyPipes.possibleFrequencies) {
             // we need to update the signal considering that the signal is now 0
             int sint = outputSignals.getOrDefault(frequency, 0);
-            onInputSignalChange(cellPos, side, frequency, sint, 0,false,false);
+            onInputSignalChange(cellPos, side, frequency, sint, 0,false,false,true);
         }
     }
 
@@ -208,7 +208,7 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
         // signal inside the pipe
         int sint = outputSignals.getOrDefault(frequency, 0);
         int sinp = getInputSignal(cellPos,side);
-        onInputSignalChange(cellPos, getGlobalSide(side,cellPos.getCellFacing()), frequency, sint, sinp,true,false);
+        onInputSignalChange(cellPos, getGlobalSide(side,cellPos.getCellFacing()), frequency, sint, sinp,true,false,false);
     }
 
     public int getInputSignal(PanelCellPos cellPos,Side side){
@@ -219,14 +219,18 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
         return (neighbor.canConnectRedstone())?neighbor.getWeakRsOutput():neighbor.getStrongRsOutputForWire();
     }
 
-    public void onInputSignalChange(PanelCellPos cellPos, @Nullable Side side, int frequency, int sint, int sinp, boolean updateInputList,boolean allowDisabled) {
+    // this method is called for every update of the pipes
+    // updateInputList is true when the input signal is changed by the neighbor pulling
+    // allowDisabled is true when the update comes from a neighbor pipe that was toggled to disabled
+    // sidePipeIsDestroyed is true when the side pipe is destroyed, and we needn't fetch pulling signals from it
+    public void onInputSignalChange(PanelCellPos cellPos, @Nullable Side side, int frequency, int sint, int sinp, boolean updateInputList,boolean allowDisabled,boolean sidePipeIsDestroyed) {
         //side must be the global side
         if (updateInputList){
             inputSignals.put(frequency, sinp); // update input signal
         }
         // update on input signal change
         if (sint > sinp) { // signal decreased
-            Map<Integer, Integer> p = getNetworkRsOutput(cellPos, null, getNextId());
+            Map<Integer, Integer> p = getNetworkRsOutput(cellPos, null, getNextId(), sidePipeIsDestroyed ? side : null);
             int spul = p.getOrDefault(frequency, 0);
             // spul is the signal that was pulled from the neighbor pulling
             // spul can only be equals to or less than sint
@@ -281,7 +285,7 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
         return false;
     }
 
-    private Map<Integer,Integer> getNetworkRsOutput(PanelCellPos cellPos, @Nullable Side side, long queryId) {
+    private Map<Integer,Integer> getNetworkRsOutput(PanelCellPos cellPos, @Nullable Side side, long queryId,@Nullable Side ignoredSide) {
         //check if we've already replied to this query (to prevent infinite loops if there is a loop in the pipe network)
         if (pushIds.contains(queryId))
             return new HashMap<>();
@@ -295,9 +299,12 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
         Map<Integer, Integer> rsOutputs = new HashMap<>(this.inputSignals);
 
         for (Side connectedSide : connectedSides) {
+            if (getGlobalSide(connectedSide,cellPos.getCellFacing()) == ignoredSide) {
+                continue; // skip the side that is the origin of the update
+            }
             PanelCellNeighbor neighbor = cellPos.getNeighbor(connectedSide);
             if (neighbor != null && neighbor.getNeighborIPanelCell() instanceof RedstonePipe neighborPipe) {
-                Map<Integer, Integer> p = neighborPipe.getNetworkRsOutput(neighbor.getCellPos(), neighbor.getNeighborsSide(), queryId);
+                Map<Integer, Integer> p = neighborPipe.getNetworkRsOutput(neighbor.getCellPos(), neighbor.getNeighborsSide(), queryId,null);
                 for (Map.Entry<Integer, Integer> entry : p.entrySet()) {
                     if (!rsOutputs.containsKey(entry.getKey()) || entry.getValue() > rsOutputs.get(entry.getKey()))
                         rsOutputs.put(entry.getKey(), entry.getValue());
@@ -353,7 +360,7 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
         if (pullSides.contains(side)) {
             int frequency = frequencies.getOrDefault(side,TinyPipes.defaultFrequency);
             int sint = outputSignals.getOrDefault(frequency, 0);
-            onInputSignalChange(cellPos, getGlobalSide(side,cellPos.getCellFacing()), frequency, sint, 0,true,false);
+            onInputSignalChange(cellPos, getGlobalSide(side,cellPos.getCellFacing()), frequency, sint, 0,true,false,false);
         }
         updateFlag = true; // we need to update the pipe neighbor redstone components
         if (color == DyeColor.RED) {
@@ -398,9 +405,9 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
                     int sp = neighborPipe.outputSignals.getOrDefault(frequency,0);
                     int sint = this.outputSignals.getOrDefault(frequency, 0);
                     // update of the toggled pipe as if input signal is 0
-                    onInputSignalChange(cellPos, getGlobalSide(side,cellPos.getCellFacing()), frequency, sint, 0,false,true);
+                    onInputSignalChange(cellPos, getGlobalSide(side,cellPos.getCellFacing()), frequency, sint, 0,false,true,false);
                     // update of the neighbor pipe as if input signal is 0
-                    neighborPipe.onInputSignalChange(neighbor.getCellPos(), getGlobalSide(side.getOpposite(),neighbor.getCellPos().getCellFacing()), frequency, sp, 0,false,false);
+                    neighborPipe.onInputSignalChange(neighbor.getCellPos(), getGlobalSide(side.getOpposite(),neighbor.getCellPos().getCellFacing()), frequency, sp, 0,false,false,false);
                 }
             } else {
                 // if the neighbor does not have the same pipe type, the last state is pulling, and we need to update the input signal
@@ -408,7 +415,7 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
                 int sinp = getInputSignal(cellPos,side);
                 if (sinp != 0){
                     int sint = outputSignals.getOrDefault(frequency, 0);
-                    onInputSignalChange(cellPos, getGlobalSide(side,cellPos.getCellFacing()), frequency, sint, 0,true,true);
+                    onInputSignalChange(cellPos, getGlobalSide(side,cellPos.getCellFacing()), frequency, sint, 0,true,true,false);
                 }
             }
         } else if (currentState == PipeConnectionState.PULLING) {
@@ -417,7 +424,7 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
             int sinp = getInputSignal(cellPos,side);
             if (sinp != 0) {
                 int sint = outputSignals.getOrDefault(frequency, 0);
-                onInputSignalChange(cellPos, getGlobalSide(side,cellPos.getCellFacing()), frequency, sint, sinp, true,false);
+                onInputSignalChange(cellPos, getGlobalSide(side,cellPos.getCellFacing()), frequency, sint, sinp, true,false,false);
             }
         } else { //currentState == PipeConnectionState.ENABLED
             // the old state was disabled,
@@ -435,10 +442,10 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
                         }
                         if (sp > sint) {
                             // if the neighbor pipe has a higher signal, we need to update the signal of the toggled pipe
-                            onInputSignalChange(cellPos, getGlobalSide(side,cellPos.getCellFacing()), frequency, sint, sp,false,false);
+                            onInputSignalChange(cellPos, getGlobalSide(side,cellPos.getCellFacing()), frequency, sint, sp,false,false,false);
                         } else { // sp < sint
                             // if the toggled pipe has a higher signal, we need to update the input signal of the neighbor pipe
-                            neighborPipe.onInputSignalChange(neighbor.getCellPos(), getGlobalSide(side.getOpposite(),neighbor.getCellPos().getCellFacing()), frequency, sp, sint,false,false);
+                            neighborPipe.onInputSignalChange(neighbor.getCellPos(), getGlobalSide(side.getOpposite(),neighbor.getCellPos().getCellFacing()), frequency, sp, sint,false,false,false);
                         }
                     }
                 }

@@ -196,7 +196,14 @@ public class RedstonePipe extends AbstractFullPipe{
 
     public boolean onInputSignalChange(PipeBlockEntity pipeBlockEntity, @Nullable Direction direction,int frequency, int sint, int sinp,boolean updateInputList,boolean allowDisabled) {
         if (updateInputList){
-            inputSignals.put(frequency, sinp); // update input signal
+            // update all input signals
+            for (Direction dir : Direction.values()) {
+                if (getPipeSideStatus(dir) == PipeConnectionState.PULLING) {
+                    int freq = frequencies.getOrDefault(dir, TinyPipes.defaultFrequency);
+                    int sin = getInputSignal(pipeBlockEntity, dir);
+                    inputSignals.put(freq, sin); // update input signal
+                }
+            }
         }
         // update on input signal change
         if (sint > sinp) { // signal decreased

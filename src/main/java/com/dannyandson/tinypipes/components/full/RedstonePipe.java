@@ -59,17 +59,29 @@ public class RedstonePipe extends AbstractFullPipe{
 
     public void setColor(PipeBlockEntity pipeBlockEntity,Direction side, Integer color){
         // update of the pipe for the old frequency (update as if the input signal is 0)
-        if (this.getPipeSideStatus(side) == PipeConnectionState.PULLING){
-            int frequency = frequencies.getOrDefault(side, TinyPipes.defaultFrequency);
-            int sint = outputSignals.getOrDefault(frequency, 0);
-            onInputSignalChange(pipeBlockEntity, side, frequency, sint, 0,true, false);
-        }
-
+        int oldFrequency = frequencies.getOrDefault(side, TinyPipes.defaultFrequency);
         if (getNeighborHasSamePipeType(side)!=null && !getNeighborHasSamePipeType(side))
             if (color == DyeColor.RED.getId())
                 this.frequencies.remove(side);
             else
                 this.frequencies.put(side,color);
+        int newFrequency = frequencies.getOrDefault(side, TinyPipes.defaultFrequency);
+        if (oldFrequency == newFrequency) {
+            // no change in frequency, so no need to update the output signal
+            return;
+        }
+
+        if (this.getPipeSideStatus(side) == PipeConnectionState.PULLING){
+            int sintOldFreq = outputSignals.getOrDefault(oldFrequency, 0);
+            int sintNewFreq = outputSignals.getOrDefault(newFrequency, 0);
+            int sinp = getInputSignal(pipeBlockEntity,side);
+            // update of the pipe for the old frequency from sinp to 0
+            onInputSignalChange(pipeBlockEntity, side, oldFrequency, sintOldFreq, 0,true, false);
+            // update of the pipe for the new frequency from 0 to sinp
+            onInputSignalChange(pipeBlockEntity, side, newFrequency, sintNewFreq, sinp,true, false);
+        }
+        updateFlag = true;
+
     }
 
     @Override

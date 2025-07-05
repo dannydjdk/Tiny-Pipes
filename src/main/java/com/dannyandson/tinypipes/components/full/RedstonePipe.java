@@ -4,6 +4,9 @@ import com.dannyandson.tinypipes.TinyPipes;
 import com.dannyandson.tinypipes.blocks.PipeBlockEntity;
 import com.dannyandson.tinypipes.blocks.PipeConnectionState;
 import com.dannyandson.tinypipes.components.RenderHelper;
+import com.dannyandson.tinyredstone.blocks.PanelCellNeighbor;
+import com.dannyandson.tinyredstone.blocks.PanelCellPos;
+import com.dannyandson.tinyredstone.blocks.Side;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -194,16 +197,34 @@ public class RedstonePipe extends AbstractFullPipe{
         );
     }
 
+    private boolean updateInputSignal(PipeBlockEntity pipeBlockEntity) {
+        Map<Integer, Integer> signals = new HashMap<>();
+
+        for (Direction direction : Direction.values()) {
+            if (getPipeSideStatus(direction) != PipeConnectionState.PULLING) {
+                continue; // only pulling pipes can have input signals
+            }
+            BlockPos pos = pipeBlockEntity.getBlockPos().relative(direction);
+            if (pipeBlockEntity.getLevel().getBlockEntity(pos) instanceof PipeBlockEntity) {
+                continue; // input signals won't come from pipe
+            }
+            int signal = getInputSignal(pipeBlockEntity,direction);
+            int frequency = frequencies.getOrDefault(direction, TinyPipes.defaultFrequency);
+            if (!signals.containsKey(frequency) || signal > signals.get(frequency))
+                signals.put(frequency, signal);
+        }
+
+        if (!signals.equals(inputSignals)) {
+            inputSignals = signals;
+            return true;
+        }
+        return false;
+    }
+
     public boolean onInputSignalChange(PipeBlockEntity pipeBlockEntity, @Nullable Direction direction,int frequency, int sint, int sinp,boolean updateInputList,boolean allowDisabled) {
         if (updateInputList){
             // update all input signals
-            for (Direction dir : Direction.values()) {
-                if (getPipeSideStatus(dir) == PipeConnectionState.PULLING) {
-                    int freq = frequencies.getOrDefault(dir, TinyPipes.defaultFrequency);
-                    int sin = getInputSignal(pipeBlockEntity, dir);
-                    inputSignals.put(freq, sin); // update input signal
-                }
-            }
+            updateInputSignal(pipeBlockEntity);
         }
         // update on input signal change
         if (sint > sinp) { // signal decreased

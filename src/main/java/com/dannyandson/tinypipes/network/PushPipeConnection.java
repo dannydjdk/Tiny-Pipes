@@ -47,7 +47,7 @@ public class PushPipeConnection {
             if (blockEntity instanceof PipeBlockEntity pipeBlockEntity) {
                 AbstractFullPipe pipe = pipeBlockEntity.getPipe(index);
                 if (pipeBlockEntity.getPipe(index) != null) {
-                    pipe.setConnectionState(side,connectionState);
+                    pipe.setConnectionState(pipeBlockEntity, side,connectionState);
                 }
             }else if(ModList.get().isLoaded("tinyredstone")) {
                 TinyPipeNetworkHelper.setTinyPipeSideState(ctx.get().getSender().level(),pos,index,side,connectionState);

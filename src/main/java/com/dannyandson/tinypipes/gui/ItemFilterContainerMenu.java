@@ -90,7 +90,7 @@ public class ItemFilterContainerMenu extends AbstractContainerMenu {
             if (!carriedStack.getItem().equals(Items.AIR) && !carriedStack.equals(ItemStack.EMPTY) &&
                     (!(this instanceof FluidFilterContainerMenu)||
                             (carriedStack.getItem() instanceof BucketItem &&
-                                    !((BucketItem) carriedStack.getItem()).getFluid().equals(Fluids.EMPTY) &&
+                                    !((BucketItem) carriedStack.getItem()).content.equals(Fluids.EMPTY) &&
                                     !(carriedStack.getItem() instanceof MobBucketItem)))
             ) {
                 boolean exists = false;
@@ -128,7 +128,7 @@ public class ItemFilterContainerMenu extends AbstractContainerMenu {
             }
 
             if (!exists && (!(this instanceof FluidFilterContainerMenu)||
-                    (itemstack1.getItem() instanceof BucketItem && !((BucketItem) itemstack1.getItem()).getFluid().equals(Fluids.EMPTY) && !(itemstack1.getItem() instanceof MobBucketItem))))
+                    (itemstack1.getItem() instanceof BucketItem && !((BucketItem) itemstack1.getItem()).content.equals(Fluids.EMPTY) && !(itemstack1.getItem() instanceof MobBucketItem))))
                 for (int i = 0; i < container.getContainerSize(); i++) {
                     if (container.getItem(i).equals(ItemStack.EMPTY)) {
                         ItemStack filterStack = itemstack1.copy();

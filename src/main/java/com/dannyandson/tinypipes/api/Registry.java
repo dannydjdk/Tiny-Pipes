@@ -35,5 +35,4 @@ public class Registry {
     public static Class<? extends AbstractFullPipe> getFullPipeClassFromItem(Item item){
             return itemFullPipeMap.get(item);
     }
-
 }

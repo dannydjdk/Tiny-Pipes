@@ -14,9 +14,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.network.NetworkHooks;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.items.IItemHandler;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
@@ -47,8 +46,8 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe {
             stack = player.getItemInHand(player.getUsedItemHand());
         if (stack == ItemStack.EMPTY)
             stack = player.getMainHandItem();
-        if (stack.hasTag()) {
-            CompoundTag itemNBT = stack.getTag();
+        if (stack.has(net.minecraft.core.component.DataComponents.CUSTOM_DATA)) {
+            CompoundTag itemNBT = stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA).copyTag();
             String filterString = itemNBT.getString("filters");
             filters = Arrays.copyOf(filterString.split("\n",filterSlots),filterSlots);
         }
@@ -58,7 +57,7 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe {
 
     @Override
     protected void populatePushWrapper(PanelCellPos cellPos, @Nullable Side side, ItemStack itemStack, PushWrapper<IItemHandler> pushWrapper, int distance) {
-        ResourceLocation itemReg = ForgeRegistries.ITEMS.getKey(itemStack.getItem());
+        ResourceLocation itemReg = BuiltInRegistries.ITEM.getKey(itemStack.getItem());
         boolean hasItem = itemReg != null && hasItem(itemReg.toString());
         if ((!blacklist && !hasItem) || (blacklist && hasItem)) {
             return;
@@ -89,7 +88,7 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe {
             return super.onBlockActivated(cellPos, segmentClicked, player);
 
         if (player instanceof ServerPlayer serverPlayer) {
-            NetworkHooks.openScreen(serverPlayer,new ItemFilterContainerMenu.Provider(this));
+            serverPlayer.openMenu(new ItemFilterContainerMenu.Provider(this));
         }
         return false;
     }
@@ -155,10 +154,10 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe {
     @Override
     public ItemStack getItem(int slot) {
         if (slot<filters.length && filters[slot]!=null && !filters[slot].equals("null") && !filters[slot].isEmpty()) {
-            CompoundTag itemNbt = new CompoundTag();
-            itemNbt.putString("id", filters[slot]);
-            itemNbt.putInt("Count",1);
-            return ItemStack.of(itemNbt);
+            net.minecraft.resources.ResourceLocation rl = net.minecraft.resources.ResourceLocation.tryParse(filters[slot]);
+            if (rl != null && net.minecraft.core.registries.BuiltInRegistries.ITEM.containsKey(rl))
+                return new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(rl));
+            return ItemStack.EMPTY;
         }
         return ItemStack.EMPTY;
     }
@@ -178,11 +177,11 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe {
 
     @Override
     public void setItem(int slot, ItemStack itemStack) {
-        if (slot<filters.length && ForgeRegistries.ITEMS.getKey(itemStack.getItem())!=null) {
-            String itemName = ForgeRegistries.ITEMS.getKey(itemStack.getItem()).toString();
+        if (slot<filters.length && BuiltInRegistries.ITEM.getKey(itemStack.getItem())!=null) {
+            String itemName = BuiltInRegistries.ITEM.getKey(itemStack.getItem()).toString();
             if(hasItem(itemName))
                 return;
-            filters[slot] = ForgeRegistries.ITEMS.getKey(itemStack.getItem()).toString();
+            filters[slot] = BuiltInRegistries.ITEM.getKey(itemStack.getItem()).toString();
         }
         setChanged();
     }

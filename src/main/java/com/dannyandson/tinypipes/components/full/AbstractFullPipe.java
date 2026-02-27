@@ -6,7 +6,7 @@ import com.dannyandson.tinypipes.blocks.PipeConnectionState;
 import com.dannyandson.tinypipes.components.IPipe;
 import com.dannyandson.tinypipes.gui.PipeConfigGUI;
 import com.dannyandson.tinypipes.setup.ClientSetup;
-import com.dannyandson.tinyredstone.blocks.RenderHelper;
+
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -31,7 +31,7 @@ public abstract class AbstractFullPipe implements IPipe {
     private static TextureAtlasSprite sprite = null;
     public TextureAtlasSprite getSprite(){
         if (sprite==null)
-            sprite = RenderHelper.getSprite(ClientSetup.PIPE_TEXTURE);
+            sprite = com.dannyandson.tinypipes.components.RenderHelper.getSprite(ClientSetup.PIPE_TEXTURE);
         return sprite;
     }
 

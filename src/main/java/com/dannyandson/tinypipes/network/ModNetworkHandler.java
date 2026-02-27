@@ -1,49 +1,27 @@
 package com.dannyandson.tinypipes.network;
 
 import com.dannyandson.tinypipes.TinyPipes;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.NetworkRegistry;
-import net.minecraftforge.network.simple.SimpleChannel;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
+@SuppressWarnings("removal")
+@EventBusSubscriber(modid = TinyPipes.MODID, bus = EventBusSubscriber.Bus.MOD)
 public class ModNetworkHandler {
-    private static SimpleChannel INSTANCE;
-    private static int ID = 0;
-    private static final String PROTOCOL_VERSION = "1.0 ";
 
-    private static int nextID() {
-        return ID++;
-    }
-
-    public static void registerMessages() {
-
-        INSTANCE = NetworkRegistry.newSimpleChannel(
-                new ResourceLocation(TinyPipes.MODID, "tinypipes"),
-                () -> PROTOCOL_VERSION,
-                PROTOCOL_VERSION::equals,
-                PROTOCOL_VERSION::equals);
-
-        INSTANCE.messageBuilder(PushItemFilterFlags.class,nextID())
-                .encoder(PushItemFilterFlags::toBytes)
-                .decoder(PushItemFilterFlags::new)
-                .consumerNetworkThread(PushItemFilterFlags::handle)
-                .add();
-
-        INSTANCE.messageBuilder(PushPipeConnection.class,nextID())
-                .encoder(PushPipeConnection::toBytes)
-                .decoder(PushPipeConnection::new)
-                .consumerNetworkThread(PushPipeConnection::handle)
-                .add();
-
-    }
-
-    public static void sendToClient(Object packet, ServerPlayer player) {
-        INSTANCE.sendTo(packet, player.connection.connection, NetworkDirection.PLAY_TO_CLIENT);
+    @SubscribeEvent
+    public static void register(RegisterPayloadHandlersEvent event) {
+        PayloadRegistrar registrar = event.registrar(TinyPipes.MODID).versioned("1.0");
+        registrar.playToServer(PushItemFilterFlags.TYPE, PushItemFilterFlags.STREAM_CODEC, PushItemFilterFlags::handle);
+        registrar.playToServer(PushPipeConnection.TYPE, PushPipeConnection.STREAM_CODEC, PushPipeConnection::handle);
     }
 
     public static void sendToServer(Object packet) {
-        INSTANCE.sendToServer(packet);
+        if (packet instanceof PushItemFilterFlags pkt)
+            PacketDistributor.sendToServer(pkt);
+        else if (packet instanceof PushPipeConnection pkt)
+            PacketDistributor.sendToServer(pkt);
     }
-
 }

@@ -25,7 +25,7 @@ import net.minecraft.world.phys.HitResult;
 public class TinyItemFilterGUI extends AbstractContainerScreen<ItemFilterContainerMenu> implements MenuAccess<ItemFilterContainerMenu> {
     public static final int WIDTH = 184;
     public static final int HEIGHT = 158;
-    private static final ResourceLocation GUI = new ResourceLocation(TinyPipes.MODID, "textures/gui/item_filter.png");
+    private static final ResourceLocation GUI = ResourceLocation.fromNamespaceAndPath(TinyPipes.MODID, "textures/gui/item_filter.png");
     private Button blackListButton = null;
     private PanelCellPos cellPos;
     private IFilterPipe iFilterPipe = null;
@@ -83,7 +83,7 @@ public class TinyItemFilterGUI extends AbstractContainerScreen<ItemFilterContain
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
-        this.renderBackground(guiGraphics);
+        this.renderBackground(guiGraphics, mouseX, mouseY, partialTicks);
         super.render(guiGraphics, mouseX, mouseY, partialTicks);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
    }

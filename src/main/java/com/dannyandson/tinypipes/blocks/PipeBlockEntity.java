@@ -10,12 +10,13 @@ import com.dannyandson.tinypipes.setup.Registration;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
-import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -26,9 +27,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.client.model.data.ModelData;
-import net.minecraftforge.client.model.data.ModelProperty;
-import net.minecraftforge.common.ForgeMod;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.CheckForNull;
@@ -41,7 +39,6 @@ public class PipeBlockEntity extends BlockEntity {
     private final Map<Integer,AbstractFullPipe> pipes = new HashMap<>();
     private TextureAtlasSprite centerSprite=null;
     private BlockState camouflageBlockState=null;
-    public static final ModelProperty<BlockState> CAMO_MODEL_PROPERTY = new ModelProperty<>();
     private Map<Direction,TextureAtlasSprite> camouflageSprites =new HashMap<>();
 
     public PipeBlockEntity(BlockPos pos, BlockState state) {
@@ -77,19 +74,19 @@ public class PipeBlockEntity extends BlockEntity {
 
     private boolean refresh = false;
 
-    /**
-     * Add pipe from itemstack
-     * @param itemStack Item stack containing pipe item
-     * @return pipe if successfully added, null if not (pipe type already exists or item is not valid pipe)
-     */
     @CheckForNull
     public AbstractFullPipe addPipe(ItemStack itemStack)
     {
         AbstractFullPipe pipe = Registry.getFullPipeFromItem(itemStack.getItem());
         if (pipe==null || slotUsed(pipe.slotPos())) return null;
 
-        if (itemStack.hasTag())
-            pipe.readNBT(itemStack.getTag().getCompound("pipe_data"));
+        // In 1.21.1 NBT is stored via components - check for legacy tag data
+        CompoundTag tag = null;
+        if (itemStack.has(net.minecraft.core.component.DataComponents.CUSTOM_DATA)) {
+            tag = itemStack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA).copyTag();
+        }
+        if (tag != null && tag.contains("pipe_data"))
+            pipe.readNBT(tag.getCompound("pipe_data"));
         pipes.put(pipe.slotPos(),pipe);
         pipe.onPlace(this, itemStack);
         this.centerSprite=null;
@@ -123,10 +120,6 @@ public class PipeBlockEntity extends BlockEntity {
         return camouflageBlockState;
     }
 
-    /**
-     * Loading and saving block entity data from disk and syncing to client
-     */
-
     public void sync() {
         if (!level.isClientSide)
             this.level.sendBlockUpdated(worldPosition, this.getBlockState(), this.getBlockState(), Block.UPDATE_CLIENTS);
@@ -140,20 +133,15 @@ public class PipeBlockEntity extends BlockEntity {
     }
 
     @Override
-    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
-        this.load(pkt.getTag());
-     }
-
-    @Override
-    public CompoundTag getUpdateTag() {
+    public @NotNull CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag nbt = new CompoundTag();
-        this.saveAdditional(nbt);
+        this.saveAdditional(nbt, registries);
         return nbt;
     }
 
     @Override
-    public void load(CompoundTag nbt) {
-        super.load(nbt);
+    protected void loadAdditional(CompoundTag nbt, HolderLookup.Provider registries) {
+        super.loadAdditional(nbt, registries);
 
         CompoundTag pipesData = nbt.getCompound("pipes");
         this.pipes.clear();
@@ -176,8 +164,8 @@ public class PipeBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag nbt) {
-        super.saveAdditional(nbt);
+    protected void saveAdditional(CompoundTag nbt, HolderLookup.Provider registries) {
+        super.saveAdditional(nbt, registries);
         CompoundTag pipeData = new CompoundTag();
         for (AbstractFullPipe pipe : this.pipes.values()) {
             pipeData.put(pipe.getClass().getCanonicalName(), pipe.writeNBT());
@@ -195,7 +183,7 @@ public class PipeBlockEntity extends BlockEntity {
         float x = (Mth.sin(-yRotation * ((float)Math.PI / 180F) - (float)Math.PI)) * v;
         float y = Mth.sin(-xRotation * ((float)Math.PI / 180F));
         float z = (Mth.cos(-yRotation * ((float)Math.PI / 180F) - (float)Math.PI)) * v;
-        double reachDistance = player.getAttribute(ForgeMod.BLOCK_REACH.get()).getValue();
+        double reachDistance = player.getAttributeValue(Attributes.BLOCK_INTERACTION_RANGE);
         Vec3 vec31 = eyePosition.add((double)x * reachDistance, (double)y * reachDistance, (double)z * reachDistance);
         return level.clip(new ClipContext(eyePosition, vec31, ClipContext.Block.COLLIDER, ClipContext.Fluid.ANY, player));
     }
@@ -249,8 +237,6 @@ public class PipeBlockEntity extends BlockEntity {
                                                     (z > 0.5703125) ? Direction.SOUTH :
                                                             Direction.NORTH;
             return new PipeSide(this,getPipes()[0],dir);
-            //getPipes()[0].togglePipeSide(dir);
-            //level.blockUpdated(this.worldPosition, this.getBlockState().getBlock());
         } else {
             Direction dir =
                     (x > 0.68) ? Direction.EAST :
@@ -264,7 +250,7 @@ public class PipeBlockEntity extends BlockEntity {
                 slot = (y > .5) ? (x > .5) ? 1 : 0 : (x > .5) ? 3 : 2;
             } else if (dir == Direction.EAST || dir == Direction.WEST) {
                 slot = (y > .5) ? (z > .5) ? 0 : 1 : (z > .5) ? 2 : 3;
-            } else { //up or down
+            } else {
                 slot = (z > .5) ? (x > .5) ? 0 : 1 : (x > .5) ? 2 : 3;
             }
             if (this.slotUsed(slot)) {
@@ -291,7 +277,6 @@ public class PipeBlockEntity extends BlockEntity {
 
         if (pipeCount() == 0)
             level.removeBlock(worldPosition, false);
-        //level.destroyBlock(worldPosition, false);
     }
 
     public void onNeighborChange() {

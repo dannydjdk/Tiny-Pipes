@@ -26,7 +26,7 @@ public class TinyPipeItem extends AbstractPanelCellItem {
     }
 
     @Override
-    public  void  appendHoverText(ItemStack stack, @Nullable Level world, List<Component> list, TooltipFlag flags)
+    public  void  appendHoverText(ItemStack stack, TooltipContext context, List<Component> list, TooltipFlag flags)
     {
         if (Screen.hasShiftDown()) {
             list.add(Component.translatable("message.item.tiny_pipe").withStyle(ChatFormatting.GRAY));

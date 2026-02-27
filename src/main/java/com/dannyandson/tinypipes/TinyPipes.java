@@ -1,49 +1,40 @@
 package com.dannyandson.tinypipes;
 
-import com.dannyandson.tinypipes.network.ModNetworkHandler;
 import com.dannyandson.tinypipes.setup.ClientSetup;
 import com.dannyandson.tinypipes.setup.Registration;
 import com.dannyandson.tinypipes.setup.RegistrationTinyRedstone;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.loading.FMLEnvironment;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.loading.FMLEnvironment;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-// The value here should match an entry in the META-INF/mods.toml file
 @Mod(TinyPipes.MODID)
 public class TinyPipes
 {
     public static final String MODID = "tinypipes";
-    // Directly reference a log4j logger.
     public static final Logger LOGGER = LogManager.getLogger();
 
-    public TinyPipes() {
+    public TinyPipes(IEventBus modEventBus, ModContainer modContainer) {
 
         if(FMLEnvironment.dist.isClient()) {
-            FMLJavaModLoadingContext.get().getModEventBus().addListener(ClientSetup::init);
+            // Menu screen registration handled via @SubscribeEvent in ClientSetup
         }
 
-        // Register the setup method for modloading
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::setup);
+        modEventBus.addListener(this::setup);
 
-        // Register ourselves for server and other game events we are interested in
-        MinecraftForge.EVENT_BUS.register(this);
-
-        ModLoadingContext.get().registerConfig(ModConfig.Type.SERVER, Config.SERVER_CONFIG);
-        Registration.register();
+        modContainer.registerConfig(ModConfig.Type.SERVER, Config.SERVER_CONFIG);
+        Registration.register(modEventBus);
         if (ModList.get().isLoaded("tinyredstone"))
             RegistrationTinyRedstone.register();
     }
 
     private void setup(final FMLCommonSetupEvent event)
     {
-        ModNetworkHandler.registerMessages();
         if (ModList.get().isLoaded("tinyredstone"))
             RegistrationTinyRedstone.registerPanelCells();
         Registration.registerFullPipeItems();

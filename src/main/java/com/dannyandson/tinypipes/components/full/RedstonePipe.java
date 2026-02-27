@@ -97,7 +97,7 @@ public class RedstonePipe extends AbstractFullPipe{
                 BlockPos neighbor = pipeBlockEntity.getBlockPos().relative(direction);
                 BlockState neighborState = pipeBlockEntity.getLevel().getBlockState(neighbor);
                 if (!(pipeBlockEntity.getLevel().getBlockEntity(neighbor) instanceof PipeBlockEntity)) {
-                    int signal = (neighborState.canRedstoneConnectTo(pipeBlockEntity.getLevel(),pipeBlockEntity.getBlockPos(),direction.getOpposite()))
+                    int signal = (neighborState.getBlock().canConnectRedstone(neighborState, pipeBlockEntity.getLevel(),neighbor,direction.getOpposite()))
                             ? pipeBlockEntity.getLevel().getSignal(neighbor,direction)
                             : ((neighborState.isRedstoneConductor(pipeBlockEntity.getLevel(),neighbor))
                                 ?pipeBlockEntity.getLevel().getBestNeighborSignal(neighbor)

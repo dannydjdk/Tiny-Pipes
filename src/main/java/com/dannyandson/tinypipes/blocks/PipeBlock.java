@@ -7,6 +7,7 @@ import com.dannyandson.tinypipes.components.full.PipeSide;
 import com.dannyandson.tinypipes.components.full.RedstonePipe;
 import com.dannyandson.tinypipes.items.SpeedUpgradeItem;
 import com.dannyandson.tinypipes.setup.Registration;
+import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
@@ -41,12 +42,19 @@ import org.jetbrains.annotations.Nullable;
 
 public class PipeBlock extends BaseEntityBlock {
 
+    public static final MapCodec<PipeBlock> CODEC = simpleCodec(p -> new PipeBlock());
+
     public PipeBlock() {
         super(Properties.of()
                 .sound(SoundType.STONE)
                 .strength(1.0f)
                 .dynamicShape()
         );
+    }
+
+    @Override
+    protected MapCodec<? extends BaseEntityBlock> codec() {
+        return CODEC;
     }
 
     @Nullable
@@ -70,7 +78,7 @@ public class PipeBlock extends BaseEntityBlock {
     }
 
     @Override
-    public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+    public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         if (level.getBlockEntity(pos) instanceof PipeBlockEntity pipeBlockEntity) {
             if (!player.isCreative()) {
                 if (pipeBlockEntity.getCamouflageBlockState() != null) {
@@ -99,7 +107,7 @@ public class PipeBlock extends BaseEntityBlock {
                 }
             }
         }
-        super.playerWillDestroy(level, pos, state, player);
+        return super.playerWillDestroy(level, pos, state, player);
     }
 
     @SuppressWarnings("deprecation")
@@ -152,13 +160,11 @@ public class PipeBlock extends BaseEntityBlock {
         };
     }
 
-    @SuppressWarnings("deprecation")
     @Override
-    public InteractionResult use(BlockState blockState, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
-        if (hand==InteractionHand.MAIN_HAND && level.getBlockEntity(pos) instanceof PipeBlockEntity pipeBlockEntity) {
-            ItemStack heldStack = player.getItemInHand(hand);
+    public InteractionResult useWithoutItem(BlockState blockState, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+        if (level.getBlockEntity(pos) instanceof PipeBlockEntity pipeBlockEntity) {
+            ItemStack heldStack = player.getMainHandItem();
             if (Registry.getFullPipeClassFromItem(heldStack.getItem()) != null) {
-                //using with a pipe in hand
                 AbstractFullPipe pipe = pipeBlockEntity.addPipe(heldStack);
                 if (pipe!=null) {
                     if (!player.isCreative())
@@ -167,26 +173,24 @@ public class PipeBlock extends BaseEntityBlock {
                     pipe.togglePipeSide(Direction.orderedByNearest(player)[0].getOpposite());
                     return InteractionResult.CONSUME;
                 }
-            } else if (heldStack.is(ItemTags.create(new ResourceLocation("forge", "tools/wrench")))) {
+            } else if (heldStack.is(ItemTags.create(ResourceLocation.fromNamespaceAndPath("c", "tools/wrench")))) {
                 if (player.getOffhandItem().getItem() instanceof BlockItem blockItem){
-                    BlockState blockState1 = blockItem.getBlock().getStateForPlacement(new BlockPlaceContext(level,player,hand,player.getOffhandItem(),hitResult));
+                    BlockState blockState1 = blockItem.getBlock().getStateForPlacement(new BlockPlaceContext(level,player,InteractionHand.MAIN_HAND,player.getOffhandItem(),hitResult));
                     boolean isFullBlock = blockState1.isCollisionShapeFullBlock(level, pos);
                     if (isFullBlock && !blockState1.hasBlockEntity()) {
-                        pipeBlockEntity.setCamouflage(blockItem.getBlock().getStateForPlacement(new BlockPlaceContext(level, player, hand, player.getOffhandItem(), hitResult)));
+                        pipeBlockEntity.setCamouflage(blockItem.getBlock().getStateForPlacement(new BlockPlaceContext(level, player, InteractionHand.MAIN_HAND, player.getOffhandItem(), hitResult)));
                         if (!player.isCreative()) {
                             player.getOffhandItem().setCount(player.getOffhandItem().getCount() - 1);
                         }
                     }
                     return InteractionResult.CONSUME;
                 }
-                //using with a wrench in hand
                 PipeSide pipeSide = pipeBlockEntity.getPipeAtHitVector(hitResult);
                 if (pipeSide!=null){
                     pipeSide.toggleSideStatus();
                 }
                 return InteractionResult.CONSUME;
             } else if (heldStack.getItem() instanceof DyeItem dyeItem) {
-                //using with a wrench in hand
                 PipeSide pipeSide = pipeBlockEntity.getPipeAtHitVector(hitResult);
                 if (pipeSide!=null && pipeSide.getPipe() instanceof RedstonePipe redstonePipe){
                     redstonePipe.setColor(pipeSide.getDirection(),dyeItem.getDyeColor().getId());
@@ -195,7 +199,6 @@ public class PipeBlock extends BaseEntityBlock {
                 }
                 return InteractionResult.CONSUME;
             } else if (heldStack.getItem() instanceof SpeedUpgradeItem) {
-                //using with a speed upgrade in hand
                 PipeSide pipeSide = pipeBlockEntity.getPipeAtHitVector(hitResult);
                 if (pipeSide.applySpeedUpgrade() && !player.isCreative()
                 ){
@@ -210,7 +213,7 @@ public class PipeBlock extends BaseEntityBlock {
                 }
             }
         }
-        return super.use(blockState, level, pos, player, hand, hitResult);
+        return super.useWithoutItem(blockState, level, pos, player, hitResult);
     }
 
     @SuppressWarnings("deprecation")
@@ -218,7 +221,7 @@ public class PipeBlock extends BaseEntityBlock {
     public void attack(BlockState state, Level level, BlockPos pos, Player player) {
         if (level.getBlockEntity(pos) instanceof PipeBlockEntity pipeBlockEntity) {
             ItemStack heldStack = player.getMainHandItem();
-            if (heldStack.is(ItemTags.create(new ResourceLocation("forge", "tools/wrench"))) || Registry.getFullPipeClassFromItem(heldStack.getItem()) != null) {
+            if (heldStack.is(ItemTags.create(ResourceLocation.fromNamespaceAndPath("c", "tools/wrench"))) || Registry.getFullPipeClassFromItem(heldStack.getItem()) != null) {
                 if (pipeBlockEntity.getCamouflageBlockState() != null) {
                     ItemStack itemStack = pipeBlockEntity.getCamouflageBlockState().getBlock().asItem().getDefaultInstance();
                     pipeBlockEntity.setCamouflage(null);
@@ -277,9 +280,6 @@ public class PipeBlock extends BaseEntityBlock {
                             :(pipe.slotPos()==3)?Shapes.or(shape,Block.box(8, 5.75, 0, 10.25, 8, 5))
                             :Shapes.or(shape,Block.box(5.75, 5.75, 0, 10.25, 10.25, 5));
                 }
-                if(pipe.getPipeSideStatus(Direction.NORTH)== PipeConnectionState.PULLING){
-                    //shape = Shapes.or(shape,Block.box(4, 4, 0, 12, 12, 2));
-                }
                 if(pipe.getPipeSideStatus(Direction.SOUTH)!= PipeConnectionState.DISABLED){
                     shape = (single)
                             ?Shapes.or(shape,Block.box(6.875, 6.875, 9.125, 9.125, 9.125, 16))
@@ -288,9 +288,6 @@ public class PipeBlock extends BaseEntityBlock {
                             :(pipe.slotPos()==2)?Shapes.or(shape,Block.box(5.75, 5.75, 11, 8, 8, 16))
                             :(pipe.slotPos()==3)?Shapes.or(shape,Block.box(8, 5.75, 11, 10.25, 8, 16))
                             :Shapes.or(shape,Block.box(5.75, 5.75, 11, 10.25, 10.25, 16));
-                }
-                if(pipe.getPipeSideStatus(Direction.SOUTH)== PipeConnectionState.PULLING){
-                    //shape = Shapes.or(shape,Block.box(4, 4, 14, 12, 12, 16));
                 }
                 if(pipe.getPipeSideStatus(Direction.EAST)!= PipeConnectionState.DISABLED){
                     shape = (single)
@@ -301,9 +298,6 @@ public class PipeBlock extends BaseEntityBlock {
                             :(pipe.slotPos()==3)?Shapes.or(shape,Block.box(11, 5.75, 5.75, 16, 8, 8))
                             :Shapes.or(shape,Block.box(11, 5.75, 5.75, 16, 10.25, 10.25));
                 }
-                if(pipe.getPipeSideStatus(Direction.EAST)== PipeConnectionState.PULLING){
-                    //shape = Shapes.or(shape,Block.box(14, 4, 4, 16, 12, 12));
-                }
                 if(pipe.getPipeSideStatus(Direction.WEST)!= PipeConnectionState.DISABLED){
                     shape = (single)
                             ?Shapes.or(shape,Block.box(0, 6.875, 6.875, 6.875, 9.125, 9.125))
@@ -312,9 +306,6 @@ public class PipeBlock extends BaseEntityBlock {
                             :(pipe.slotPos()==2)?Shapes.or(shape,Block.box(0, 5.75, 8, 5, 8, 10.25))
                             :(pipe.slotPos()==3)?Shapes.or(shape,Block.box(0, 5.75, 5.75, 5, 8, 8))
                             :Shapes.or(shape,Block.box(0, 5.75, 5.75, 5, 10.25, 10.25));
-                }
-                if(pipe.getPipeSideStatus(Direction.WEST)== PipeConnectionState.PULLING){
-                    //shape = Shapes.or(shape,Block.box(0, 4, 4, 2, 12, 12));
                 }
                 if(pipe.getPipeSideStatus(Direction.UP)!= PipeConnectionState.DISABLED){
                     shape = (single)
@@ -325,9 +316,6 @@ public class PipeBlock extends BaseEntityBlock {
                             :(pipe.slotPos()==3)?Shapes.or(shape,Block.box(5.75, 11,5.75, 8, 16, 8))
                             :Shapes.or(shape,Block.box(5.75, 11, 5.75, 10.25, 16, 10.25));
                 }
-                if(pipe.getPipeSideStatus(Direction.UP)== PipeConnectionState.PULLING){
-                    //shape = Shapes.or(shape,Block.box(4, 14, 4, 12, 16, 12));
-                }
                 if(pipe.getPipeSideStatus(Direction.DOWN)!= PipeConnectionState.DISABLED){
                     shape = (single)
                             ?Shapes.or(shape,Block.box(6.875, 0, 6.875, 9.125, 6.875, 9.125))
@@ -337,15 +325,9 @@ public class PipeBlock extends BaseEntityBlock {
                             :(pipe.slotPos()==3)?Shapes.or(shape,Block.box(5.75, 0,5.75, 8, 5, 8))
                             :Shapes.or(shape,Block.box(5.75, 0, 5.75, 10.25, 5, 10.25));
                 }
-                if(pipe.getPipeSideStatus(Direction.DOWN)== PipeConnectionState.PULLING){
-                    //shape = Shapes.or(shape,Block.box(4, 0, 4, 12, 2, 12));
-                }
-
             }
-
             return shape;
         }
         return super.getShape(state, level, pos, context);
     }
-
 }

@@ -1,22 +1,20 @@
 package com.dannyandson.tinypipes;
 
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.common.ModConfigSpec;
 
-@Mod.EventBusSubscriber
 public class Config {
 
-    public static ForgeConfigSpec SERVER_CONFIG;
+    public static ModConfigSpec SERVER_CONFIG;
 
     public static final String CATEGORY_BALANCE = "balance";
-    public static ForgeConfigSpec.IntValue ENERGY_THROUGHPUT;
-    public static ForgeConfigSpec.IntValue FLUID_THROUGHPUT;
-    public static ForgeConfigSpec.IntValue ITEM_THROUGHPUT;
-    public static ForgeConfigSpec.DoubleValue SPEED_UPGRADE_MULTIPLIER;
-    public static ForgeConfigSpec.IntValue SPEED_UPGRADE_MAX;
+    public static ModConfigSpec.IntValue ENERGY_THROUGHPUT;
+    public static ModConfigSpec.IntValue FLUID_THROUGHPUT;
+    public static ModConfigSpec.IntValue ITEM_THROUGHPUT;
+    public static ModConfigSpec.DoubleValue SPEED_UPGRADE_MULTIPLIER;
+    public static ModConfigSpec.IntValue SPEED_UPGRADE_MAX;
 
     static {
-        ForgeConfigSpec.Builder serverBuilder = new ForgeConfigSpec.Builder();
+        ModConfigSpec.Builder serverBuilder = new ModConfigSpec.Builder();
 
         serverBuilder.comment("Balance Settings").push(CATEGORY_BALANCE);
 
@@ -58,10 +56,5 @@ public class Config {
         serverBuilder.pop();
 
         SERVER_CONFIG = serverBuilder.build();
-
     }
-
-
-
-
 }

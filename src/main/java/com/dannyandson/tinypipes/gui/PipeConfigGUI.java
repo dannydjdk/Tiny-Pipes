@@ -32,7 +32,7 @@ public class PipeConfigGUI extends Screen {
     private Map<Direction,Integer> xLocations = new HashMap<>();
     private Map<Direction,Integer> yLocations = new HashMap<>();
 
-    private final ResourceLocation GUI = new ResourceLocation(TinyPipes.MODID, "textures/gui/transparent.png");
+    private final ResourceLocation GUI = ResourceLocation.fromNamespaceAndPath(TinyPipes.MODID, "textures/gui/transparent.png");
 
     protected PipeConfigGUI(PipeBlockEntity pipeBlockEntity, AbstractFullPipe tinyPipe) {
         super(Component.translatable("tinypipes:pipeconfiggui"));
@@ -71,7 +71,7 @@ public class PipeConfigGUI extends Screen {
         addRenderableWidget(new ModWidget(relX+2,relY+110,WIDTH-2,40,Component.translatable("tinypipes.gui.pipe_config.msg.disabled")));
         addRenderableWidget(new ModWidget(relX+2,relY+120,WIDTH-2,40,Component.translatable("tinypipes.gui.pipe_config.msg.pulling")));
 
-        addRenderableWidget(ModWidget.buildButton(relX + 82, relY + 135, 80, 20, Component.translatable("tinyredstone.close"), button -> close()));
+        addRenderableWidget(ModWidget.buildButton(relX + 82, relY + 135, 80, 20, Component.translatable("tinypipes.close"), button -> close()));
 
 
     }

@@ -17,10 +17,9 @@ import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.MobBucketItem;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.network.NetworkHooks;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
@@ -50,8 +49,8 @@ public class FluidFilterPipe extends FluidPipe implements IFilterPipe {
             stack = player.getItemInHand(player.getUsedItemHand());
         if (stack == ItemStack.EMPTY)
             stack = player.getMainHandItem();
-        if (stack.hasTag()) {
-            CompoundTag itemNBT = stack.getTag();
+        if (stack.has(net.minecraft.core.component.DataComponents.CUSTOM_DATA)) {
+            CompoundTag itemNBT = stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA).copyTag();
             String filterString = itemNBT.getString("filters");
             filters = Arrays.copyOf(filterString.split("\n",filterSlots),filterSlots);
             blacklist = itemNBT.getBoolean("blacklist");
@@ -62,7 +61,7 @@ public class FluidFilterPipe extends FluidPipe implements IFilterPipe {
 
     @Override
     protected void populatePushWrapper(PanelCellPos cellPos, @Nullable Side side, FluidStack fluidStack, PushWrapper<IFluidHandler> pushWrapper, int distance) {
-        ResourceLocation fluidReg = ForgeRegistries.ITEMS.getKey(fluidStack.getFluid().getBucket());
+        ResourceLocation fluidReg = BuiltInRegistries.ITEM.getKey(fluidStack.getFluid().getBucket());
         boolean hasFluid = fluidReg != null && hasFluid(fluidReg.toString());
         if ((!blacklist && !hasFluid) || (blacklist && hasFluid)) {
             return;
@@ -97,7 +96,7 @@ public class FluidFilterPipe extends FluidPipe implements IFilterPipe {
             return super.onBlockActivated(cellPos, segmentClicked, player);
 
         if (player instanceof ServerPlayer) {
-            NetworkHooks.openScreen((ServerPlayer) player,new FluidFilterContainerMenu.Provider(this));
+            ((ServerPlayer) player).openMenu(new FluidFilterContainerMenu.Provider(this));
         }
         return false;
     }
@@ -169,10 +168,10 @@ public class FluidFilterPipe extends FluidPipe implements IFilterPipe {
     @Override
     public ItemStack getItem(int slot) {
         if (slot<filters.length && filters[slot]!=null && !filters[slot].equals("null") && !filters[slot].isEmpty()) {
-            CompoundTag itemNbt = new CompoundTag();
-            itemNbt.putString("id", filters[slot]);
-            itemNbt.putInt("Count",1);
-            return ItemStack.of(itemNbt);
+            net.minecraft.resources.ResourceLocation rl = net.minecraft.resources.ResourceLocation.tryParse(filters[slot]);
+            if (rl != null && net.minecraft.core.registries.BuiltInRegistries.ITEM.containsKey(rl))
+                return new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(rl));
+            return ItemStack.EMPTY;
         }
         return ItemStack.EMPTY;
     }
@@ -196,14 +195,14 @@ public class FluidFilterPipe extends FluidPipe implements IFilterPipe {
         if (!(itemStack.getItem() instanceof BucketItem))
             return;
         bucketItem=(BucketItem) itemStack.getItem();
-        if (slot<filters.length && ForgeRegistries.ITEMS.getKey(bucketItem)!=null &&
-                !bucketItem.getFluid().equals(Fluids.EMPTY) &&
+        if (slot<filters.length && BuiltInRegistries.ITEM.getKey(bucketItem)!=null &&
+                !bucketItem.content.equals(Fluids.EMPTY) &&
                 !(bucketItem instanceof MobBucketItem)
         ) {
-            String itemName = ForgeRegistries.ITEMS.getKey(itemStack.getItem()).toString();
+            String itemName = BuiltInRegistries.ITEM.getKey(itemStack.getItem()).toString();
             if(hasFluid(itemName))
                 return;
-            filters[slot] = ForgeRegistries.ITEMS.getKey(itemStack.getItem()).toString();
+            filters[slot] = BuiltInRegistries.ITEM.getKey(itemStack.getItem()).toString();
         }
         setChanged();
     }

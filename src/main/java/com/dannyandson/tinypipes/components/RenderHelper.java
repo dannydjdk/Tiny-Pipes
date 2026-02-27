@@ -5,7 +5,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureManager;
@@ -14,19 +13,18 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.client.model.data.ModelData;
 import org.joml.Matrix4f;
 
 import java.util.List;
 
 public class RenderHelper {
 
-    public static final ResourceLocation REDSTONE_PIPE_TEXTURE = new ResourceLocation(TinyPipes.MODID, "block/redstone_pipe");
-    public static final ResourceLocation ENERGY_PIPE_TEXTURE = new ResourceLocation(TinyPipes.MODID, "block/energy_pipe");
-    public static final ResourceLocation FLUID_FILTER_PIPE_TEXTURE = new ResourceLocation(TinyPipes.MODID, "block/fluid_filter_pipe");
-    public static final ResourceLocation FLUID_PIPE_TEXTURE = new ResourceLocation(TinyPipes.MODID, "block/fluid_pipe");
-    public static final ResourceLocation ITEM_FILTER_PIPE_TEXTURE = new ResourceLocation(TinyPipes.MODID, "block/item_filter_pipe");
-    public static final ResourceLocation ITEM_PIPE_TEXTURE = new ResourceLocation(TinyPipes.MODID, "block/item_pipe");
+    public static final ResourceLocation REDSTONE_PIPE_TEXTURE = ResourceLocation.fromNamespaceAndPath(TinyPipes.MODID, "block/redstone_pipe");
+    public static final ResourceLocation ENERGY_PIPE_TEXTURE = ResourceLocation.fromNamespaceAndPath(TinyPipes.MODID, "block/energy_pipe");
+    public static final ResourceLocation FLUID_FILTER_PIPE_TEXTURE = ResourceLocation.fromNamespaceAndPath(TinyPipes.MODID, "block/fluid_filter_pipe");
+    public static final ResourceLocation FLUID_PIPE_TEXTURE = ResourceLocation.fromNamespaceAndPath(TinyPipes.MODID, "block/fluid_pipe");
+    public static final ResourceLocation ITEM_FILTER_PIPE_TEXTURE = ResourceLocation.fromNamespaceAndPath(TinyPipes.MODID, "block/item_filter_pipe");
+    public static final ResourceLocation ITEM_PIPE_TEXTURE = ResourceLocation.fromNamespaceAndPath(TinyPipes.MODID, "block/item_pipe");
 
     public static void drawCube(PoseStack poseStack, VertexConsumer builder, TextureAtlasSprite sprite, float x1, float x2, float y1, float y2, float z1, float z2, int combinedLight, int color, float alpha){
 
@@ -92,12 +90,11 @@ public class RenderHelper {
 
 
     public static void add(VertexConsumer renderer, Matrix4f matrix4f, float x, float y, float z, float u, float v, int combinedLightIn, int color, float alpha) {
-        renderer.vertex(matrix4f, x, y, z)
-                .color(color >> 16 & 255,color >> 8 & 255, color & 255, (int)(alpha*255f))
-                .uv(u, v)
-                .uv2(combinedLightIn)
-                .normal(1, 0, 0)
-                .endVertex();
+        renderer.addVertex(matrix4f, x, y, z)
+                .setColor(color >> 16 & 255,color >> 8 & 255, color & 255, (int)(alpha*255f))
+                .setUv(u, v)
+                .setUv2(combinedLightIn & 0xFFFF, (combinedLightIn >> 16) & 0xFFFF)
+                .setNormal(1, 0, 0);
     }
 
     public static TextureAtlasSprite getSprite(ResourceLocation resourceLocation)
@@ -107,7 +104,7 @@ public class RenderHelper {
 
     public static TextureAtlasSprite getSprite(BlockState state, Direction direction){
         List<BakedQuad> bakedQuads =  Minecraft.getInstance().getBlockRenderer().getBlockModel(state)
-                .getQuads(state,direction, RandomSource.create(), ModelData.EMPTY, RenderType.solid() );
+                .getQuads(state,direction, RandomSource.create());
         if (bakedQuads.size()>0)
             return bakedQuads.get(0).getSprite();
 

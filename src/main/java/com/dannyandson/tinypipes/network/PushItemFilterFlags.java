@@ -1,60 +1,46 @@
 package com.dannyandson.tinypipes.network;
 
+import com.dannyandson.tinypipes.TinyPipes;
 import com.dannyandson.tinypipes.blocks.PipeBlockEntity;
 import com.dannyandson.tinypipes.components.IFilterPipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.fml.ModList;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-import java.util.function.Supplier;
+public record PushItemFilterFlags(BlockPos pos, int index, boolean blacklist) implements CustomPacketPayload {
 
-public class PushItemFilterFlags {
-    private final BlockPos pos;
-    private final int index;
-    boolean blacklist;
+    public static final Type<PushItemFilterFlags> TYPE =
+            new Type<>(ResourceLocation.fromNamespaceAndPath(TinyPipes.MODID, "push_item_filter_flags"));
 
-    public PushItemFilterFlags(BlockPos blockPos, Integer index, boolean blacklist){
-        this.pos = blockPos;
-        this.index = index;
-        this.blacklist = blacklist;
-    }
+    public static final StreamCodec<FriendlyByteBuf, PushItemFilterFlags> STREAM_CODEC =
+            StreamCodec.composite(
+                    BlockPos.STREAM_CODEC, PushItemFilterFlags::pos,
+                    ByteBufCodecs.INT, PushItemFilterFlags::index,
+                    ByteBufCodecs.BOOL, PushItemFilterFlags::blacklist,
+                    PushItemFilterFlags::new);
 
-    public PushItemFilterFlags(FriendlyByteBuf buffer)
-    {
-        this.pos= buffer.readBlockPos();
-        this.index =buffer.readInt();
-        this.blacklist =buffer.readBoolean();
-    }
+    @Override
+    public Type<? extends CustomPacketPayload> type() { return TYPE; }
 
-    public void toBytes(FriendlyByteBuf buf)
-    {
-        buf.writeBlockPos(pos);
-        buf.writeInt(index);
-        buf.writeBoolean(blacklist);
-    }
-
-    public boolean handle(Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(()-> {
-            BlockEntity blockEntity = ctx.get().getSender().level().getBlockEntity(pos);
+    public static void handle(PushItemFilterFlags pkt, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> {
+            BlockEntity blockEntity = ctx.player().level().getBlockEntity(pkt.pos());
             IFilterPipe iFilterPipe = null;
-            if (blockEntity instanceof PipeBlockEntity pipeBlockEntity)
-            {
-                if( pipeBlockEntity.getPipe(index) instanceof IFilterPipe pipe )
+            if (blockEntity instanceof PipeBlockEntity pipeBlockEntity) {
+                if (pipeBlockEntity.getPipe(pkt.index()) instanceof IFilterPipe pipe)
+                    iFilterPipe = pipe;
+            } else if (ModList.get().isLoaded("tinyredstone")) {
+                if (TinyPipeNetworkHelper.getPipe(ctx.player().level(), pkt.pos(), pkt.index()) instanceof IFilterPipe pipe)
                     iFilterPipe = pipe;
             }
-            else if(ModList.get().isLoaded("tinyredstone"))
-            {
-                if(TinyPipeNetworkHelper.getPipe(ctx.get().getSender().level(),pos, index) instanceof IFilterPipe pipe)
-                    iFilterPipe = pipe;
-            }
-            if (iFilterPipe!=null)
-                iFilterPipe.serverSetBlacklist(blacklist);
-            ctx.get().setPacketHandled(true);
+            if (iFilterPipe != null)
+                iFilterPipe.serverSetBlacklist(pkt.blacklist());
         });
-        return true;
     }
-
-
 }

@@ -4,17 +4,18 @@ import com.dannyandson.tinypipes.components.tiny.*;
 import com.dannyandson.tinypipes.items.TinyPipeItem;
 import com.dannyandson.tinyredstone.TinyRedstone;
 import net.minecraft.world.item.Item;
-import net.minecraftforge.registries.RegistryObject;
+
+import java.util.function.Supplier;
 
 public class RegistrationTinyRedstone {
 
     //Tiny Redstone Tiny Pipe items
-    public static final RegistryObject<Item> ITEM_PIPE_ITEM = Registration.ITEMS.register("item_pipe", TinyPipeItem::new);
-    public static final RegistryObject<Item> ITEM_FILTER_PIPE_ITEM = Registration.ITEMS.register("item_filter_pipe", TinyPipeItem::new);
-    public static final RegistryObject<Item> FLUID_PIPE_ITEM = Registration.ITEMS.register("fluid_pipe", TinyPipeItem::new);
-    public static final RegistryObject<Item> FLUID_FILTER_PIPE_ITEM = Registration.ITEMS.register("fluid_filter_pipe", TinyPipeItem::new);
-    public static final RegistryObject<Item> ENERGY_PIPE_ITEM = Registration.ITEMS.register("energy_pipe", TinyPipeItem::new);
-    public static final RegistryObject<Item> REDSTONE_PIPE_ITEM = Registration.ITEMS.register("redstone_pipe", TinyPipeItem::new);
+    public static final Supplier<Item> ITEM_PIPE_ITEM = Registration.ITEMS.register("item_pipe", TinyPipeItem::new);
+    public static final Supplier<Item> ITEM_FILTER_PIPE_ITEM = Registration.ITEMS.register("item_filter_pipe", TinyPipeItem::new);
+    public static final Supplier<Item> FLUID_PIPE_ITEM = Registration.ITEMS.register("fluid_pipe", TinyPipeItem::new);
+    public static final Supplier<Item> FLUID_FILTER_PIPE_ITEM = Registration.ITEMS.register("fluid_filter_pipe", TinyPipeItem::new);
+    public static final Supplier<Item> ENERGY_PIPE_ITEM = Registration.ITEMS.register("energy_pipe", TinyPipeItem::new);
+    public static final Supplier<Item> REDSTONE_PIPE_ITEM = Registration.ITEMS.register("redstone_pipe", TinyPipeItem::new);
 
     public static void register(){}
 

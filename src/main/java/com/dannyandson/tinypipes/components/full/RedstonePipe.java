@@ -4,9 +4,6 @@ import com.dannyandson.tinypipes.TinyPipes;
 import com.dannyandson.tinypipes.blocks.PipeBlockEntity;
 import com.dannyandson.tinypipes.blocks.PipeConnectionState;
 import com.dannyandson.tinypipes.components.RenderHelper;
-import com.dannyandson.tinyredstone.blocks.PanelCellNeighbor;
-import com.dannyandson.tinyredstone.blocks.PanelCellPos;
-import com.dannyandson.tinyredstone.blocks.Side;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -32,7 +29,7 @@ public class RedstonePipe extends AbstractFullPipe{
 
     //saved fields
     private Map<Integer,Integer> inputSignals = new HashMap<>();
-    private Map<Integer,Integer> outputSignals = new HashMap<>();
+    private final Map<Integer,Integer> outputSignals = new HashMap<>();
     private final Map<Direction,Integer> frequencies = new HashMap<>();
 
     private boolean updateFlag = false;
@@ -163,7 +160,7 @@ public class RedstonePipe extends AbstractFullPipe{
         }
     }
 
-    public boolean onRemoveNeighbor(PipeBlockEntity pipeBlockEntity, Direction direction) {
+    public void onRemoveNeighbor(PipeBlockEntity pipeBlockEntity, Direction direction) {
         // on remove is called when a neighbor pipe is removed
         for (int frequency : TinyPipes.possibleFrequencies) {
             // if the neighbor pipe was enabled, we need to update the signal considering that the signal is now 0
@@ -172,8 +169,14 @@ public class RedstonePipe extends AbstractFullPipe{
                 onInputSignalChange(pipeBlockEntity, direction, frequency, sint, 0,false, false);
             }
         }
-        return false;
     }
+
+    @Override
+    public boolean neighborChanged(PipeBlockEntity pipeBlockEntity, @Nullable Direction direction) {
+        super.neighborChanged(pipeBlockEntity,direction);
+        return updateSignal(pipeBlockEntity,direction);
+    }
+
 
     public boolean updateSignal(PipeBlockEntity pipeBlockEntity, @Nullable Direction direction) {
         if (direction == null) {
@@ -282,12 +285,6 @@ public class RedstonePipe extends AbstractFullPipe{
                 }
             }
         }
-    }
-
-    @Override
-    public boolean neighborChanged(PipeBlockEntity pipeBlockEntity, @Nullable Direction direction) {
-        super.neighborChanged(pipeBlockEntity,direction);
-        return updateSignal(pipeBlockEntity,direction);
     }
 
     private Map<Integer,Integer> getNetworkRsOutput(PipeBlockEntity pipeBlockEntity, @Nullable Direction side, long queryId) {

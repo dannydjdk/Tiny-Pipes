@@ -22,7 +22,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.SignalGetter;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
@@ -63,11 +62,7 @@ public class PipeBlock extends BaseEntityBlock {
     @SuppressWarnings("deprecation")
     @Override
     public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, BlockPos neighborPos, boolean p_60514_) {
-        // the condition below is to avoid triggering the neighborChanged event when redstone update are done (too many calls)
-        // we need to check that the neighbor block is matching the blockstate of the level
-        if (level.getBlockState(neighborPos).getBlock() != block && level.getBlockState(neighborPos).getBlock() != Blocks.AIR)
-            return;
-        // if the neighbor block is a pipe as argument and is null by blockstate, we uodate using the onRemoveNeighbor method
+         // if the neighbor block is a pipe as argument and is null by blockstate, we update using the onRemoveNeighbor method
         Direction direction = Direction.getNearest(
                 neighborPos.getX() - pos.getX(),
                 neighborPos.getY() - pos.getY(),

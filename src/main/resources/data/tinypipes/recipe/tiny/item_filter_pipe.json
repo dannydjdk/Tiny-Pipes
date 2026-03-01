@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "tinypipes:item_pipe"
+    },
+    {
+      "tag": "c:silicon"
+    },
+    {
+      "item": "minecraft:paper"
+    }
+  ],
+  "result": {
+    "id": "tinypipes:item_filter_pipe",
+    "count": 1
+  }
+}

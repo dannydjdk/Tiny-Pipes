@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "psp"
+  ],
+  "key": {
+    "p": {
+      "item": "tinypipes:full_energy_pipe"
+    },
+    "s": {
+      "tag": "c:silicon"
+    }
+  },
+  "result": {
+    "id": "tinypipes:energy_pipe",
+    "count": 8
+  }
+}

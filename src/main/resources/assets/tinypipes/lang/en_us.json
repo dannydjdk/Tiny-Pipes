@@ -33,6 +33,5 @@
   "tinypipes.gui.pipe_config.msg.pulling":"Pulling: allows input",
   "tinypipes.gui.pipe_config.msg.disabled":"Disabled: no connection, no input/output",
   "tinypipes.tooltip.press_shift": "-- Press Shift for More Info --",
-  "message.item.tiny_pipe": "Can be placed on a Tiny Redstone Panel or in world with other tiny components.",
-  "tinypipes.close": "Close"
+  "message.item.tiny_pipe": "Can be placed on a Tiny Redstone Panel or in world with other tiny components."
 }

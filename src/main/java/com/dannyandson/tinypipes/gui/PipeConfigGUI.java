@@ -7,7 +7,6 @@ import com.dannyandson.tinypipes.components.full.AbstractFullPipe;
 import com.dannyandson.tinypipes.network.ModNetworkHandler;
 import com.dannyandson.tinypipes.network.PushPipeConnection;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -81,7 +80,7 @@ public class PipeConfigGUI extends Screen {
     }
 
     private void toggleConnection(Direction side) {
-        PipeConnectionState state = pipe.togglePipeSide(side);
+        PipeConnectionState state = pipe.togglePipeSide(pipeBlockEntity, side);
 
         ModNetworkHandler.sendToServer(new PushPipeConnection(pipeBlockEntity.getBlockPos(), pipe.slotPos(), side, state));
 

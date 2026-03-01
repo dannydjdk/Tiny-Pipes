@@ -13,6 +13,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -39,7 +40,7 @@ public abstract class AbstractFullPipe implements IPipe {
         return false;
     }
 
-    public boolean neighborChanged(PipeBlockEntity pipeBlockEntity) {
+    public boolean neighborChanged(PipeBlockEntity pipeBlockEntity, @Nullable Direction updateDirection) {
         boolean change = false;
         for(Direction direction : Direction.values()) {
             boolean pipeCluster = false;
@@ -64,6 +65,10 @@ public abstract class AbstractFullPipe implements IPipe {
             pipeBlockEntity.sync();
         }
         return false;
+    }
+
+    public void onRemoveNeighbor(PipeBlockEntity pipeBlockEntity, Direction direction) {
+        this.neighborChanged(pipeBlockEntity, direction);
     }
 
     public Boolean getNeighborIsPipeCluster(Direction direction) {
@@ -99,26 +104,31 @@ public abstract class AbstractFullPipe implements IPipe {
         return (status == null) ? PipeConnectionState.DISABLED : status;
     }
 
-    public PipeConnectionState togglePipeSide(Direction direction) {
+    public PipeConnectionState togglePipeSide(PipeBlockEntity pipeBlockEntity, Direction direction) {
+        PipeConnectionState state;
         if (sideStatusMap.get(direction) == PipeConnectionState.DISABLED || sideStatusMap.get(direction) == null)
-            sideStatusMap.put(direction, PipeConnectionState.ENABLED);
+            state = PipeConnectionState.ENABLED;
         else if (sideStatusMap.get(direction) == PipeConnectionState.ENABLED && neighborHasSamePipeType.get(direction) != null && !neighborHasSamePipeType.get(direction))
-            sideStatusMap.put(direction, PipeConnectionState.PULLING);
+            state = PipeConnectionState.PULLING;
         else
-            sideStatusMap.put(direction, PipeConnectionState.DISABLED);
-        toggled = true;
-        return sideStatusMap.get(direction);
+            state = PipeConnectionState.DISABLED;
+        setConnectionState(pipeBlockEntity, direction, state);
+        return state;
     }
 
-    public void setConnectionState(Direction direction, PipeConnectionState state) {
+    public void setConnectionState(PipeBlockEntity pipeBlockEntity, Direction direction, PipeConnectionState state) {
         sideStatusMap.put(direction, state);
-        toggled = true;
+        if (this instanceof RedstonePipe redstonePipe){
+            redstonePipe.onToggle(pipeBlockEntity, direction);
+        }else {
+            toggled = true;
+        }
     }
 
     public boolean tick(PipeBlockEntity pipeBlockEntity){
         if (toggled) {
             toggled=false;
-            boolean change = neighborChanged(pipeBlockEntity);
+            boolean change = neighborChanged(pipeBlockEntity, null);
             pipeBlockEntity.sync();
             if (change){
                 pipeBlockEntity.getLevel().blockUpdated(pipeBlockEntity.getBlockPos(),pipeBlockEntity.getBlockState().getBlock());

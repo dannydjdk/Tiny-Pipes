@@ -23,7 +23,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.SignalGetter;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
@@ -70,11 +69,23 @@ public class PipeBlock extends BaseEntityBlock {
 
     @SuppressWarnings("deprecation")
     @Override
-    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block p60512, BlockPos neighborPos, boolean p_60514_) {
-        if (level.getBlockEntity(pos) instanceof PipeBlockEntity pipeBlockEntity) {
-            pipeBlockEntity.onNeighborChange();
+    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, BlockPos neighborPos, boolean p_60514_) {
+        // if the neighbor block is a pipe as argument and is null by blockstate, we update using the onRemoveNeighbor method
+        Direction direction = Direction.getNearest(
+                neighborPos.getX() - pos.getX(),
+                neighborPos.getY() - pos.getY(),
+                neighborPos.getZ() - pos.getZ()
+        );
+        if (level.getBlockState(neighborPos).getBlock() == Blocks.AIR && block instanceof PipeBlock && level.getBlockEntity(pos) instanceof PipeBlockEntity pipeBlockEntity) {
+            for (AbstractFullPipe pipe : pipeBlockEntity.getPipes()) {
+                pipe.onRemoveNeighbor(pipeBlockEntity, direction);
+            }
+            return;
         }
-        super.neighborChanged(state, level, pos, p60512, neighborPos, p_60514_);
+        if (level.getBlockEntity(pos) instanceof PipeBlockEntity pipeBlockEntity) {
+            pipeBlockEntity.onNeighborChange(direction);
+        }
+        super.neighborChanged(state, level, pos, block, neighborPos, p_60514_);
     }
 
     @Override
@@ -169,8 +180,8 @@ public class PipeBlock extends BaseEntityBlock {
                 if (pipe!=null) {
                     if (!player.isCreative())
                         heldStack.setCount(heldStack.getCount()-1);
-                    pipe.togglePipeSide(Direction.orderedByNearest(player)[0]);
-                    pipe.togglePipeSide(Direction.orderedByNearest(player)[0].getOpposite());
+                    pipe.togglePipeSide(pipeBlockEntity, Direction.orderedByNearest(player)[0]);
+                    pipe.togglePipeSide(pipeBlockEntity, Direction.orderedByNearest(player)[0].getOpposite());
                     return InteractionResult.CONSUME;
                 }
             } else if (heldStack.is(ItemTags.create(ResourceLocation.fromNamespaceAndPath("c", "tools/wrench")))) {
@@ -187,14 +198,16 @@ public class PipeBlock extends BaseEntityBlock {
                 }
                 PipeSide pipeSide = pipeBlockEntity.getPipeAtHitVector(hitResult);
                 if (pipeSide!=null){
-                    pipeSide.toggleSideStatus();
+                    pipeSide.toggleSideStatus(pipeBlockEntity);
                 }
                 return InteractionResult.CONSUME;
             } else if (heldStack.getItem() instanceof DyeItem dyeItem) {
                 PipeSide pipeSide = pipeBlockEntity.getPipeAtHitVector(hitResult);
                 if (pipeSide!=null && pipeSide.getPipe() instanceof RedstonePipe redstonePipe){
-                    redstonePipe.setColor(pipeSide.getDirection(),dyeItem.getDyeColor().getId());
-                    redstonePipe.neighborChanged(pipeBlockEntity);
+                    // set the new frequency signal and update the pipe block regarding the old frequency signal in the pipe network
+                    redstonePipe.setColor(pipeBlockEntity, pipeSide.getDirection(), dyeItem.getDyeColor().getId());
+                    // update the pipe block regarding the new frequency signal in the pipe network
+                    redstonePipe.neighborChanged(pipeBlockEntity, pipeSide.getDirection());
                     level.blockUpdated(pos,this);
                 }
                 return InteractionResult.CONSUME;

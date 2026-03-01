@@ -91,6 +91,24 @@ public abstract class AbstractTinyPipe implements IPanelCell, IPipe {
         connectedSides.add(Side.FRONT);
         connectedSides.add(Side.BACK);
 
+        Side side1 = connectedSides.get(0);
+        Side side2 = connectedSides.get(1);
+        PanelCellNeighbor neighbor1 = cellPos.getNeighbor(side1);
+        PanelCellNeighbor neighbor2 = cellPos.getNeighbor(side2);
+
+        //check the connected state of neighbor pipe
+        if (neighbor1 != null && neighbor1.getNeighborIPanelCell() instanceof AbstractTinyPipe neighborPipe1) {
+            if (neighborPipe1.getSideConnection(side1.getOpposite()) == PipeConnectionState.PULLING) {
+                neighborPipe1.setConnectionState(cellPos.offset(side1), side1.getOpposite(), PipeConnectionState.ENABLED);
+            }
+        }
+        //check the connected state of neighbor pipe
+        if (neighbor2 != null && neighbor2.getNeighborIPanelCell() instanceof AbstractTinyPipe neighborPipe2) {
+            if (neighborPipe2.getSideConnection(side2.getOpposite()) == PipeConnectionState.PULLING) {
+                neighborPipe2.setConnectionState(cellPos.offset(side2), side2.getOpposite(), PipeConnectionState.ENABLED);
+            }
+        }
+
         return false;
     }
 

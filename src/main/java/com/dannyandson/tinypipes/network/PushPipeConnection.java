@@ -45,7 +45,7 @@ public record PushPipeConnection(BlockPos pos, int index, int sideOrdinal, int s
             if (blockEntity instanceof PipeBlockEntity pipeBlockEntity) {
                 AbstractFullPipe pipe = pipeBlockEntity.getPipe(pkt.index());
                 if (pipe != null) {
-                    pipe.setConnectionState(pkt.side(), pkt.connectionState());
+                    pipe.setConnectionState(pipeBlockEntity, pkt.side(), pkt.connectionState());
                 }
             } else if (ModList.get().isLoaded("tinyredstone")) {
                 TinyPipeNetworkHelper.setTinyPipeSideState(ctx.player().level(), pkt.pos(), pkt.index(), pkt.side(), pkt.connectionState());

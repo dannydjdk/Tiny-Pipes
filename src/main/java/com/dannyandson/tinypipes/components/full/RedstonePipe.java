@@ -160,6 +160,7 @@ public class RedstonePipe extends AbstractFullPipe{
         }
     }
 
+    @Override
     public void onRemoveNeighbor(PipeBlockEntity pipeBlockEntity, Direction direction) {
         // on remove is called when a neighbor pipe is removed
         for (int frequency : TinyPipes.possibleFrequencies) {
@@ -169,6 +170,7 @@ public class RedstonePipe extends AbstractFullPipe{
                 onInputSignalChange(pipeBlockEntity, direction, frequency, sint, 0,false, false);
             }
         }
+        super.onRemoveNeighbor(pipeBlockEntity,direction);
     }
 
     @Override

@@ -67,6 +67,10 @@ public abstract class AbstractFullPipe implements IPipe {
         return false;
     }
 
+    public void onRemoveNeighbor(PipeBlockEntity pipeBlockEntity, Direction direction) {
+        this.neighborChanged(pipeBlockEntity,direction);
+    }
+
     public Boolean getNeighborIsPipeCluster(Direction direction) {
         return neighborIsPipeCluster.get(direction)!=null && neighborIsPipeCluster.get(direction);
     }

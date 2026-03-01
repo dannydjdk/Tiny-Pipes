@@ -69,9 +69,8 @@ public class PipeBlock extends BaseEntityBlock {
                 neighborPos.getZ() - pos.getZ()
         );
         if (level.getBlockState(neighborPos).getBlock() == Blocks.AIR && block instanceof PipeBlock && level.getBlockEntity(pos) instanceof PipeBlockEntity pipeBlockEntity) {
-            if (pipeBlockEntity.getPipe(3) != null) { // if the pipe is a redstone pipe, we call the onRemoveNeighbor method
-                RedstonePipe redstonePipe = (RedstonePipe) pipeBlockEntity.getPipe(3);
-                redstonePipe.onRemoveNeighbor(pipeBlockEntity,direction);
+            for (AbstractFullPipe pipe : pipeBlockEntity.getPipes()) {
+                pipe.onRemoveNeighbor(pipeBlockEntity, direction);
             }
             return;
         }

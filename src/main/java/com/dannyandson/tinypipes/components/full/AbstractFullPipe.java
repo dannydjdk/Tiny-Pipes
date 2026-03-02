@@ -118,6 +118,7 @@ public abstract class AbstractFullPipe implements IPipe {
 
     public void setConnectionState(PipeBlockEntity pipeBlockEntity, Direction direction, PipeConnectionState state) {
         sideStatusMap.put(direction, state);
+        pipeBlockEntity.markRenderDirty();
         if (this instanceof RedstonePipe redstonePipe){
             redstonePipe.onToggle(pipeBlockEntity, direction);
         }else {

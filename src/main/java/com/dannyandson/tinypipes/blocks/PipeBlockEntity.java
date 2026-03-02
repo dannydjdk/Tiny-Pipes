@@ -2,6 +2,7 @@ package com.dannyandson.tinypipes.blocks;
 
 import com.dannyandson.tinypipes.TinyPipes;
 import com.dannyandson.tinypipes.api.Registry;
+import com.dannyandson.tinypipes.blocks.rendering.CachedPipeRenderer;
 import com.dannyandson.tinypipes.components.RenderHelper;
 import com.dannyandson.tinypipes.components.full.AbstractFullPipe;
 import com.dannyandson.tinypipes.components.full.PipeSide;
@@ -41,8 +42,33 @@ public class PipeBlockEntity extends BlockEntity {
     private BlockState camouflageBlockState=null;
     private Map<Direction,TextureAtlasSprite> camouflageSprites =new HashMap<>();
 
+    // Vertex caching for full-pipe rendering (client-side only, lazy-initialized)
+    private Object cachedRenderer = null;
+
     public PipeBlockEntity(BlockPos pos, BlockState state) {
         super(Registration.PIPE_BLOCK_ENTITY.get(), pos, state);
+    }
+
+    /**
+     * Get the cached renderer for this block entity. Client-side only.
+     * Lazy-initialized to avoid loading client rendering classes on the dedicated server.
+     */
+    public CachedPipeRenderer getCachedRenderer() {
+        if (cachedRenderer == null) {
+            cachedRenderer = new CachedPipeRenderer();
+        }
+        return (CachedPipeRenderer) cachedRenderer;
+    }
+
+    /**
+     * Mark the render cache as dirty, forcing a rebuild on the next frame.
+     * Must be called from any code path that changes visual state.
+     * Safe to call on either side — no-ops on the server since the cache won't exist.
+     */
+    public void markRenderDirty() {
+        if (cachedRenderer != null) {
+            ((CachedPipeRenderer) cachedRenderer).markDirty();
+        }
     }
 
     public boolean slotUsed(int slot){
@@ -91,6 +117,7 @@ public class PipeBlockEntity extends BlockEntity {
         pipe.onPlace(this, itemStack);
         this.centerSprite=null;
         refresh=true;
+        markRenderDirty();
         sync();
         return pipe;
     }
@@ -98,6 +125,7 @@ public class PipeBlockEntity extends BlockEntity {
     public boolean removePipe(AbstractFullPipe pipe){
         if(pipes.remove(pipe.slotPos())!=null){
             this.centerSprite=null;
+            markRenderDirty();
             if (pipes.size()==0)
                 level.removeBlock(worldPosition,false);
             else {
@@ -113,6 +141,7 @@ public class PipeBlockEntity extends BlockEntity {
     public void setCamouflage(BlockState camouflageBlockState){
         this.camouflageBlockState=camouflageBlockState;
         camouflageSprites.clear();
+        markRenderDirty();
         sync();
     }
 
@@ -161,6 +190,9 @@ public class PipeBlockEntity extends BlockEntity {
                 TinyPipes.LOGGER.error("Exception attempting to read camouflage nbt.", exception);
             }
         }
+        // Invalidate render cache on NBT load (world load or server->client sync)
+        this.centerSprite = null;
+        markRenderDirty();
     }
 
     @Override
@@ -277,6 +309,15 @@ public class PipeBlockEntity extends BlockEntity {
 
         if (pipeCount() == 0)
             level.removeBlock(worldPosition, false);
+    }
+
+    @Override
+    public void setRemoved() {
+        super.setRemoved();
+        if (cachedRenderer != null) {
+            ((CachedPipeRenderer) cachedRenderer).clear();
+            cachedRenderer = null;
+        }
     }
 
     public void onNeighborChange(@Nullable Direction direction) {

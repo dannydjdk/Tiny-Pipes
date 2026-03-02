@@ -8,7 +8,6 @@ import com.dannyandson.tinypipes.network.PushPipeConnection;
 import com.dannyandson.tinyredstone.blocks.PanelCellPos;
 import com.dannyandson.tinyredstone.blocks.Side;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -33,7 +32,7 @@ public class TinyPipeConfigGUI extends Screen {
     private Map<Side,Integer> xLocations = new HashMap<>();
     private Map<Side,Integer> yLocations = new HashMap<>();
 
-    private final ResourceLocation GUI = ResourceLocation.fromNamespaceAndPath(TinyPipes.MODID, "textures/gui/transparent.png");
+    private static final ResourceLocation GUI = ResourceLocation.fromNamespaceAndPath(TinyPipes.MODID, "textures/gui/transparent.png");
 
     protected TinyPipeConfigGUI(PanelCellPos cellPos, AbstractTinyPipe tinyPipe) {
         super(Component.translatable("tinypipes:pipeconfiggui"));

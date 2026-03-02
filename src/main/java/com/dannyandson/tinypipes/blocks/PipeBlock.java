@@ -42,6 +42,8 @@ import org.jetbrains.annotations.Nullable;
 public class PipeBlock extends BaseEntityBlock {
 
     public static final MapCodec<PipeBlock> CODEC = simpleCodec(p -> new PipeBlock());
+    private static final net.minecraft.tags.TagKey<Item> WRENCH_TAG =
+            ItemTags.create(ResourceLocation.fromNamespaceAndPath("c", "tools/wrench"));
 
     public PipeBlock() {
         super(Properties.of()
@@ -184,7 +186,7 @@ public class PipeBlock extends BaseEntityBlock {
                     pipe.togglePipeSide(pipeBlockEntity, Direction.orderedByNearest(player)[0].getOpposite());
                     return InteractionResult.CONSUME;
                 }
-            } else if (heldStack.is(ItemTags.create(ResourceLocation.fromNamespaceAndPath("c", "tools/wrench")))) {
+            } else if (heldStack.is(WRENCH_TAG)) {
                 if (player.getOffhandItem().getItem() instanceof BlockItem blockItem){
                     BlockState blockState1 = blockItem.getBlock().getStateForPlacement(new BlockPlaceContext(level,player,InteractionHand.MAIN_HAND,player.getOffhandItem(),hitResult));
                     boolean isFullBlock = blockState1.isCollisionShapeFullBlock(level, pos);
@@ -234,7 +236,7 @@ public class PipeBlock extends BaseEntityBlock {
     public void attack(BlockState state, Level level, BlockPos pos, Player player) {
         if (level.getBlockEntity(pos) instanceof PipeBlockEntity pipeBlockEntity) {
             ItemStack heldStack = player.getMainHandItem();
-            if (heldStack.is(ItemTags.create(ResourceLocation.fromNamespaceAndPath("c", "tools/wrench"))) || Registry.getFullPipeClassFromItem(heldStack.getItem()) != null) {
+            if (heldStack.is(WRENCH_TAG) || Registry.getFullPipeClassFromItem(heldStack.getItem()) != null) {
                 if (pipeBlockEntity.getCamouflageBlockState() != null) {
                     ItemStack itemStack = pipeBlockEntity.getCamouflageBlockState().getBlock().asItem().getDefaultInstance();
                     pipeBlockEntity.setCamouflage(null);

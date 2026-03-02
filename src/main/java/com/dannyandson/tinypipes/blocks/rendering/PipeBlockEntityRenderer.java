@@ -1,6 +1,8 @@
-package com.dannyandson.tinypipes.blocks;
+package com.dannyandson.tinypipes.blocks.rendering;
 
 import com.dannyandson.tinypipes.Config;
+import com.dannyandson.tinypipes.blocks.PipeBlockEntity;
+import com.dannyandson.tinypipes.blocks.PipeConnectionState;
 import com.dannyandson.tinypipes.components.RenderHelper;
 import com.dannyandson.tinypipes.components.full.AbstractCapFullPipe;
 import com.dannyandson.tinypipes.components.full.AbstractFullPipe;
@@ -14,7 +16,6 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.Direction;
-import net.minecraft.world.level.block.state.BlockState;
 
 public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEntity> {
 
@@ -22,7 +23,29 @@ public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEnt
     }
 
     @Override
-    public void render(PipeBlockEntity pipeBlockEntity, float p_112308_, PoseStack poseStack, MultiBufferSource buffer, int combinedLight, int combinedOverlay) {
+    public void render(PipeBlockEntity pipeBlockEntity, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int combinedLight, int combinedOverlay) {
+        CachedPipeRenderer cache = pipeBlockEntity.getCachedRenderer();
+
+        // Check if we need to rebuild the cache
+        if (cache.isDirty() || cache.lightChanged(combinedLight)) {
+            cache.rebuild(
+                    (capturePoseStack, captureBuffer) ->
+                            renderGeometry(pipeBlockEntity, capturePoseStack, captureBuffer, combinedLight, combinedOverlay),
+                    combinedLight
+            );
+        }
+
+        // Replay cached vertices with the real PoseStack (applies block-to-world transform)
+        cache.replay(poseStack, buffer, combinedLight);
+    }
+
+    /**
+     * The actual geometry generation logic.
+     * Called during cache rebuild with a capture PoseStack (identity) and capture buffer.
+     * Positions are baked into block-local space during capture; on replay only the
+     * block-to-world transform from the real PoseStack is applied.
+     */
+    private void renderGeometry(PipeBlockEntity pipeBlockEntity, PoseStack poseStack, MultiBufferSource buffer, int combinedLight, int combinedOverlay) {
         VertexConsumer builder = buffer.getBuffer(RenderType.solid());
 
         if(pipeBlockEntity.getCamouflageBlockState()!=null) {

@@ -12,12 +12,15 @@ import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 @EventBusSubscriber(modid = TinyPipes.MODID)
 public class CommonBinding {
 
+    private static final net.minecraft.tags.TagKey<net.minecraft.world.item.Item> WRENCH_TAG =
+            ItemTags.create(ResourceLocation.fromNamespaceAndPath("c", "tools/wrench"));
+
     @SubscribeEvent
     public static void onLeftClickBlock(PlayerInteractEvent.LeftClickBlock event) {
         if (event.getEntity().isCreative() &&
                 event.getEntity().level().getBlockState(event.getPos()).getBlock() instanceof PipeBlock pipeBlock &&
                 (
-                        event.getEntity().getMainHandItem().is(ItemTags.create(ResourceLocation.fromNamespaceAndPath("c", "tools/wrench"))) ||
+                        event.getEntity().getMainHandItem().is(WRENCH_TAG) ||
                                 Registry.getFullPipeClassFromItem(event.getEntity().getMainHandItem().getItem()) != null
                 )
         ) {
@@ -29,7 +32,7 @@ public class CommonBinding {
     @SubscribeEvent
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event)
     {
-        if (event.getEntity().isCrouching() && event.getEntity().getMainHandItem().is(ItemTags.create(ResourceLocation.fromNamespaceAndPath("c", "tools/wrench"))))
+        if (event.getEntity().isCrouching() && event.getEntity().getMainHandItem().is(WRENCH_TAG))
         {
             if (event.getEntity().level().getBlockEntity(event.getPos()) instanceof PipeBlockEntity pipeBlockEntity)
             {

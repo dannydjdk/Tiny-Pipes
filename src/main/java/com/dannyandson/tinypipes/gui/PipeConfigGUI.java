@@ -31,7 +31,7 @@ public class PipeConfigGUI extends Screen {
     private Map<Direction,Integer> xLocations = new HashMap<>();
     private Map<Direction,Integer> yLocations = new HashMap<>();
 
-    private final ResourceLocation GUI = ResourceLocation.fromNamespaceAndPath(TinyPipes.MODID, "textures/gui/transparent.png");
+    private static final ResourceLocation GUI = ResourceLocation.fromNamespaceAndPath(TinyPipes.MODID, "textures/gui/transparent.png");
 
     protected PipeConfigGUI(PipeBlockEntity pipeBlockEntity, AbstractFullPipe tinyPipe) {
         super(Component.translatable("tinypipes:pipeconfiggui"));

@@ -1,7 +1,7 @@
 package com.dannyandson.tinypipes.setup;
 
 import com.dannyandson.tinypipes.TinyPipes;
-import com.dannyandson.tinypipes.blocks.PipeBlockEntityRenderer;
+import com.dannyandson.tinypipes.blocks.rendering.PipeBlockEntityRenderer;
 import com.dannyandson.tinypipes.gui.ItemFilterGUI;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;

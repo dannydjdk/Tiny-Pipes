@@ -80,7 +80,7 @@ public class PipeConfigGUI extends Screen {
     }
 
     private void toggleConnection(Direction side) {
-        PipeConnectionState state = pipe.togglePipeSide(side);
+        PipeConnectionState state = pipe.togglePipeSide(pipeBlockEntity, side);
 
         ModNetworkHandler.sendToServer(new PushPipeConnection(pipeBlockEntity.getBlockPos(), pipe.slotPos(), side, state));
 

@@ -277,7 +277,7 @@ public class PipeBlockEntity extends BlockEntity {
 
         if (refresh) {
             update=true;
-            onNeighborChange();
+            onNeighborChange(null);
             refresh=false;
         }
         if (update) {
@@ -290,8 +290,8 @@ public class PipeBlockEntity extends BlockEntity {
         //level.destroyBlock(worldPosition, false);
     }
 
-    public void onNeighborChange() {
+    public void onNeighborChange(@Nullable Direction direction) {
         for (AbstractFullPipe pipe : pipes.values())
-            pipe.neighborChanged(this);
+            pipe.neighborChanged(this,direction);
     }
 }

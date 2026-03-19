@@ -147,15 +147,41 @@ public abstract class AbstractFullPipe implements IPipe {
     }
 
     public PipeConnectionState togglePipeSide(PipeBlockEntity pipeBlockEntity, Direction direction) {
-        PipeConnectionState state;
-        if (sideStatusMap.get(direction) == PipeConnectionState.DISABLED || sideStatusMap.get(direction) == null)
-            state = PipeConnectionState.ENABLED;
-        else if (sideStatusMap.get(direction) == PipeConnectionState.ENABLED && neighborHasSamePipeType.get(direction) != null && !neighborHasSamePipeType.get(direction))
-            state = PipeConnectionState.PULLING;
-        else
-            state = PipeConnectionState.DISABLED;
+        PipeConnectionState state = getNextToggleState(direction);
         setConnectionState(pipeBlockEntity, direction, state);
         return state;
+    }
+
+    /**
+     * Computes the next toggle state for a side without any side effects.
+     * Safe to call on the client for GUI purposes.
+     */
+    public PipeConnectionState getNextToggleState(Direction direction) {
+        if (sideStatusMap.get(direction) == PipeConnectionState.DISABLED || sideStatusMap.get(direction) == null)
+            return PipeConnectionState.ENABLED;
+        else if (sideStatusMap.get(direction) == PipeConnectionState.ENABLED && neighborHasSamePipeType.get(direction) != null && !neighborHasSamePipeType.get(direction))
+            return PipeConnectionState.PULLING;
+        else
+            return PipeConnectionState.DISABLED;
+    }
+
+    /**
+     * Computes the previous toggle state (reverse direction) without side effects.
+     * Forward:  DISABLED → ENABLED → PULLING → DISABLED
+     * Reverse:  DISABLED → PULLING → ENABLED → DISABLED
+     */
+    public PipeConnectionState getPrevToggleState(Direction direction) {
+        PipeConnectionState current = sideStatusMap.get(direction);
+        if (current == PipeConnectionState.DISABLED || current == null) {
+            // DISABLED → PULLING if the neighbor is not the same pipe type, else ENABLED
+            if (neighborHasSamePipeType.get(direction) != null && !neighborHasSamePipeType.get(direction))
+                return PipeConnectionState.PULLING;
+            else
+                return PipeConnectionState.ENABLED;
+        } else if (current == PipeConnectionState.PULLING)
+            return PipeConnectionState.ENABLED;
+        else
+            return PipeConnectionState.DISABLED;
     }
 
     public void setConnectionState(PipeBlockEntity pipeBlockEntity, Direction direction, PipeConnectionState state) {
@@ -210,27 +236,27 @@ public abstract class AbstractFullPipe implements IPipe {
     }
 
     public void readNBT(CompoundTag compoundTag) {
-            try {
-                if (compoundTag.contains("sideStatus")) {
-                    for (String key : compoundTag.getCompound("sideStatus").getAllKeys()) {
-                        Direction direction = Direction.valueOf(key);
-                        PipeConnectionState status = PipeConnectionState.valueOf(compoundTag.getCompound("sideStatus").getString(key));
-                        sideStatusMap.put(direction, status);
-                    }
+        try {
+            if (compoundTag.contains("sideStatus")) {
+                for (String key : compoundTag.getCompound("sideStatus").getAllKeys()) {
+                    Direction direction = Direction.valueOf(key);
+                    PipeConnectionState status = PipeConnectionState.valueOf(compoundTag.getCompound("sideStatus").getString(key));
+                    sideStatusMap.put(direction, status);
                 }
-                if (compoundTag.contains("neighborIsPipeCluster")){
-                    for (String side : compoundTag.getCompound("neighborIsPipeCluster").getAllKeys()) {
-                        neighborIsPipeCluster.put(Direction.valueOf(side), compoundTag.getCompound("neighborIsPipeCluster").getBoolean(side));
-                    }
-                }
-                if (compoundTag.contains("neighborHasSamePipeType")){
-                    for (String side : compoundTag.getCompound("neighborHasSamePipeType").getAllKeys()) {
-                        neighborHasSamePipeType.put(Direction.valueOf(side), compoundTag.getCompound("neighborHasSamePipeType").getBoolean(side));
-                    }
-                }
-
-            }catch (IllegalArgumentException exception){
-                TinyPipes.LOGGER.error("Exception attempting to read pipe direction from NBT.", exception);
             }
+            if (compoundTag.contains("neighborIsPipeCluster")){
+                for (String side : compoundTag.getCompound("neighborIsPipeCluster").getAllKeys()) {
+                    neighborIsPipeCluster.put(Direction.valueOf(side), compoundTag.getCompound("neighborIsPipeCluster").getBoolean(side));
+                }
+            }
+            if (compoundTag.contains("neighborHasSamePipeType")){
+                for (String side : compoundTag.getCompound("neighborHasSamePipeType").getAllKeys()) {
+                    neighborHasSamePipeType.put(Direction.valueOf(side), compoundTag.getCompound("neighborHasSamePipeType").getBoolean(side));
+                }
+            }
+
+        }catch (IllegalArgumentException exception){
+            TinyPipes.LOGGER.error("Exception attempting to read pipe direction from NBT.", exception);
+        }
     }
 }

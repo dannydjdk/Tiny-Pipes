@@ -29,9 +29,12 @@
   "item.tinypipes.speed_upgrade": "Pipe Speed Upgrade",
   "message.item.tinypipes.speed_upgrade": "Use on a full sized pipe connection to increase it's speed by _speed_upgrade_multiplier_x.\nOnly required on sending pipe and receiving pipe.\nUp to _speed_upgrade_max_ upgrades can be applied to multiply the speed increase.",
   "tinypipes.gui.pipe_config": "Pipe Connection Configuration",
+  "tinypipes.gui.full_pipe_config": "%s Connection Configuration",
+  "tinypipes.gui.pipe_config.hint": "Click a side indicator to toggle \u2022 Drag to rotate",
   "tinypipes.gui.pipe_config.msg.enabled": "Enabled: outputs and connects to other pipes",
   "tinypipes.gui.pipe_config.msg.pulling":"Pulling: allows input",
   "tinypipes.gui.pipe_config.msg.disabled":"Disabled: no connection, no input/output",
   "tinypipes.tooltip.press_shift": "-- Press Shift for More Info --",
-  "message.item.tiny_pipe": "Can be placed on a Tiny Redstone Panel or in world with other tiny components."
+  "message.item.tiny_pipe": "Can be placed on a Tiny Redstone Panel or in world with other tiny components.",
+  "tinypipes.close": "Close"
 }

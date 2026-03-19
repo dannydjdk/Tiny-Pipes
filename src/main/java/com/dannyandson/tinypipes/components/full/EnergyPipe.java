@@ -32,6 +32,11 @@ public class EnergyPipe extends AbstractCapFullPipe<IEnergyStorage>{
     }
 
     @Override
+    protected boolean canAutoConnectTo(net.minecraft.world.level.Level level, BlockPos neighborPos, Direction direction) {
+        return ModCapabilityManager.getIEnergyStorage(level, neighborPos, direction.getOpposite()) != null;
+    }
+
+    @Override
     public boolean tick(PipeBlockEntity pipeBlockEntity) {
         if (disabled) return false;
         super.tick(pipeBlockEntity);

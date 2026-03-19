@@ -182,8 +182,7 @@ public class PipeBlock extends BaseEntityBlock {
                 if (pipe!=null) {
                     if (!player.isCreative())
                         heldStack.setCount(heldStack.getCount()-1);
-                    pipe.togglePipeSide(pipeBlockEntity, Direction.orderedByNearest(player)[0]);
-                    pipe.togglePipeSide(pipeBlockEntity, Direction.orderedByNearest(player)[0].getOpposite());
+                    pipe.autoConnectOnPlace(pipeBlockEntity);
                     return InteractionResult.CONSUME;
                 }
             } else if (heldStack.is(WRENCH_TAG)) {

@@ -47,6 +47,12 @@ public class RedstonePipe extends AbstractFullPipe{
         return 3;
     }
 
+    @Override
+    protected boolean canAutoConnectTo(Level level, BlockPos neighborPos, Direction direction) {
+        BlockState neighborState = level.getBlockState(neighborPos);
+        return neighborState.getBlock().canConnectRedstone(neighborState, level, neighborPos, direction.getOpposite());
+    }
+
     @CheckForNull
     public Integer getColor(Direction side) {
         if (getNeighborHasSamePipeType(side)==null || getNeighborHasSamePipeType(side)) return null;

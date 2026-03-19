@@ -8,10 +8,12 @@ import com.dannyandson.tinypipes.gui.PipeConfigGUI;
 import com.dannyandson.tinypipes.setup.ClientSetup;
 
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -37,6 +39,46 @@ public abstract class AbstractFullPipe implements IPipe {
     }
 
     public boolean onPlace(PipeBlockEntity pipeBlockEntity, ItemStack itemStack){
+        return false;
+    }
+
+    /**
+     * Called on pipe placement to automatically enable sides facing compatible neighbors.
+     * Connects to adjacent PipeBlocks that contain the same pipe type (and enables the neighbor's side too),
+     * and to non-pipe blocks that this pipe type can interface with.
+     */
+    public void autoConnectOnPlace(PipeBlockEntity pipeBlockEntity) {
+        Level level = pipeBlockEntity.getLevel();
+        BlockPos pos = pipeBlockEntity.getBlockPos();
+
+        for (Direction direction : Direction.values()) {
+            BlockPos neighborPos = pos.relative(direction);
+
+            if (level.getBlockEntity(neighborPos) instanceof PipeBlockEntity neighborBE) {
+                AbstractFullPipe neighborPipe = neighborBE.getPipe(this.slotPos());
+                if (neighborPipe != null) {
+                    // Enable our side toward the matching neighbor pipe
+                    setConnectionState(pipeBlockEntity, direction, PipeConnectionState.ENABLED);
+                    // Enable the neighbor's side toward us if it is currently disabled
+                    if (neighborPipe.getPipeSideStatus(direction.getOpposite()) == PipeConnectionState.DISABLED) {
+                        neighborPipe.setConnectionState(neighborBE, direction.getOpposite(), PipeConnectionState.ENABLED);
+                    }
+                }
+            } else if (canAutoConnectTo(level, neighborPos, direction)) {
+                setConnectionState(pipeBlockEntity, direction, PipeConnectionState.ENABLED);
+            }
+        }
+    }
+
+    /**
+     * Check whether this pipe type can interface with the non-pipe block at the given position.
+     * Override in subclasses to check for appropriate capabilities or block properties.
+     * @param level the world
+     * @param neighborPos position of the adjacent block
+     * @param direction direction from this pipe toward the neighbor
+     * @return true if this pipe should auto-connect to the neighbor
+     */
+    protected boolean canAutoConnectTo(Level level, BlockPos neighborPos, Direction direction) {
         return false;
     }
 

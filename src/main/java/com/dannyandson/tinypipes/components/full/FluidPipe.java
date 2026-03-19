@@ -34,6 +34,11 @@ public class FluidPipe extends AbstractCapFullPipe<IFluidHandler>{
     }
 
     @Override
+    protected boolean canAutoConnectTo(net.minecraft.world.level.Level level, BlockPos neighborPos, Direction direction) {
+        return ModCapabilityManager.getIFluidHandler(level, neighborPos, direction.getOpposite()) != null;
+    }
+
+    @Override
     public boolean tick(PipeBlockEntity pipeBlockEntity) {
         if (disabled) return false;
 

@@ -23,6 +23,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.SignalGetter;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
@@ -88,6 +89,16 @@ public class PipeBlock extends BaseEntityBlock {
             pipeBlockEntity.onNeighborChange(direction);
         }
         super.neighborChanged(state, level, pos, block, neighborPos, p_60514_);
+    }
+
+    @Override
+    public void onNeighborChange(BlockState state, LevelReader levelReader, BlockPos pos, BlockPos neighborPos) {
+        if (levelReader instanceof Level level && level.isClientSide) {
+            if (level.getBlockEntity(pos) instanceof PipeBlockEntity pipeBlockEntity
+                    && pipeBlockEntity.getCamouflageBlockState() != null) {
+                pipeBlockEntity.markRenderDirty();
+            }
+        }
     }
 
     @Override

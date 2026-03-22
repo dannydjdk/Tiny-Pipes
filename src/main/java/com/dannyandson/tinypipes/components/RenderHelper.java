@@ -14,6 +14,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.block.state.BlockState;
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
 import java.util.List;
 
@@ -73,28 +74,68 @@ public class RenderHelper {
     }
 
     public static void drawRectangle(VertexConsumer builder, PoseStack matrixStack, float x1, float x2, float y1, float y2, float u0, float u1, float v0, float v1, int combinedLight , int color, float alpha){
+        // Compute the local face normal from the quad's winding order.
+        // Vertices are emitted in order (x1,y1), (x2,y1), (x2,y2), (x1,y2) in the XY plane at z=0.
+        // The cross product of edge1 × edge2 gives (0, 0, (x2-x1)*(y2-y1)), so the local normal
+        // is +Z or -Z depending on whether the parameters are ascending or descending.
+        float localNz = Math.signum((x2 - x1) * (y2 - y1));
+        Vector3f normal = matrixStack.last().normal().transform(new Vector3f(0, 0, localNz));
+        normal.normalize();
+
+        int shadedColor = applyShade(color, getShadeFromNormal(normal.x, normal.y, normal.z));
         Matrix4f matrix4f = matrixStack.last().pose();
-        add(builder, matrix4f, x1, y1, 0, u0, v0, combinedLight, color, alpha);
-        add(builder, matrix4f, x2, y1, 0, u1, v0, combinedLight, color, alpha);
-        add(builder, matrix4f, x2, y2, 0, u1, v1, combinedLight, color, alpha);
-        add(builder, matrix4f, x1, y2, 0, u0, v1, combinedLight, color, alpha);
+        add(builder, matrix4f, x1, y1, 0, u0, v0, combinedLight, shadedColor, alpha, normal.x, normal.y, normal.z);
+        add(builder, matrix4f, x2, y1, 0, u1, v0, combinedLight, shadedColor, alpha, normal.x, normal.y, normal.z);
+        add(builder, matrix4f, x2, y2, 0, u1, v1, combinedLight, shadedColor, alpha, normal.x, normal.y, normal.z);
+        add(builder, matrix4f, x1, y2, 0, u0, v1, combinedLight, shadedColor, alpha, normal.x, normal.y, normal.z);
     }
 
     public static void drawRectangle2(VertexConsumer builder, PoseStack matrixStack, float x1, float x2, float y1, float y2, TextureAtlasSprite sprite, int combinedLight , int color, float alpha){
+        float localNz = Math.signum((x2 - x1) * (y2 - y1));
+        Vector3f normal = matrixStack.last().normal().transform(new Vector3f(0, 0, localNz));
+        normal.normalize();
+
+        int shadedColor = applyShade(color, getShadeFromNormal(normal.x, normal.y, normal.z));
         Matrix4f matrix4f = matrixStack.last().pose();
-        add(builder, matrix4f, x1, y1, 0, sprite.getU0(), sprite.getV1(), combinedLight, color, alpha);
-        add(builder, matrix4f, x2, y1, 0, sprite.getU1(), sprite.getV1(), combinedLight, color, alpha);
-        add(builder, matrix4f, x2, y2, 0, sprite.getU1(), sprite.getV0(), combinedLight, color, alpha);
-        add(builder, matrix4f, x1, y2, 0, sprite.getU0(), sprite.getV0(), combinedLight, color, alpha);
+        add(builder, matrix4f, x1, y1, 0, sprite.getU0(), sprite.getV1(), combinedLight, shadedColor, alpha, normal.x, normal.y, normal.z);
+        add(builder, matrix4f, x2, y1, 0, sprite.getU1(), sprite.getV1(), combinedLight, shadedColor, alpha, normal.x, normal.y, normal.z);
+        add(builder, matrix4f, x2, y2, 0, sprite.getU1(), sprite.getV0(), combinedLight, shadedColor, alpha, normal.x, normal.y, normal.z);
+        add(builder, matrix4f, x1, y2, 0, sprite.getU0(), sprite.getV0(), combinedLight, shadedColor, alpha, normal.x, normal.y, normal.z);
     }
 
 
-    public static void add(VertexConsumer renderer, Matrix4f matrix4f, float x, float y, float z, float u, float v, int combinedLightIn, int color, float alpha) {
+    public static void add(VertexConsumer renderer, Matrix4f matrix4f, float x, float y, float z, float u, float v, int combinedLightIn, int color, float alpha, float nx, float ny, float nz) {
         renderer.addVertex(matrix4f, x, y, z)
                 .setColor(color >> 16 & 255,color >> 8 & 255, color & 255, (int)(alpha*255f))
                 .setUv(u, v)
                 .setUv2(combinedLightIn & 0xFFFF, (combinedLightIn >> 16) & 0xFFFF)
-                .setNormal(1, 0, 0);
+                .setNormal(nx, ny, nz);
+    }
+
+    /**
+     * Returns the diffuse shade multiplier based on which axis a normal is aligned to,
+     * matching Minecraft's standard block face shading.
+     */
+    public static float getShadeFromNormal(float nx, float ny, float nz) {
+        float ax = Math.abs(nx), ay = Math.abs(ny), az = Math.abs(nz);
+        if (ay >= ax && ay >= az) {
+            return ny > 0 ? 1.0f : 0.5f;  // UP or DOWN
+        } else if (az >= ax) {
+            return 0.8f;  // NORTH or SOUTH
+        } else {
+            return 0.6f;  // EAST or WEST
+        }
+    }
+
+    /**
+     * Multiplies the RGB channels of a color by a shade factor.
+     */
+    public static int applyShade(int color, float shade) {
+        int r = (int)((color >> 16 & 255) * shade);
+        int g = (int)((color >> 8 & 255) * shade);
+        int b = (int)((color & 255) * shade);
+        int a = color >> 24 & 255;
+        return (a << 24) | (r << 16) | (g << 8) | b;
     }
 
     public static TextureAtlasSprite getSprite(ResourceLocation resourceLocation)

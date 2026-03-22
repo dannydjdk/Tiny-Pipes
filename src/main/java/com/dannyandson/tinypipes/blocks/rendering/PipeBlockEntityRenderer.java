@@ -10,12 +10,16 @@ import com.dannyandson.tinypipes.components.full.RedstonePipe;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.block.state.BlockState;
 
 public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEntity> {
 
@@ -54,28 +58,28 @@ public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEnt
         VertexConsumer builder = buffer.getBuffer(renderType);
 
         if(pipeBlockEntity.getCamouflageBlockState()!=null) {
+            BlockState camouflageState = pipeBlockEntity.getCamouflageBlockState();
+            var blockRenderer = Minecraft.getInstance().getBlockRenderer();
+            BakedModel model = blockRenderer.getBlockModel(camouflageState);
+
             poseStack.pushPose();
-
-            poseStack.translate(0,0,1);
-
-            for (Direction direction : new Direction[]{Direction.SOUTH, Direction.EAST, Direction.NORTH, Direction.WEST}) {
-                RenderHelper.drawRectangle2(builder,poseStack,0,1,0,1,pipeBlockEntity.getCamouflageSprite(direction),combinedLight,0xFFFFFFFF,alpha);
-                poseStack.mulPose(Axis.YP.rotationDegrees(90));
-                poseStack.translate(0, 0, 1);
-            }
-            poseStack.mulPose(Axis.XP.rotationDegrees(90));
-            poseStack.mulPose(Axis.ZP.rotationDegrees(90));
-            poseStack.translate(-1, -1, -1);
-            RenderHelper.drawRectangle2(builder,poseStack,0,1,1,0,pipeBlockEntity.getCamouflageSprite(Direction.UP),combinedLight,0xFFFFFFFF,alpha);
-
-            poseStack.mulPose(Axis.YP.rotationDegrees(180));
-            poseStack.translate(-1, 0, -1);
-            RenderHelper.drawRectangle2(builder,poseStack,0,1,1,0,pipeBlockEntity.getCamouflageSprite(Direction.DOWN),combinedLight,0xFFFFFFFF,alpha);
-
+            blockRenderer.getModelRenderer().tesselateBlock(
+                    pipeBlockEntity.getLevel(),
+                    model,
+                    camouflageState,
+                    pipeBlockEntity.getBlockPos(),
+                    poseStack,
+                    builder,
+                    false,
+                    RandomSource.create(),
+                    camouflageState.getSeed(pipeBlockEntity.getBlockPos()),
+                    combinedOverlay
+            );
             poseStack.popPose();
 
             return;
         }
+
         TextureAtlasSprite sprite = pipeBlockEntity.getCenterSprite();
         AbstractFullPipe[] pipes = pipeBlockEntity.getPipes();
         boolean single = pipes.length == 1;

@@ -185,7 +185,7 @@ public class PipeBlockEntity extends BlockEntity {
         }
         if (nbt.contains("camouflage")){
             try {
-                this.camouflageBlockState = NbtUtils.readBlockState(this.level.holderLookup(Registries.BLOCK),nbt.getCompound("camouflage"));
+                this.camouflageBlockState = NbtUtils.readBlockState(registries.lookupOrThrow(Registries.BLOCK),nbt.getCompound("camouflage"));
             } catch (Exception exception) {
                 TinyPipes.LOGGER.error("Exception attempting to read camouflage nbt.", exception);
             }

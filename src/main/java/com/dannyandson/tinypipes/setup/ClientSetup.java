@@ -3,12 +3,15 @@ package com.dannyandson.tinypipes.setup;
 import com.dannyandson.tinypipes.TinyPipes;
 import com.dannyandson.tinypipes.blocks.rendering.PipeBlockEntityRenderer;
 import com.dannyandson.tinypipes.gui.ItemFilterGUI;
+import com.dannyandson.tinypipes.gui.PipeConfigPipRenderState;
+import com.dannyandson.tinypipes.gui.PipeConfigPipRenderer;
 import net.minecraft.resources.Identifier;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
+import net.neoforged.neoforge.client.event.RegisterPictureInPictureRenderersEvent;
 
 @EventBusSubscriber(modid = TinyPipes.MODID, value = Dist.CLIENT)
 public class ClientSetup {
@@ -26,5 +29,12 @@ public class ClientSetup {
     @SubscribeEvent
     public static void onRegisterRenderer(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(ModRegistration.PIPE_BLOCK_ENTITY.get(), PipeBlockEntityRenderer::new);
+    }
+
+    @SubscribeEvent
+    public static void onRegisterPipRenderers(RegisterPictureInPictureRenderersEvent event) {
+        System.out.println("[TinyPipes] RegisterPictureInPictureRenderersEvent FIRED");
+        event.register(PipeConfigPipRenderState.class, PipeConfigPipRenderer::new);
+        System.out.println("[TinyPipes] PiP renderer registered for PipeConfigPipRenderState");
     }
 }

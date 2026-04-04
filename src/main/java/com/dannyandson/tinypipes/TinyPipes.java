@@ -1,6 +1,6 @@
 package com.dannyandson.tinypipes;
 
-import com.dannyandson.tinypipes.setup.Registration;
+import com.dannyandson.tinypipes.setup.ModRegistration;
 import com.dannyandson.tinypipes.setup.RegistrationTinyRedstone;
 import net.minecraft.world.item.DyeColor;
 import net.neoforged.bus.api.IEventBus;
@@ -32,14 +32,14 @@ public class TinyPipes
 
     public TinyPipes(IEventBus modEventBus, ModContainer modContainer) {
 
-        if(FMLEnvironment.dist.isClient()) {
+        if(FMLEnvironment.getDist().isClient()) {
             // Menu screen registration handled via @SubscribeEvent in ClientSetup
         }
 
         modEventBus.addListener(this::setup);
 
         modContainer.registerConfig(ModConfig.Type.SERVER, Config.SERVER_CONFIG);
-        Registration.register(modEventBus);
+        ModRegistration.register(modEventBus);
         if (ModList.get().isLoaded("tinyredstone"))
             RegistrationTinyRedstone.register();
     }
@@ -48,6 +48,6 @@ public class TinyPipes
     {
         if (ModList.get().isLoaded("tinyredstone"))
             RegistrationTinyRedstone.registerPanelCells();
-        Registration.registerFullPipeItems();
+        ModRegistration.registerFullPipeItems();
     }
 }

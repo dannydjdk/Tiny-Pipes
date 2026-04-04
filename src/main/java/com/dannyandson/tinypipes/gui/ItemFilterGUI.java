@@ -7,16 +7,14 @@ import com.dannyandson.tinypipes.components.full.AbstractFullPipe;
 import com.dannyandson.tinypipes.components.full.PipeSide;
 import com.dannyandson.tinypipes.network.ModNetworkHandler;
 import com.dannyandson.tinypipes.network.PushItemFilterFlags;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.MenuAccess;
-import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.BlockHitResult;
@@ -26,7 +24,7 @@ import net.neoforged.fml.ModList;
 public class ItemFilterGUI extends AbstractContainerScreen<ItemFilterContainerMenu> implements MenuAccess<ItemFilterContainerMenu> {
     public static final int WIDTH = 184;
     public static final int HEIGHT = 158;
-    private static final ResourceLocation GUI = ResourceLocation.fromNamespaceAndPath(TinyPipes.MODID, "textures/gui/item_filter.png");
+    private static final Identifier GUI = Identifier.fromNamespaceAndPath(TinyPipes.MODID, "textures/gui/item_filter.png");
     private Button blackListButton = null;
     private PipeBlockEntity pipeBlockEntity;
     private IFilterPipe pipe = null;
@@ -48,10 +46,8 @@ public class ItemFilterGUI extends AbstractContainerScreen<ItemFilterContainerMe
     }
 
     public ItemFilterGUI(ItemFilterContainerMenu menu, Inventory playerInventory, Component title) {
-        super(menu, playerInventory,title);
+        super(menu, playerInventory, title, WIDTH, HEIGHT);
         this.menu=menu;
-        this.imageHeight=HEIGHT;
-        this.imageWidth=WIDTH;
         this.inventoryLabelY=65;
     }
 
@@ -96,22 +92,9 @@ public class ItemFilterGUI extends AbstractContainerScreen<ItemFilterContainerMe
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
-        this.renderBackground(guiGraphics, mouseX, mouseY, partialTicks);
-        super.render(guiGraphics, mouseX, mouseY, partialTicks);
-        this.renderTooltip(guiGraphics, mouseX, mouseY);
-   }
-
-    @Override
-    protected void renderBg(GuiGraphics guiGraphics, float p_97788_, int p_97789_, int p_97790_) {
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        RenderSystem.setShaderTexture(0, GUI);
-
-        int x = (this.width - this.imageWidth) / 2;
-        int y = (this.height - this.imageHeight) / 2;
-
-        guiGraphics.blit(GUI, x, y, 0, 0, WIDTH, HEIGHT, 256,256);
+    public void extractBackground(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+        int x = (this.width - WIDTH) / 2;
+        int y = (this.height - HEIGHT) / 2;
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, GUI, x, y, 0, 0, WIDTH, HEIGHT, 256, 256);
     }
-
 }

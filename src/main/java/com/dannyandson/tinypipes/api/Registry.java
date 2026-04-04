@@ -2,8 +2,8 @@ package com.dannyandson.tinypipes.api;
 
 import com.dannyandson.tinypipes.components.full.AbstractFullPipe;
 import net.minecraft.world.item.Item;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.CheckForNull;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -17,12 +17,12 @@ public class Registry {
         fullPipeItemMap.put(fullPipeClass,item);
     }
 
-    @CheckForNull
+    @Nullable
     public static Item getFullPipeItemFromClass(Class<? extends AbstractFullPipe> fullPipeClass){
         return fullPipeItemMap.get(fullPipeClass);
     }
 
-    @CheckForNull
+    @Nullable
     public static AbstractFullPipe getFullPipeFromItem(Item item){
         try {
             return itemFullPipeMap.get(item).getConstructor().newInstance();
@@ -31,7 +31,7 @@ public class Registry {
         }
     }
 
-    @CheckForNull
+    @Nullable
     public static Class<? extends AbstractFullPipe> getFullPipeClassFromItem(Item item){
             return itemFullPipeMap.get(item);
     }

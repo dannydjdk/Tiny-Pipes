@@ -11,7 +11,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.neoforged.neoforge.energy.IEnergyStorage;
 
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import static com.dannyandson.tinypipes.components.RenderHelper.ENERGY_PIPE_TEXTURE;
 

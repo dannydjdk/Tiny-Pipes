@@ -7,17 +7,17 @@ import com.dannyandson.tinypipes.gui.ItemFilterContainerMenu;
 import com.dannyandson.tinyredstone.blocks.PanelCellPos;
 import com.dannyandson.tinyredstone.blocks.PanelCellSegment;
 import com.dannyandson.tinyredstone.blocks.Side;
-import com.dannyandson.tinyredstone.setup.Registration;
+import com.dannyandson.tinyredstone.setup.ModRegistration;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.minecraft.core.registries.BuiltInRegistries;
 
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import java.util.Arrays;
 
 public class ItemFilterPipe extends ItemPipe implements IFilterPipe {
@@ -48,7 +48,7 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe {
             stack = player.getMainHandItem();
         if (stack.has(net.minecraft.core.component.DataComponents.CUSTOM_DATA)) {
             CompoundTag itemNBT = stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA).copyTag();
-            String filterString = itemNBT.getString("filters");
+            String filterString = itemNBT.getStringOr("filters", "");
             filters = Arrays.copyOf(filterString.split("\n",filterSlots),filterSlots);
         }
 
@@ -57,7 +57,7 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe {
 
     @Override
     protected void populatePushWrapper(PanelCellPos cellPos, @Nullable Side side, ItemStack itemStack, PushWrapper<IItemHandler> pushWrapper, int distance) {
-        ResourceLocation itemReg = BuiltInRegistries.ITEM.getKey(itemStack.getItem());
+        Identifier itemReg = BuiltInRegistries.ITEM.getKey(itemStack.getItem());
         boolean hasItem = itemReg != null && hasItem(itemReg.toString());
         if ((!blacklist && !hasItem) || (blacklist && hasItem)) {
             return;
@@ -84,7 +84,7 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe {
 
     @Override
     public boolean onBlockActivated(PanelCellPos cellPos, PanelCellSegment segmentClicked, Player player) {
-        if (player.getMainHandItem().getItem() == Registration.REDSTONE_WRENCH.get())
+        if (player.getMainHandItem().getItem() == ModRegistration.REDSTONE_WRENCH.get())
             return super.onBlockActivated(cellPos, segmentClicked, player);
 
         if (player instanceof ServerPlayer serverPlayer) {
@@ -118,9 +118,9 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe {
     @Override
     public void readNBT(CompoundTag compoundTag) {
         super.readNBT(compoundTag);
-        String filterString = compoundTag.getString("filters");
+        String filterString = compoundTag.getStringOr("filters", "");
         filters = Arrays.copyOf(filterString.split("\n",filterSlots),filterSlots);
-        blacklist = compoundTag.getBoolean("blacklist");
+        blacklist = compoundTag.getBooleanOr("blacklist", false);
     }
 
     @Override
@@ -154,9 +154,9 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe {
     @Override
     public ItemStack getItem(int slot) {
         if (slot<filters.length && filters[slot]!=null && !filters[slot].equals("null") && !filters[slot].isEmpty()) {
-            net.minecraft.resources.ResourceLocation rl = net.minecraft.resources.ResourceLocation.tryParse(filters[slot]);
+            net.minecraft.resources.Identifier rl = net.minecraft.resources.Identifier.tryParse(filters[slot]);
             if (rl != null && net.minecraft.core.registries.BuiltInRegistries.ITEM.containsKey(rl))
-                return new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(rl));
+                return new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(rl));
             return ItemStack.EMPTY;
         }
         return ItemStack.EMPTY;

@@ -6,18 +6,10 @@
     "srs"
   ],
   "key": {
-    "s": {
-      "item": "minecraft:sugar"
-    },
-    "i": {
-      "item": "minecraft:iron_ingot"
-    },
-    "q": {
-      "item": "minecraft:quartz"
-    },
-    "r": {
-      "item": "minecraft:redstone"
-    }
+    "s": "minecraft:sugar",
+    "i": "minecraft:iron_ingot",
+    "q": "minecraft:quartz",
+    "r": "minecraft:redstone"
   },
   "result": {
     "id": "tinypipes:speed_upgrade"

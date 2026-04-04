@@ -6,18 +6,19 @@ import com.dannyandson.tinypipes.setup.ClientSetup;
 import com.dannyandson.tinyredstone.api.IOverlayBlockInfo;
 import com.dannyandson.tinyredstone.api.IPanelCellInfoProvider;
 import com.dannyandson.tinyredstone.blocks.*;
-import com.dannyandson.tinyredstone.setup.Registration;
+import com.dannyandson.tinyredstone.setup.ModRegistration;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.DyeItem;
+import net.minecraft.core.component.DataComponents;
 
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -44,7 +45,7 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
         if (sprite_color == null)
             sprite_color = RenderHelper.getSprite(ClientSetup.PIPE_TEXTURE);
 
-        VertexConsumer builder = buffer.getBuffer((alpha == 1.0) ? RenderType.solid() : RenderType.translucent());
+        VertexConsumer builder = buffer.getBuffer((alpha == 1.0) ? Sheets.cutoutBlockSheet() : Sheets.translucentBlockSheet());
 
         com.dannyandson.tinypipes.components.RenderHelper.drawCube(poseStack, builder, sprite, c1, c2, c1, c2, c1, c2, combinedLight, 0xFFFFFFFF, alpha);
 
@@ -328,18 +329,18 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
 
     @Override
     public boolean hasActivation(Player player) {
-        return super.hasActivation(player) || player.getMainHandItem().getItem() instanceof DyeItem;
+        return super.hasActivation(player) || player.getMainHandItem().has(DataComponents.DYE);
     }
 
     @Override
     public boolean onBlockActivated(PanelCellPos cellPos, PanelCellSegment segmentClicked, Player player) {
-        if (player.getMainHandItem().getItem() == Registration.REDSTONE_WRENCH.get()) {
+        if (player.getMainHandItem().getItem() == ModRegistration.REDSTONE_WRENCH.get()) {
             Side sideOfCell = getClickedSide(cellPos, player);
             toggleSideConnection(cellPos, sideOfCell);
             return true;
-        } else if (player.getMainHandItem().getItem() instanceof DyeItem dyeItem) {
+        } else if (player.getMainHandItem().has(DataComponents.DYE)) {
             Side sideClicked = getClickedSide(cellPos, player);
-            DyeColor dyeColor = dyeItem.getDyeColor();
+            DyeColor dyeColor = player.getMainHandItem().get(DataComponents.DYE);
             setColor(cellPos, sideClicked, dyeColor);
         } else {
             super.onBlockActivated(cellPos, segmentClicked, player);
@@ -441,18 +442,21 @@ public class RedstonePipe extends AbstractTinyPipe implements IPanelCellInfoProv
     public void readNBT(CompoundTag compoundTag) {
         super.readNBT(compoundTag);
         if (compoundTag.contains("outputs")) {
-            for (String frequency : compoundTag.getCompound("outputs").getAllKeys()) {
-                outputSignals.put(Integer.parseInt(frequency), compoundTag.getCompound("outputs").getInt(frequency));
+            CompoundTag outputsTag = compoundTag.getCompound("outputs").orElseGet(CompoundTag::new);
+            for (String frequency : outputsTag.keySet()) {
+                outputSignals.put(Integer.parseInt(frequency), outputsTag.getIntOr(frequency, 0));
             }
         }
         if (compoundTag.contains("inputs")) {
-            for (String frequency : compoundTag.getCompound("inputs").getAllKeys()) {
-                inputSignals.put(Integer.parseInt(frequency), compoundTag.getCompound("inputs").getInt(frequency));
+            CompoundTag inputsTag = compoundTag.getCompound("inputs").orElseGet(CompoundTag::new);
+            for (String frequency : inputsTag.keySet()) {
+                inputSignals.put(Integer.parseInt(frequency), inputsTag.getIntOr(frequency, 0));
             }
         }
         if (compoundTag.contains("frequencies")) {
-            for (String side : compoundTag.getCompound("frequencies").getAllKeys()) {
-                frequencies.put(Side.valueOf(side), compoundTag.getCompound("frequencies").getInt(side));
+            CompoundTag freqTag = compoundTag.getCompound("frequencies").orElseGet(CompoundTag::new);
+            for (String side : freqTag.keySet()) {
+                frequencies.put(Side.valueOf(side), freqTag.getIntOr(side, 0));
             }
         }
     }

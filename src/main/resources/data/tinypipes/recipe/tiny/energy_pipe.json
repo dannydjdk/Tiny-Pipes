@@ -4,12 +4,8 @@
     "psp"
   ],
   "key": {
-    "p": {
-      "item": "tinypipes:full_energy_pipe"
-    },
-    "s": {
-      "tag": "c:silicon"
-    }
+    "p": "tinypipes:full_energy_pipe",
+    "s": "#c:silicon"
   },
   "result": {
     "id": "tinypipes:energy_pipe",

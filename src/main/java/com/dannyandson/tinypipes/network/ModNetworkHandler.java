@@ -1,14 +1,14 @@
 package com.dannyandson.tinypipes.network;
 
 import com.dannyandson.tinypipes.TinyPipes;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
-@SuppressWarnings("removal")
-@EventBusSubscriber(modid = TinyPipes.MODID, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = TinyPipes.MODID)
 public class ModNetworkHandler {
 
     @SubscribeEvent
@@ -19,9 +19,12 @@ public class ModNetworkHandler {
     }
 
     public static void sendToServer(Object packet) {
-        if (packet instanceof PushItemFilterFlags pkt)
-            PacketDistributor.sendToServer(pkt);
-        else if (packet instanceof PushPipeConnection pkt)
-            PacketDistributor.sendToServer(pkt);
+        var connection = Minecraft.getInstance().getConnection();
+        if (connection != null) {
+            if (packet instanceof PushItemFilterFlags pkt)
+                connection.send(new ServerboundCustomPayloadPacket(pkt));
+            else if (packet instanceof PushPipeConnection pkt)
+                connection.send(new ServerboundCustomPayloadPacket(pkt));
+        }
     }
 }

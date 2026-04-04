@@ -7,14 +7,15 @@ import com.dannyandson.tinypipes.components.RenderHelper;
 import com.dannyandson.tinypipes.components.full.AbstractFullPipe;
 import com.dannyandson.tinypipes.components.full.PipeSide;
 import com.dannyandson.tinypipes.setup.ClientSetup;
-import com.dannyandson.tinypipes.setup.Registration;
+import com.dannyandson.tinypipes.setup.ModRegistration;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.registries.Registries;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
+import net.minecraft.nbt.TagParser;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -26,12 +27,12 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.CheckForNull;
-import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,7 +47,7 @@ public class PipeBlockEntity extends BlockEntity {
     private Object cachedRenderer = null;
 
     public PipeBlockEntity(BlockPos pos, BlockState state) {
-        super(Registration.PIPE_BLOCK_ENTITY.get(), pos, state);
+        super(ModRegistration.PIPE_BLOCK_ENTITY.get(), pos, state);
     }
 
     /**
@@ -86,7 +87,7 @@ public class PipeBlockEntity extends BlockEntity {
         return false;
     }
 
-    @CheckForNull
+    @Nullable
     public AbstractFullPipe getPipe(int slot)
     {
         return pipes.get(slot);
@@ -100,7 +101,7 @@ public class PipeBlockEntity extends BlockEntity {
 
     private boolean refresh = false;
 
-    @CheckForNull
+    @Nullable
     public AbstractFullPipe addPipe(ItemStack itemStack)
     {
         AbstractFullPipe pipe = Registry.getFullPipeFromItem(itemStack.getItem());
@@ -112,7 +113,7 @@ public class PipeBlockEntity extends BlockEntity {
             tag = itemStack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA).copyTag();
         }
         if (tag != null && tag.contains("pipe_data"))
-            pipe.readNBT(tag.getCompound("pipe_data"));
+            pipe.readNBT(tag.getCompound("pipe_data").orElseGet(CompoundTag::new));
         pipes.put(pipe.slotPos(),pipe);
         pipe.onPlace(this, itemStack);
         this.centerSprite=null;
@@ -150,7 +151,7 @@ public class PipeBlockEntity extends BlockEntity {
     }
 
     public void sync() {
-        if (!level.isClientSide)
+        if (!level.isClientSide())
             this.level.sendBlockUpdated(worldPosition, this.getBlockState(), this.getBlockState(), Block.UPDATE_CLIENTS);
         this.setChanged();
     }
@@ -162,49 +163,69 @@ public class PipeBlockEntity extends BlockEntity {
     }
 
     @Override
-    public @NotNull CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-        CompoundTag nbt = new CompoundTag();
-        this.saveAdditional(nbt, registries);
-        return nbt;
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        return this.saveWithoutMetadata(registries);
     }
 
     @Override
-    protected void loadAdditional(CompoundTag nbt, HolderLookup.Provider registries) {
-        super.loadAdditional(nbt, registries);
+    protected void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
 
-        CompoundTag pipesData = nbt.getCompound("pipes");
+        // Build complex nested data as a CompoundTag, then serialize to SNBT
+        CompoundTag data = new CompoundTag();
+
+        CompoundTag pipeData = new CompoundTag();
+        for (AbstractFullPipe pipe : this.pipes.values()) {
+            pipeData.put(pipe.getClass().getCanonicalName(), pipe.writeNBT());
+        }
+        data.put("pipes", pipeData);
+
+        if (camouflageBlockState != null)
+            data.put("camouflage", NbtUtils.writeBlockState(camouflageBlockState));
+
+        output.putString("pipe_data", data.toString());
+    }
+
+    @Override
+    public void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
+
+        CompoundTag data = parseSnbt(input.getStringOr("pipe_data", ""));
+
+        CompoundTag pipesData = data.getCompound("pipes").orElseGet(CompoundTag::new);
         this.pipes.clear();
-        for (String key : pipesData.getAllKeys()) {
+        for (String key : pipesData.keySet()) {
             try {
                 AbstractFullPipe pipe = (AbstractFullPipe) Class.forName(key).getConstructor().newInstance();
-                pipe.readNBT(pipesData.getCompound(key));
+                pipe.readNBT(pipesData.getCompound(key).orElseGet(CompoundTag::new));
                 this.pipes.put(pipe.slotPos(),pipe);
             } catch (Exception exception) {
                 TinyPipes.LOGGER.error("Exception attempting to construct Pipe object " + key, exception);
             }
         }
-        if (nbt.contains("camouflage")){
+        if (data.contains("camouflage")){
             try {
-                this.camouflageBlockState = NbtUtils.readBlockState(registries.lookupOrThrow(Registries.BLOCK),nbt.getCompound("camouflage"));
+                this.camouflageBlockState = NbtUtils.readBlockState(
+                        BuiltInRegistries.BLOCK,
+                        data.getCompound("camouflage").orElseGet(CompoundTag::new));
             } catch (Exception exception) {
                 TinyPipes.LOGGER.error("Exception attempting to read camouflage nbt.", exception);
             }
         }
         // Invalidate render cache on NBT load (world load or server->client sync)
         this.centerSprite = null;
-        markRenderDirty();
+        if (level != null && level.isClientSide()) {
+            markRenderDirty();
+        }
     }
 
-    @Override
-    protected void saveAdditional(CompoundTag nbt, HolderLookup.Provider registries) {
-        super.saveAdditional(nbt, registries);
-        CompoundTag pipeData = new CompoundTag();
-        for (AbstractFullPipe pipe : this.pipes.values()) {
-            pipeData.put(pipe.getClass().getCanonicalName(), pipe.writeNBT());
+    private static CompoundTag parseSnbt(String snbt) {
+        if (snbt == null || snbt.isEmpty()) return new CompoundTag();
+        try {
+            return TagParser.parseCompoundFully(snbt);
+        } catch (Exception e) {
+            return new CompoundTag();
         }
-        nbt.put("pipes", pipeData);
-        if (camouflageBlockState!=null)
-            nbt.put("camouflage",NbtUtils.writeBlockState(camouflageBlockState));
     }
 
     public static BlockHitResult getPlayerCollisionHitResult(Player player, Level level) {
@@ -253,7 +274,7 @@ public class PipeBlockEntity extends BlockEntity {
         return pullSprite;
     }
 
-    @CheckForNull
+    @Nullable
     public PipeSide getPipeAtHitVector(BlockHitResult hitResult) {
         Direction rayTraceDirection = hitResult.getDirection().getOpposite();
         Vec3 hitVec = hitResult.getLocation().add((double) rayTraceDirection.getStepX() * .001d, (double) rayTraceDirection.getStepY() * .001d, (double) rayTraceDirection.getStepZ() * .001d);
@@ -303,7 +324,7 @@ public class PipeBlockEntity extends BlockEntity {
             refresh=false;
         }
         if (update) {
-            getLevel().blockUpdated(getBlockPos(), getBlockState().getBlock());
+            getLevel().updateNeighborsAt(getBlockPos(), getBlockState().getBlock());
             sync();
         }
 

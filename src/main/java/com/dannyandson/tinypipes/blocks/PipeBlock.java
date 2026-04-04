@@ -6,18 +6,19 @@ import com.dannyandson.tinypipes.components.full.AbstractFullPipe;
 import com.dannyandson.tinypipes.components.full.PipeSide;
 import com.dannyandson.tinypipes.components.full.RedstonePipe;
 import com.dannyandson.tinypipes.items.SpeedUpgradeItem;
-import com.dannyandson.tinypipes.setup.Registration;
+import com.dannyandson.tinypipes.setup.ModRegistration;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.DyeItem;
+import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -28,30 +29,25 @@ import net.minecraft.world.level.SignalGetter;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.redstone.Orientation;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public class PipeBlock extends BaseEntityBlock {
 
-    public static final MapCodec<PipeBlock> CODEC = simpleCodec(p -> new PipeBlock());
+    public static final MapCodec<PipeBlock> CODEC = simpleCodec(PipeBlock::new);
     private static final net.minecraft.tags.TagKey<Item> WRENCH_TAG =
-            ItemTags.create(ResourceLocation.fromNamespaceAndPath("c", "tools/wrench"));
+            ItemTags.create(Identifier.fromNamespaceAndPath("c", "tools/wrench"));
 
-    public PipeBlock() {
-        super(Properties.of()
-                .sound(SoundType.STONE)
-                .strength(1.0f)
-                .dynamicShape()
-        );
+    public PipeBlock(Properties props) {
+        super(props);
     }
 
     @Override
@@ -70,15 +66,31 @@ public class PipeBlock extends BaseEntityBlock {
         return true;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
-    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, BlockPos neighborPos, boolean p_60514_) {
-        // if the neighbor block is a pipe as argument and is null by blockstate, we update using the onRemoveNeighbor method
-        Direction direction = Direction.getNearest(
-                neighborPos.getX() - pos.getX(),
-                neighborPos.getY() - pos.getY(),
-                neighborPos.getZ() - pos.getZ()
-        );
+    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block,
+                                @Nullable Orientation orientation, boolean isMoving) {
+        // Extract direction from orientation, with fallback for null
+        Direction direction = null;
+        if (orientation != null && orientation.getFront() != null) {
+            direction = orientation.getFront();
+        }
+
+        if (direction != null) {
+            // Targeted update - we know which direction the change came from
+            BlockPos neighborPos = pos.relative(direction);
+            handleNeighborChanged(level, pos, block, direction, neighborPos);
+        } else {
+            // Fallback: update ALL sides when direction is unknown
+            for (Direction dir : Direction.values()) {
+                BlockPos neighborPos = pos.relative(dir);
+                handleNeighborChanged(level, pos, block, dir, neighborPos);
+            }
+        }
+
+        super.neighborChanged(state, level, pos, block, orientation, isMoving);
+    }
+
+    private void handleNeighborChanged(Level level, BlockPos pos, Block block, Direction direction, BlockPos neighborPos) {
         if (level.getBlockState(neighborPos).getBlock() == Blocks.AIR && block instanceof PipeBlock && level.getBlockEntity(pos) instanceof PipeBlockEntity pipeBlockEntity) {
             for (AbstractFullPipe pipe : pipeBlockEntity.getPipes()) {
                 pipe.onRemoveNeighbor(pipeBlockEntity, direction);
@@ -88,12 +100,11 @@ public class PipeBlock extends BaseEntityBlock {
         if (level.getBlockEntity(pos) instanceof PipeBlockEntity pipeBlockEntity) {
             pipeBlockEntity.onNeighborChange(direction);
         }
-        super.neighborChanged(state, level, pos, block, neighborPos, p_60514_);
     }
 
     @Override
     public void onNeighborChange(BlockState state, LevelReader levelReader, BlockPos pos, BlockPos neighborPos) {
-        if (levelReader instanceof Level level && level.isClientSide) {
+        if (levelReader instanceof Level level && level.isClientSide()) {
             if (level.getBlockEntity(pos) instanceof PipeBlockEntity pipeBlockEntity
                     && pipeBlockEntity.getCamouflageBlockState() != null) {
                 pipeBlockEntity.markRenderDirty();
@@ -113,7 +124,7 @@ public class PipeBlock extends BaseEntityBlock {
                 }
                 for (AbstractFullPipe pipe : pipeBlockEntity.getPipes()) {
                     if (pipe instanceof AbstractCapFullPipe abstractCapFullPipe && abstractCapFullPipe.getSpeedUpgradeCount() > 0) {
-                        Item item = Registration.SPEED_UPGRADE_ITEM.get();
+                        Item item = ModRegistration.SPEED_UPGRADE_ITEM.get();
                         ItemStack itemStack = item.getDefaultInstance();
                         itemStack.setCount(abstractCapFullPipe.getSpeedUpgradeCount());
                         ItemEntity itemEntity = new ItemEntity(level, pos.getX(), pos.getY() + .5, pos.getZ(), itemStack);
@@ -161,12 +172,12 @@ public class PipeBlock extends BaseEntityBlock {
 
     @SuppressWarnings("deprecation")
     @Override
-    public boolean isSignalSource(@NotNull BlockState p_60571_) {
+    public boolean isSignalSource(BlockState p_60571_) {
         return true;
     }
 
     @Override
-    public VoxelShape getOcclusionShape(BlockState p_60578_, BlockGetter p_60579_, BlockPos p_60580_) {
+    public VoxelShape getOcclusionShape(BlockState state) {
         return Shapes.empty();
     }
 
@@ -213,16 +224,19 @@ public class PipeBlock extends BaseEntityBlock {
                     pipeSide.toggleSideStatus(pipeBlockEntity);
                 }
                 return InteractionResult.CONSUME;
-            } else if (heldStack.getItem() instanceof DyeItem dyeItem) {
-                PipeSide pipeSide = pipeBlockEntity.getPipeAtHitVector(hitResult);
-                if (pipeSide!=null && pipeSide.getPipe() instanceof RedstonePipe redstonePipe){
-                    // set the new frequency signal and update the pipe block regarding the old frequency signal in the pipe network
-                    redstonePipe.setColor(pipeBlockEntity, pipeSide.getDirection(), dyeItem.getDyeColor().getId());
-                    // update the pipe block regarding the new frequency signal in the pipe network
-                    redstonePipe.neighborChanged(pipeBlockEntity, pipeSide.getDirection());
-                    level.blockUpdated(pos,this);
+            } else if (heldStack.has(DataComponents.DYE)) {
+                DyeColor dyeColor = heldStack.get(DataComponents.DYE);
+                if (dyeColor != null) {
+                    PipeSide pipeSide = pipeBlockEntity.getPipeAtHitVector(hitResult);
+                    if (pipeSide != null && pipeSide.getPipe() instanceof RedstonePipe redstonePipe) {
+                        // set the new frequency signal and update the pipe block regarding the old frequency signal in the pipe network
+                        redstonePipe.setColor(pipeBlockEntity, pipeSide.getDirection(), dyeColor.getId());
+                        // update the pipe block regarding the new frequency signal in the pipe network
+                        redstonePipe.neighborChanged(pipeBlockEntity, pipeSide.getDirection());
+                        level.updateNeighborsAt(pos, this);
+                    }
+                    return InteractionResult.CONSUME;
                 }
-                return InteractionResult.CONSUME;
             } else if (heldStack.getItem() instanceof SpeedUpgradeItem) {
                 PipeSide pipeSide = pipeBlockEntity.getPipeAtHitVector(hitResult);
                 if (pipeSide.applySpeedUpgrade() && !player.isCreative()
@@ -262,7 +276,7 @@ public class PipeBlock extends BaseEntityBlock {
                             pipeSide.getPipe().openGUI(pipeBlockEntity, player);
                         } else if (pipeSide.removeSpeedUpgrade()) {
                             if (!player.isCreative()) {
-                                Item item = Registration.SPEED_UPGRADE_ITEM.get();
+                                Item item = ModRegistration.SPEED_UPGRADE_ITEM.get();
                                 ItemStack itemStack = item.getDefaultInstance();
                                 ItemEntity itemEntity = new ItemEntity(level, pos.getX(), pos.getY() + .5, pos.getZ(), itemStack);
                                 level.addFreshEntity(itemEntity);

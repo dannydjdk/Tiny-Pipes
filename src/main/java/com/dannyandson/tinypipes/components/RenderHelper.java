@@ -5,27 +5,25 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureManager;
+import net.minecraft.client.resources.model.sprite.SpriteId;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.RandomSource;
-import net.minecraft.world.inventory.InventoryMenu;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.state.BlockState;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
-import java.util.List;
 
 public class RenderHelper {
 
-    public static final ResourceLocation REDSTONE_PIPE_TEXTURE = ResourceLocation.fromNamespaceAndPath(TinyPipes.MODID, "block/redstone_pipe");
-    public static final ResourceLocation ENERGY_PIPE_TEXTURE = ResourceLocation.fromNamespaceAndPath(TinyPipes.MODID, "block/energy_pipe");
-    public static final ResourceLocation FLUID_FILTER_PIPE_TEXTURE = ResourceLocation.fromNamespaceAndPath(TinyPipes.MODID, "block/fluid_filter_pipe");
-    public static final ResourceLocation FLUID_PIPE_TEXTURE = ResourceLocation.fromNamespaceAndPath(TinyPipes.MODID, "block/fluid_pipe");
-    public static final ResourceLocation ITEM_FILTER_PIPE_TEXTURE = ResourceLocation.fromNamespaceAndPath(TinyPipes.MODID, "block/item_filter_pipe");
-    public static final ResourceLocation ITEM_PIPE_TEXTURE = ResourceLocation.fromNamespaceAndPath(TinyPipes.MODID, "block/item_pipe");
+    public static final Identifier REDSTONE_PIPE_TEXTURE = Identifier.fromNamespaceAndPath(TinyPipes.MODID, "block/redstone_pipe");
+    public static final Identifier ENERGY_PIPE_TEXTURE = Identifier.fromNamespaceAndPath(TinyPipes.MODID, "block/energy_pipe");
+    public static final Identifier FLUID_FILTER_PIPE_TEXTURE = Identifier.fromNamespaceAndPath(TinyPipes.MODID, "block/fluid_filter_pipe");
+    public static final Identifier FLUID_PIPE_TEXTURE = Identifier.fromNamespaceAndPath(TinyPipes.MODID, "block/fluid_pipe");
+    public static final Identifier ITEM_FILTER_PIPE_TEXTURE = Identifier.fromNamespaceAndPath(TinyPipes.MODID, "block/item_filter_pipe");
+    public static final Identifier ITEM_PIPE_TEXTURE = Identifier.fromNamespaceAndPath(TinyPipes.MODID, "block/item_pipe");
 
     public static void drawCube(PoseStack poseStack, VertexConsumer builder, TextureAtlasSprite sprite, float x1, float x2, float y1, float y2, float z1, float z2, int combinedLight, int color, float alpha){
 
@@ -75,9 +73,6 @@ public class RenderHelper {
 
     public static void drawRectangle(VertexConsumer builder, PoseStack matrixStack, float x1, float x2, float y1, float y2, float u0, float u1, float v0, float v1, int combinedLight , int color, float alpha){
         // Compute the local face normal from the quad's winding order.
-        // Vertices are emitted in order (x1,y1), (x2,y1), (x2,y2), (x1,y2) in the XY plane at z=0.
-        // The cross product of edge1 × edge2 gives (0, 0, (x2-x1)*(y2-y1)), so the local normal
-        // is +Z or -Z depending on whether the parameters are ascending or descending.
         float localNz = Math.signum((x2 - x1) * (y2 - y1));
         Vector3f normal = matrixStack.last().normal().transform(new Vector3f(0, 0, localNz));
         normal.normalize();
@@ -108,6 +103,7 @@ public class RenderHelper {
         renderer.addVertex(matrix4f, x, y, z)
                 .setColor(color >> 16 & 255,color >> 8 & 255, color & 255, (int)(alpha*255f))
                 .setUv(u, v)
+                .setUv1(0, 10)
                 .setUv2(combinedLightIn & 0xFFFF, (combinedLightIn >> 16) & 0xFFFF)
                 .setNormal(nx, ny, nz);
     }
@@ -138,17 +134,19 @@ public class RenderHelper {
         return (a << 24) | (r << 16) | (g << 8) | b;
     }
 
-    public static TextureAtlasSprite getSprite(ResourceLocation resourceLocation)
+    public static TextureAtlasSprite getSprite(Identifier resourceLocation)
     {
-        return Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(resourceLocation);
+        return Minecraft.getInstance().getAtlasManager().get(new SpriteId(TextureAtlas.LOCATION_BLOCKS, resourceLocation));
     }
 
+    /**
+     * Get a sprite for a block state's face.
+     * TODO: In 26.1, BlockStateModel doesn't expose particleIcon() directly.
+     * IDE-check what method is available on BlockStateModel for the particle sprite.
+     * For now, falls back to missing texture — camouflage sprite lookup needs IDE verification.
+     */
     public static TextureAtlasSprite getSprite(BlockState state, Direction direction){
-        List<BakedQuad> bakedQuads =  Minecraft.getInstance().getBlockRenderer().getBlockModel(state)
-                .getQuads(state,direction, RandomSource.create());
-        if (bakedQuads.size()>0)
-            return bakedQuads.get(0).getSprite();
-
+        // Fallback: use the missing texture sprite until the correct BlockStateModel API is identified
         return getSprite(TextureManager.INTENTIONAL_MISSING_TEXTURE);
     }
 }

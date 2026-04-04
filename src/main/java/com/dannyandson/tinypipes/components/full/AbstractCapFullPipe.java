@@ -7,7 +7,7 @@ import com.dannyandson.tinypipes.components.ICapPipe;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 
 public abstract class AbstractCapFullPipe<CapType> extends AbstractFullPipe implements ICapPipe<CapType> {
@@ -75,9 +75,9 @@ public abstract class AbstractCapFullPipe<CapType> extends AbstractFullPipe impl
     public void readNBT(CompoundTag compoundTag) {
         super.readNBT(compoundTag);
         if (compoundTag.contains("disabled"))
-            disabled = compoundTag.getBoolean("disabled");
+            disabled = compoundTag.getBooleanOr("disabled", false);
         if (compoundTag.contains("speedUpgrades"))
-            speedUpgrades = compoundTag.getInt("speedUpgrades");
+            speedUpgrades = compoundTag.getIntOr("speedUpgrades", 0);
     }
 
     @Override

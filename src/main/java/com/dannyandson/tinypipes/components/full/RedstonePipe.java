@@ -13,8 +13,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
-import javax.annotation.CheckForNull;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -53,7 +52,7 @@ public class RedstonePipe extends AbstractFullPipe{
         return neighborState.getBlock().canConnectRedstone(neighborState, level, neighborPos, direction.getOpposite());
     }
 
-    @CheckForNull
+    @Nullable
     public Integer getColor(Direction side) {
         if (getNeighborHasSamePipeType(side)==null || getNeighborHasSamePipeType(side)) return null;
 
@@ -312,18 +311,21 @@ public class RedstonePipe extends AbstractFullPipe{
     public void readNBT(CompoundTag compoundTag) {
         super.readNBT(compoundTag);
         if (compoundTag.contains("outputs")) {
-            for (String frequency : compoundTag.getCompound("outputs").getAllKeys()) {
-                outputSignals.put(Integer.parseInt(frequency), compoundTag.getCompound("outputs").getInt(frequency));
+            CompoundTag outputsTag = compoundTag.getCompound("outputs").orElseGet(CompoundTag::new);
+            for (String frequency : outputsTag.keySet()) {
+                outputSignals.put(Integer.parseInt(frequency), outputsTag.getIntOr(frequency, 0));
             }
         }
         if (compoundTag.contains("inputs")) {
-            for (String frequency : compoundTag.getCompound("inputs").getAllKeys()) {
-                inputSignals.put(Integer.parseInt(frequency), compoundTag.getCompound("inputs").getInt(frequency));
+            CompoundTag inputsTag = compoundTag.getCompound("inputs").orElseGet(CompoundTag::new);
+            for (String frequency : inputsTag.keySet()) {
+                inputSignals.put(Integer.parseInt(frequency), inputsTag.getIntOr(frequency, 0));
             }
         }
         if (compoundTag.contains("frequencies")) {
-            for (String side : compoundTag.getCompound("frequencies").getAllKeys()) {
-                frequencies.put(Direction.valueOf(side), compoundTag.getCompound("frequencies").getInt(side));
+            CompoundTag freqTag = compoundTag.getCompound("frequencies").orElseGet(CompoundTag::new);
+            for (String side : freqTag.keySet()) {
+                frequencies.put(Direction.valueOf(side), freqTag.getIntOr(side, 0));
             }
         }
     }

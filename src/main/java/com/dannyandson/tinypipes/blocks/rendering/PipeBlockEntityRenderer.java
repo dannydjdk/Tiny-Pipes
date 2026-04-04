@@ -11,72 +11,86 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.color.block.BlockColors;
+import net.minecraft.client.model.geom.builders.UVPair;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.Sheets;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.block.BlockAndTintGetter;
+import net.minecraft.client.renderer.block.ModelBlockRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
-import net.minecraft.util.RandomSource;
+import net.minecraft.util.ARGB;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
+import org.jspecify.annotations.Nullable;
+import org.joml.Vector3fc;
 
-public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEntity> {
+public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEntity, PipeBlockEntityRenderState> {
 
-    public PipeBlockEntityRenderer(BlockEntityRendererProvider.Context context){
+    private static ModelBlockRenderer cachedModelRenderer;
+
+    public PipeBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
     }
 
     @Override
-    public void render(PipeBlockEntity pipeBlockEntity, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int combinedLight, int combinedOverlay) {
-        CachedPipeRenderer cache = pipeBlockEntity.getCachedRenderer();
+    public PipeBlockEntityRenderState createRenderState() {
+        return new PipeBlockEntityRenderState();
+    }
+
+    @Override
+    public void extractRenderState(PipeBlockEntity be, PipeBlockEntityRenderState state, float partialTick, Vec3 cameraPos, ModelFeatureRenderer.@Nullable CrumblingOverlay crumblingOverlay) {
+        BlockEntityRenderer.super.extractRenderState(be, state, partialTick, cameraPos, crumblingOverlay);
+        state.pipeBlockEntity = be;
+        state.cachedRenderer = be.getCachedRenderer();
+    }
+
+    @Override
+    public void submit(PipeBlockEntityRenderState state, PoseStack poseStack,
+                       SubmitNodeCollector collector, CameraRenderState camera) {
+        PipeBlockEntity pipeBlockEntity = state.pipeBlockEntity;
+        if (pipeBlockEntity == null) return;
+
+        CachedPipeRenderer cache = state.cachedRenderer;
+        int combinedLight = state.lightCoords;
+
+        // Use the immediate buffer source for custom vertex rendering
+        MultiBufferSource.BufferSource bufferSource =
+                Minecraft.getInstance().renderBuffers().bufferSource();
 
         // Check if we need to rebuild the cache
         if (cache.isDirty() || cache.lightChanged(combinedLight)) {
             cache.rebuild(
                     (capturePoseStack, captureBuffer) ->
-                            renderGeometry(pipeBlockEntity, capturePoseStack, captureBuffer, combinedLight, combinedOverlay),
+                            renderGeometry(pipeBlockEntity, capturePoseStack, captureBuffer, combinedLight, 0),
                     combinedLight
             );
         }
 
-        // Replay cached vertices with the real PoseStack (applies block-to-world transform)
-        cache.replay(poseStack, buffer, combinedLight);
+        // Replay cached vertices with the real PoseStack
+        cache.replay(poseStack, bufferSource, combinedLight);
+
+        // BER: No endBatch needed — the level renderer manages buffer lifecycle.
     }
 
     /**
      * The actual geometry generation logic.
      * Called during cache rebuild with a capture PoseStack (identity) and capture buffer.
-     * Positions are baked into block-local space during capture; on replay only the
-     * block-to-world transform from the real PoseStack is applied.
      */
     public static void renderGeometry(PipeBlockEntity pipeBlockEntity, PoseStack poseStack, MultiBufferSource buffer, int combinedLight, int combinedOverlay) {
         renderGeometry(pipeBlockEntity, poseStack, buffer, combinedLight, combinedOverlay, 1.0f);
     }
 
     public static void renderGeometry(PipeBlockEntity pipeBlockEntity, PoseStack poseStack, MultiBufferSource buffer, int combinedLight, int combinedOverlay, float alpha) {
-        RenderType renderType = alpha < 1.0f ? RenderType.translucent() : RenderType.solid();
-        VertexConsumer builder = buffer.getBuffer(renderType);
+        VertexConsumer builder = buffer.getBuffer(Sheets.cutoutBlockSheet());
 
-        if(pipeBlockEntity.getCamouflageBlockState()!=null) {
+        if (pipeBlockEntity.getCamouflageBlockState() != null) {
             BlockState camouflageState = pipeBlockEntity.getCamouflageBlockState();
-            var blockRenderer = Minecraft.getInstance().getBlockRenderer();
-            BakedModel model = blockRenderer.getBlockModel(camouflageState);
-
-            poseStack.pushPose();
-            blockRenderer.getModelRenderer().tesselateBlock(
-                    pipeBlockEntity.getLevel(),
-                    model,
-                    camouflageState,
-                    pipeBlockEntity.getBlockPos(),
-                    poseStack,
-                    builder,
-                    false,
-                    RandomSource.create(),
-                    camouflageState.getSeed(pipeBlockEntity.getBlockPos()),
-                    combinedOverlay
-            );
-            poseStack.popPose();
-
+            renderCamouflageBlock(pipeBlockEntity, camouflageState, builder);
             return;
         }
 
@@ -93,31 +107,30 @@ public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEnt
             RenderHelper.drawCube(poseStack, builder, sprite, 0.3125f, 0.6875f, 0.3125f, 0.6875f, 0.3125f, 0.6875f, combinedLight, 0xFFFFFFFF, alpha);
 
         for (AbstractFullPipe pipe : pipes) {
-            RedstonePipe rsPipe = (pipe instanceof RedstonePipe)?(RedstonePipe) pipe:null;
+            RedstonePipe rsPipe = (pipe instanceof RedstonePipe) ? (RedstonePipe) pipe : null;
             int color = pipe.getColor();
-            int upgrades = (pipe instanceof AbstractCapFullPipe)?((AbstractCapFullPipe<?>) pipe).getSpeedUpgradeCount():0;
-            Integer upgradeColor = (upgrades>0)?0xFF226600+0xFF/Config.SPEED_UPGRADE_MAX.get()*upgrades :0xFF222222;
+            int upgrades = (pipe instanceof AbstractCapFullPipe) ? ((AbstractCapFullPipe<?>) pipe).getSpeedUpgradeCount() : 0;
+            Integer upgradeColor = (upgrades > 0) ? 0xFF226600 + 0xFF / Config.SPEED_UPGRADE_MAX.get() * upgrades : 0xFF222222;
             poseStack.pushPose();
 
-
-            int slot = (single)?-1: pipe.slotPos();
+            int slot = (single) ? -1 : pipe.slotPos();
             sprite = pipe.getSprite();
             for (Direction direction : new Direction[]{Direction.NORTH, Direction.WEST, Direction.SOUTH, Direction.EAST}) {
-                Integer connectionColor = (rsPipe!=null)?rsPipe.getColor(direction):(!pipe.getNeighborHasSamePipeType(direction))?upgradeColor:null;
-                drawSide(pipe.getPipeSideStatus(direction), slot, poseStack, builder, sprite, combinedLight,direction.getAxisDirection(), color, connectionColor, pipe.getNeighborIsPipeCluster(direction), alpha);
+                Integer connectionColor = (rsPipe != null) ? rsPipe.getColor(direction) : (!pipe.getNeighborHasSamePipeType(direction)) ? upgradeColor : null;
+                drawSide(pipe.getPipeSideStatus(direction), slot, poseStack, builder, sprite, combinedLight, direction.getAxisDirection(), color, connectionColor, pipe.getNeighborIsPipeCluster(direction), alpha);
                 poseStack.translate(0, 0, 1);
                 poseStack.mulPose(Axis.YP.rotationDegrees(90));
             }
 
-            Integer connectionColor = (rsPipe!=null)?rsPipe.getColor(Direction.UP):(!pipe.getNeighborHasSamePipeType(Direction.UP))?upgradeColor:null;
+            Integer connectionColor = (rsPipe != null) ? rsPipe.getColor(Direction.UP) : (!pipe.getNeighborHasSamePipeType(Direction.UP)) ? upgradeColor : null;
             poseStack.mulPose(Axis.XP.rotationDegrees(90));
             poseStack.translate(0, 0, -1);
-            drawSide(pipe.getPipeSideStatus(Direction.UP), slot, poseStack, builder, sprite, combinedLight, Direction.AxisDirection.POSITIVE,color, connectionColor, pipe.getNeighborIsPipeCluster(Direction.UP), alpha);
+            drawSide(pipe.getPipeSideStatus(Direction.UP), slot, poseStack, builder, sprite, combinedLight, Direction.AxisDirection.POSITIVE, color, connectionColor, pipe.getNeighborIsPipeCluster(Direction.UP), alpha);
 
-            connectionColor = (rsPipe!=null)?rsPipe.getColor(Direction.DOWN):(!pipe.getNeighborHasSamePipeType(Direction.DOWN))?upgradeColor:null;
+            connectionColor = (rsPipe != null) ? rsPipe.getColor(Direction.DOWN) : (!pipe.getNeighborHasSamePipeType(Direction.DOWN)) ? upgradeColor : null;
             poseStack.mulPose(Axis.YP.rotationDegrees(180));
             poseStack.translate(-1, 0, -1);
-            drawSide(pipe.getPipeSideStatus(Direction.DOWN), slot , poseStack, builder, sprite, combinedLight, Direction.AxisDirection.NEGATIVE,color, connectionColor, pipe.getNeighborIsPipeCluster(Direction.DOWN), alpha);
+            drawSide(pipe.getPipeSideStatus(Direction.DOWN), slot, poseStack, builder, sprite, combinedLight, Direction.AxisDirection.NEGATIVE, color, connectionColor, pipe.getNeighborIsPipeCluster(Direction.DOWN), alpha);
 
             poseStack.popPose();
         }
@@ -125,8 +138,54 @@ public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEnt
         poseStack.popPose();
     }
 
+    /**
+     * Renders a camouflage block using the tesselateBlock adapter pattern.
+     * Uses UP normals to prevent the Sheets shader from double-applying face shading,
+     * since tesselateBlock already bakes shading into vertex colors.
+     */
+    private static void renderCamouflageBlock(PipeBlockEntity tile, BlockState camoState, VertexConsumer builder) {
+        if (tile.getLevel() == null) return;
+
+        var modelSet = Minecraft.getInstance().getModelManager().getBlockStateModelSet();
+        var model = modelSet.get(camoState);
+        if (model == null) return;
+
+        ModelBlockRenderer modelRenderer = getOrCreateModelRenderer();
+
+        modelRenderer.tesselateBlock(
+                (var x, var y, var z, var quad, var instance) -> {
+                    int lightEmission = quad.materialInfo().lightEmission();
+                    for (int vertex = 0; vertex < 4; vertex++) {
+                        Vector3fc pos = quad.position(vertex);
+                        long packedUv = quad.packedUV(vertex);
+                        int vertexColor = ARGB.multiply(
+                                instance.getColor(vertex),
+                                quad.bakedColors().color(vertex));
+                        int light = instance.getLightCoordsWithEmission(vertex, lightEmission);
+                        float u = UVPair.unpackU(packedUv);
+                        float v = UVPair.unpackV(packedUv);
+                        // Normal = UP (0,1,0) → shader shade factor 1.0
+                        builder.addVertex(pos.x() + x, pos.y() + y, pos.z() + z,
+                                vertexColor, u, v, instance.overlayCoords(), light,
+                                0f, 1f, 0f);
+                    }
+                },
+                0f, 0f, 0f,
+                (BlockAndTintGetter) tile.getLevel(), tile.getBlockPos(),
+                camoState, model,
+                camoState.getSeed(tile.getBlockPos())
+        );
+    }
+
+    private static ModelBlockRenderer getOrCreateModelRenderer() {
+        if (cachedModelRenderer == null) {
+            BlockColors blockColors = Minecraft.getInstance().getBlockColors();
+            cachedModelRenderer = new ModelBlockRenderer(true, false, blockColors);
+        }
+        return cachedModelRenderer;
+    }
+
     private static void drawSide(PipeConnectionState sideStatus, int slot, PoseStack poseStack, VertexConsumer builder, TextureAtlasSprite sprite, int combinedLight, Direction.AxisDirection dir, int pipeColor, Integer connectionColor, Boolean clusterNeighbor, float alpha) {
-        // 0.359375f 0.5f 0.640625f
         boolean alt = dir == Direction.AxisDirection.NEGATIVE;
         boolean xRight = (slot == 0 && alt) || (slot == 1 && !alt) || (slot == 2 && alt) || (slot == 3 && !alt);
         boolean yUpper = slot == 0 || slot == 1;
@@ -138,22 +197,20 @@ public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEnt
         float ymax = slot == -1 ? 0.4296875f : 0.3125f;
 
         if (sideStatus == PipeConnectionState.ENABLED) {
-            if (slot==-1 && clusterNeighbor!=null && clusterNeighbor){
+            if (slot == -1 && clusterNeighbor != null && clusterNeighbor) {
                 RenderHelper.drawCube(poseStack, builder, sprite, xmin, xmax, 0.0625f, ymax, zmin, zmax, combinedLight, pipeColor, alpha);
                 RenderHelper.drawCube(poseStack, builder, sprite, 0.359375f, 0.640625f, 0, 0.0625f, 0.359375f, 0.640625f, combinedLight, pipeColor, alpha);
-            }else if (connectionColor==null) {
+            } else if (connectionColor == null) {
                 RenderHelper.drawCube(poseStack, builder, sprite, xmin, xmax, 0, ymax, zmin, zmax, combinedLight, pipeColor, alpha);
-            }else{
+            } else {
                 RenderHelper.drawCube(poseStack, builder, sprite, xmin, xmax, 0, ymax, zmin, zmax, combinedLight, pipeColor, alpha);
-                RenderHelper.drawCube(poseStack, builder, PipeBlockEntity.getWhitePipeSprite(), xmin-.005f, xmax+.005f, 0.0625f, 0.125f, zmin-.005f, zmax+.005f, combinedLight, connectionColor, alpha);
+                RenderHelper.drawCube(poseStack, builder, PipeBlockEntity.getWhitePipeSprite(), xmin - .005f, xmax + .005f, 0.0625f, 0.125f, zmin - .005f, zmax + .005f, combinedLight, connectionColor, alpha);
             }
         } else if (sideStatus == PipeConnectionState.PULLING) {
             RenderHelper.drawCube(poseStack, builder, sprite, xmin, xmax, 0.125f, ymax, zmin, zmax, combinedLight, pipeColor, alpha);
-            RenderHelper.drawCube(poseStack, builder, PipeBlockEntity.getPullSprite(), xmin, xmax, 0, 0.125f, zmin, zmax, combinedLight, (connectionColor==null)?0xFFFFFFFF:connectionColor, alpha);
+            RenderHelper.drawCube(poseStack, builder, PipeBlockEntity.getPullSprite(), xmin, xmax, 0, 0.125f, zmin, zmax, combinedLight, (connectionColor == null) ? 0xFFFFFFFF : connectionColor, alpha);
         } else if (slot != -1) {
             RenderHelper.drawCube(poseStack, builder, sprite, xmin, xmax, 0.28125f, 0.3125f, zmin, zmax, combinedLight, pipeColor, alpha);
         }
-
     }
-
 }

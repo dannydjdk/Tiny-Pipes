@@ -6,12 +6,8 @@
     "S  "
   ],
   "key": {
-    "i": {
-      "item": "minecraft:iron_nugget"
-    },
-    "S": {
-      "item": "minecraft:stick"
-    }
+    "i": "minecraft:iron_nugget",
+    "S": "minecraft:stick"
   },
   "result": {
     "id": "tinypipes:pipe_wrench"

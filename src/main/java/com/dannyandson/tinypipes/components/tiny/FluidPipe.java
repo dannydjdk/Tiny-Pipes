@@ -14,7 +14,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public class FluidPipe  extends AbstractCapPipe<IFluidHandler> {
 
@@ -185,7 +185,7 @@ public class FluidPipe  extends AbstractCapPipe<IFluidHandler> {
     @Override
     public void readNBT(CompoundTag compoundTag) {
         super.readNBT(compoundTag);
-        disabled = compoundTag.getBoolean("disabled");
+        disabled = compoundTag.getBooleanOr("disabled", false);
     }
 
     @Override

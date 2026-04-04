@@ -9,23 +9,22 @@ import com.dannyandson.tinypipes.components.RenderHelper;
 import com.dannyandson.tinypipes.components.full.AbstractFullPipe;
 import com.dannyandson.tinypipes.network.ModNetworkHandler;
 import com.dannyandson.tinypipes.network.PushPipeConnection;
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.Sheets;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.ChestBlock;
@@ -79,7 +78,7 @@ public class PipeConfigGUI extends Screen {
         // Get the pipe's display name from its registered item
         Item pipeItem = Registry.getFullPipeItemFromClass(pipe.getClass());
         this.pipeName = (pipeItem != null)
-                ? pipeItem.getDescription()
+                ? pipeItem.getDefaultInstance().getHoverName()
                 : Component.literal("Pipe");
 
         // Set initial rotation to match the player's current view
@@ -93,8 +92,6 @@ public class PipeConfigGUI extends Screen {
 
     /**
      * Always fetch the live pipe from the block entity.
-     * The block entity recreates pipe objects on every server sync,
-     * so holding a direct reference goes stale after the first toggle.
      */
     private AbstractFullPipe getPipe() {
         return pipeBlockEntity.getPipe(slotPos);
@@ -113,13 +110,13 @@ public class PipeConfigGUI extends Screen {
     // ── Rendering ───────────────────────────────────────────────────────────────
 
     @Override
-    public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+    public void extractBackground(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
         guiGraphics.fill(0, 0, width, height, 0xC0101010);
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
-        renderBackground(guiGraphics, mouseX, mouseY, partialTicks);
+    public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTicks) {
+        extractBackground(guiGraphics, mouseX, mouseY, partialTicks);
 
         // Dark panel behind the 3D scene for contrast
         int panelSize = (int)(SCALE * 3.5f);
@@ -128,11 +125,9 @@ public class PipeConfigGUI extends Screen {
         guiGraphics.fill(panelX - 1, panelY - 1, panelX + panelSize + 1, panelY + panelSize + 1, 0xFF000000);
         guiGraphics.fill(panelX, panelY, panelX + panelSize, panelY + panelSize, 0xE0222222);
 
-        PoseStack poseStack = guiGraphics.pose();
+        PoseStack poseStack = new PoseStack();
 
         // ── 3D scene ──
-        RenderSystem.enableDepthTest();
-        RenderSystem.disableCull();
 
         MultiBufferSource.BufferSource bufferSource =
                 Minecraft.getInstance().renderBuffers().bufferSource();
@@ -153,41 +148,32 @@ public class PipeConfigGUI extends Screen {
 
         // Render the pipe (identical to in-world)
         PipeBlockEntityRenderer.renderGeometry(pipeBlockEntity, poseStack, bufferSource, FULL_BRIGHT, 0);
-        bufferSource.endBatch(RenderType.solid());
+        bufferSource.endBatch();
 
-        // 3D text labels on indicator faces — rendered after solid pipe (so pipe occludes
-        // back-face labels) but before translucent blocks (so labels aren't hidden by ghosts)
+        // 3D text labels on indicator faces
         renderIndicatorLabels(poseStack, bufferSource);
         bufferSource.endBatch();
 
         // Translucent layer
         renderAdjacentBlocks(poseStack, bufferSource);
         renderFaceIndicators(poseStack, bufferSource);
-        bufferSource.endBatch(RenderType.translucent());
+        bufferSource.endBatch();
 
         poseStack.popPose();
 
-        RenderSystem.enableCull();
-        RenderSystem.disableDepthTest();
-
+        guiGraphics.nextStratum();
         // 2D overlay
-        guiGraphics.drawCenteredString(font,
+        guiGraphics.centeredText(font,
                 Component.translatable("tinypipes.gui.full_pipe_config", pipeName),
                 width / 2, 10, 0xFFFFFF);
-        guiGraphics.drawCenteredString(font,
+        guiGraphics.centeredText(font,
                 Component.translatable("tinypipes.gui.pipe_config.hint"),
                 width / 2, 22, 0x888888);
         renderLegend(guiGraphics);
-
-        closeButton.render(guiGraphics, mouseX, mouseY, partialTicks);
     }
 
     // ── Adjacent blocks ─────────────────────────────────────────────────────────
 
-    /**
-     * Renders adjacent blocks as translucent ghosts.
-     * All blocks (including adjacent pipes) use a translucent textured cube.
-     */
     private void renderAdjacentBlocks(PoseStack poseStack, MultiBufferSource bufferSource) {
         Level level = pipeBlockEntity.getLevel();
         if (level == null) return;
@@ -204,28 +190,22 @@ public class PipeConfigGUI extends Screen {
 
             if (adjacent.getBlock() instanceof PipeBlock
                     && level.getBlockEntity(neighborPos) instanceof PipeBlockEntity adjacentPBE) {
-                // Render adjacent pipe with full geometry but semi-transparent
                 PipeBlockEntityRenderer.renderGeometry(adjacentPBE, poseStack, bufferSource, FULL_BRIGHT, 0, 0.3f);
             } else if (adjacent.getBlock() instanceof ChestBlock) {
-                // Chests have no baked model; render a chest-shaped silhouette.
-                // Vanilla chest: 14x10 body + 14x4 lid, all 14px deep, 1px off the ground.
-                VertexConsumer builder = bufferSource.getBuffer(RenderType.translucent());
+                VertexConsumer builder = bufferSource.getBuffer(Sheets.cutoutBlockSheet());
                 TextureAtlasSprite whiteSprite = PipeBlockEntity.getWhitePipeSprite();
                 int chestBrown = 0xFF8B6914;
-                // Body: 14x10x14 px = 0.875 x 0.625 x 0.875 block units, 1px off ground
                 RenderHelper.drawCube(poseStack, builder, whiteSprite,
                         0.0625f, 0.9375f, 0.0625f, 0.9375f, 0.0625f, 0.6875f,
                         FULL_BRIGHT, chestBrown, 0.3f);
-                // Lid: 14x5x14 px on top, slightly inset
                 RenderHelper.drawCube(poseStack, builder, whiteSprite,
                         0.0625f, 0.9375f, 0.0625f, 0.9375f, 0.6875f, 0.875f,
                         FULL_BRIGHT, chestBrown, 0.25f);
-                // Latch: small dark strip on front face for recognizability
                 RenderHelper.drawCube(poseStack, builder, whiteSprite,
                         0.4375f, 0.5625f, 0.0f, 0.0625f, 0.5625f, 0.8125f,
                         FULL_BRIGHT, 0xFF3B2A0A, 0.4f);
             } else {
-                VertexConsumer builder = bufferSource.getBuffer(RenderType.translucent());
+                VertexConsumer builder = bufferSource.getBuffer(Sheets.cutoutBlockSheet());
                 TextureAtlasSprite sprite = getBlockSprite(adjacent, dir.getOpposite());
                 RenderHelper.drawCube(poseStack, builder, sprite,
                         0.02f, 0.98f, 0.02f, 0.98f, 0.02f, 0.98f,
@@ -237,28 +217,14 @@ public class PipeConfigGUI extends Screen {
     }
 
     private static TextureAtlasSprite getBlockSprite(BlockState state, Direction face) {
-        List<BakedQuad> quads = Minecraft.getInstance().getBlockRenderer()
-                .getBlockModel(state).getQuads(state, face, RandomSource.create());
-        if (!quads.isEmpty()) {
-            return quads.get(0).getSprite();
-        }
-        quads = Minecraft.getInstance().getBlockRenderer()
-                .getBlockModel(state).getQuads(state, null, RandomSource.create());
-        if (!quads.isEmpty()) {
-            return quads.get(0).getSprite();
-        }
-        return Minecraft.getInstance().getBlockRenderer()
-                .getBlockModel(state).getParticleIcon();
+        // TODO: Restore per-face sprite lookup once BlockStateModel particle API is identified
+        return RenderHelper.getSprite(state, face);
     }
 
     // ── Face indicators ─────────────────────────────────────────────────────────
-    //
-    // Rendered as direct quads at exact local-space positions to avoid drawCube
-    // axis mapping confusion. Each indicator is a flat colored quad on the
-    // outer face of the unit cube.
 
     private void renderFaceIndicators(PoseStack poseStack, MultiBufferSource bufferSource) {
-        VertexConsumer builder = bufferSource.getBuffer(RenderType.translucent());
+        VertexConsumer builder = bufferSource.getBuffer(Sheets.cutoutBlockSheet());
         Matrix4f matrix = poseStack.last().pose();
         TextureAtlasSprite sprite = PipeBlockEntity.getWhitePipeSprite();
         float u0 = sprite.getU0(), u1 = sprite.getU1();
@@ -268,16 +234,12 @@ public class PipeConfigGUI extends Screen {
             PipeConnectionState state = getPipe().getPipeSideStatus(dir);
             boolean hovered = (dir == hoveredFace);
 
-            // When hovered, draw a yellow outline frame around the indicator
             if (hovered) {
                 float inner = INDICATOR_SIZE;
                 float outer = INDICATOR_SIZE + 0.05f;
-                // 4 border strips: top, bottom, left, right
-                // Each strip shares the outline's offset plane from getIndicatorCorners
                 drawOutlineFrame(builder, matrix, dir, inner, outer, u0, u1, v0, v1, COLOR_HOVERED, 0.9f);
             }
 
-            // Always draw the state-colored indicator at normal size
             int color = getStateColor(state);
             float alpha = hovered ? 0.9f : 0.7f;
             float[][] corners = getIndicatorCorners(dir, INDICATOR_SIZE);
@@ -290,10 +252,6 @@ public class PipeConfigGUI extends Screen {
         }
     }
 
-    /**
-     * Returns 4 corner positions [x,y,z] for an indicator quad on the given face.
-     * Winding order is set so the quad faces outward from the block.
-     */
     private static float[][] getIndicatorCorners(Direction dir, float size) {
         float min = 0.5f - size;
         float max = 0.5f + size;
@@ -310,10 +268,6 @@ public class PipeConfigGUI extends Screen {
         };
     }
 
-    /**
-     * Draws a hollow rectangular frame by emitting 4 strip quads between the
-     * outer and inner corner rings. Uses the same winding as getIndicatorCorners.
-     */
     private static void drawOutlineFrame(VertexConsumer builder, Matrix4f matrix, Direction dir,
                                          float innerSize, float outerSize,
                                          float u0, float u1, float v0, float v1,
@@ -321,7 +275,6 @@ public class PipeConfigGUI extends Screen {
         float[][] outer = getIndicatorCorners(dir, outerSize);
         float[][] inner = getIndicatorCorners(dir, innerSize);
 
-        // 4 edge strips connecting outer[i]→outer[i+1] to inner[i]→inner[i+1]
         for (int i = 0; i < 4; i++) {
             int j = (i + 1) % 4;
             addQuad(builder, matrix,
@@ -342,23 +295,17 @@ public class PipeConfigGUI extends Screen {
                                 int color, float alpha) {
         int r = (color >> 16) & 0xFF, g = (color >> 8) & 0xFF, b = color & 0xFF, a = (int)(alpha * 255f);
         int lightU = FULL_BRIGHT & 0xFFFF, lightV = (FULL_BRIGHT >> 16) & 0xFFFF;
-        builder.addVertex(matrix, x0,y0,z0).setColor(r,g,b,a).setUv(u0,v0).setUv2(lightU,lightV).setNormal(0,1,0);
-        builder.addVertex(matrix, x1,y1,z1).setColor(r,g,b,a).setUv(u1,v0).setUv2(lightU,lightV).setNormal(0,1,0);
-        builder.addVertex(matrix, x2,y2,z2).setColor(r,g,b,a).setUv(u1,v1).setUv2(lightU,lightV).setNormal(0,1,0);
-        builder.addVertex(matrix, x3,y3,z3).setColor(r,g,b,a).setUv(u0,v1).setUv2(lightU,lightV).setNormal(0,1,0);
+        builder.addVertex(matrix, x0,y0,z0).setColor(r,g,b,a).setUv(u0,v0).setUv1(0,10).setUv2(lightU,lightV).setNormal(0,1,0);
+        builder.addVertex(matrix, x1,y1,z1).setColor(r,g,b,a).setUv(u1,v0).setUv1(0,10).setUv2(lightU,lightV).setNormal(0,1,0);
+        builder.addVertex(matrix, x2,y2,z2).setColor(r,g,b,a).setUv(u1,v1).setUv1(0,10).setUv2(lightU,lightV).setNormal(0,1,0);
+        builder.addVertex(matrix, x3,y3,z3).setColor(r,g,b,a).setUv(u0,v1).setUv1(0,10).setUv2(lightU,lightV).setNormal(0,1,0);
     }
 
-    // ── Hit testing via screen-space projection ─────────────────────────────────
-    //
-    // For each indicator, project its 4 corners through the model-view matrix
-    // to screen space, then test if the mouse point is inside that projected quad.
-    // This avoids all depth/Z-flip issues with unprojection.
+    // ── Hit testing ─────────────────────────────────────────────────────────────
 
     private Direction hitTestIndicators(Matrix4f mvMatrix, double mouseX, double mouseY) {
         float mx = (float) mouseX;
         float my = (float) mouseY;
-
-        // Use a slightly larger hit size than visual for easier clicking
         float hitSize = INDICATOR_SIZE + 0.05f;
 
         Direction closest = null;
@@ -367,7 +314,6 @@ public class PipeConfigGUI extends Screen {
         for (Direction dir : Direction.values()) {
             float[][] corners = getIndicatorCorners(dir, hitSize);
 
-            // Project each corner to screen space
             float[] sx = new float[4];
             float[] sy = new float[4];
             float avgZ = 0;
@@ -380,7 +326,6 @@ public class PipeConfigGUI extends Screen {
             }
             avgZ /= 4f;
 
-            // Point-in-convex-quad test; if hit, keep the one closest to viewer (highest Z)
             if (pointInQuad(mx, my, sx, sy) && avgZ > closestZ) {
                 closestZ = avgZ;
                 closest = dir;
@@ -389,11 +334,6 @@ public class PipeConfigGUI extends Screen {
         return closest;
     }
 
-    /**
-     * Tests if point (px,py) is inside the convex quad defined by screen coords.
-     * Uses the cross product sign test: the point must be on the same side of
-     * all 4 edges.
-     */
     private static boolean pointInQuad(float px, float py, float[] qx, float[] qy) {
         boolean allPositive = true;
         boolean allNegative = true;
@@ -410,22 +350,22 @@ public class PipeConfigGUI extends Screen {
 
     // ── Legend ───────────────────────────────────────────────────────────────────
 
-    private void renderLegend(GuiGraphics guiGraphics) {
+    private void renderLegend(GuiGraphicsExtractor guiGraphics) {
         int legendY = height - 68;
         int legendX = width / 2 - 105;
         int boxSize = 8;
         int textGap = boxSize + 4;
 
         guiGraphics.fill(legendX, legendY, legendX + boxSize, legendY + boxSize, COLOR_ENABLED);
-        guiGraphics.drawString(font, Component.translatable("tinypipes.gui.pipe_config.msg.enabled"), legendX + textGap, legendY, 0xFFFFFF);
+        guiGraphics.text(font, Component.translatable("tinypipes.gui.pipe_config.msg.enabled"), legendX + textGap, legendY, 0xFFFFFF);
 
         legendY += 12;
         guiGraphics.fill(legendX, legendY, legendX + boxSize, legendY + boxSize, COLOR_DISABLED);
-        guiGraphics.drawString(font, Component.translatable("tinypipes.gui.pipe_config.msg.disabled"), legendX + textGap, legendY, 0xFFFFFF);
+        guiGraphics.text(font, Component.translatable("tinypipes.gui.pipe_config.msg.disabled"), legendX + textGap, legendY, 0xFFFFFF);
 
         legendY += 12;
         guiGraphics.fill(legendX, legendY, legendX + boxSize, legendY + boxSize, COLOR_PULLING);
-        guiGraphics.drawString(font, Component.translatable("tinypipes.gui.pipe_config.msg.pulling"), legendX + textGap, legendY, 0xFFFFFF);
+        guiGraphics.text(font, Component.translatable("tinypipes.gui.pipe_config.msg.pulling"), legendX + textGap, legendY, 0xFFFFFF);
     }
 
     private static int getStateColor(PipeConnectionState state) {
@@ -447,14 +387,6 @@ public class PipeConfigGUI extends Screen {
         };
     }
 
-    /**
-     * Renders direction letters on both sides of each indicator face in 3D.
-     *
-     * Font renders in XY plane. After rotation to face each direction, the Z sign
-     * in the scale controls which side the text is readable from:
-     *   scale(ts, -ts,  ts) = readable from the inward side (looking outward from block center)
-     *   scale(ts, -ts, -ts) = readable from the outward side (looking at the block face)
-     */
     private void renderIndicatorLabels(PoseStack poseStack, MultiBufferSource bufferSource) {
         float ts = 0.018f;
         float offset = 0.01f;
@@ -469,7 +401,6 @@ public class PipeConfigGUI extends Screen {
 
                 poseStack.pushPose();
 
-                // Translate to face center and rotate so the text plane lies on the face
                 switch (dir) {
                     case NORTH:
                         poseStack.translate(0.5, 0.5, NEG_INDICATOR_OFFSET - d);
@@ -496,16 +427,12 @@ public class PipeConfigGUI extends Screen {
                         break;
                 }
 
-                // Y 180° flip needed for specific face+side combinations to read correctly.
-                // NORTH/SOUTH outward and EAST/WEST inward need it; all others don't.
                 boolean needsFlip = (!inward && (dir == Direction.NORTH || dir == Direction.SOUTH))
                         || (inward && (dir == Direction.EAST || dir == Direction.WEST));
                 if (needsFlip) {
                     poseStack.mulPose(Axis.YP.rotationDegrees(180));
                 }
                 poseStack.scale(ts, -ts, ts);
-
-                // Center the text
                 poseStack.translate(-textWidth / 2.0, -font.lineHeight / 2.0, 0);
 
                 font.drawInBatch(label, 0, 0, 0xFFFFFFFF, true,
@@ -520,21 +447,25 @@ public class PipeConfigGUI extends Screen {
     // ── Mouse interaction ───────────────────────────────────────────────────────
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (super.mouseClicked(mouseX, mouseY, button)) return true;
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        if (super.mouseClicked(event, doubleClick)) return true;
+        int button = event.button();
         if (button == 0 || button == 1) {
             isDragging = true;
             activeButton = button;
             clickCandidate = true;
-            clickStartX = mouseX;
-            clickStartY = mouseY;
+            clickStartX = event.x();
+            clickStartY = event.y();
             return true;
         }
         return false;
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    public boolean mouseReleased(MouseButtonEvent event) {
+        int button = event.button();
+        double mouseX = event.x();
+        double mouseY = event.y();
         if (button == activeButton && (button == 0 || button == 1)) {
             if (clickCandidate && hoveredFace != null) {
                 double dx = mouseX - clickStartX;
@@ -548,11 +479,14 @@ public class PipeConfigGUI extends Screen {
             clickCandidate = false;
             return true;
         }
-        return super.mouseReleased(mouseX, mouseY, button);
+        return super.mouseReleased(event);
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+    public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
+        int button = event.button();
+        double mouseX = event.x();
+        double mouseY = event.y();
         if (isDragging && button == activeButton) {
             double dx = mouseX - clickStartX;
             double dy = mouseY - clickStartY;
@@ -566,7 +500,7 @@ public class PipeConfigGUI extends Screen {
             }
             return true;
         }
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        return super.mouseDragged(event, dragX, dragY);
     }
 
     // ── State toggle ────────────────────────────────────────────────────────────

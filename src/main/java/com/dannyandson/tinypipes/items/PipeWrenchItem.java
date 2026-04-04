@@ -1,18 +1,19 @@
 package com.dannyandson.tinypipes.items;
 
-import com.dannyandson.tinypipes.setup.Registration;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.*;
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.world.item.component.TooltipDisplay;
+import org.lwjgl.glfw.GLFW;
 
-import java.util.List;
+import java.util.function.Consumer;
 
-public class PipeWrenchItem extends DiggerItem {
+public class PipeWrenchItem extends Item {
 
-    public PipeWrenchItem() {
-        super(Tiers.WOOD, Registration.MINEABLE_WITH_WRENCH, new Properties());
+    public PipeWrenchItem(Item.Properties props) {
+        super(props);
     }
 
     @Override
@@ -21,10 +22,16 @@ public class PipeWrenchItem extends DiggerItem {
     }
 
     @Override
-    public void appendHoverText(@NotNull ItemStack stack, TooltipContext context, @NotNull List<Component> list, @NotNull TooltipFlag flags) {
-        if (Screen.hasShiftDown()) {
-            list.add(Component.translatable("message." + this.getDescriptionId()).withStyle(ChatFormatting.DARK_AQUA));
+    public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> textConsumer, TooltipFlag flags) {
+        if (isShiftKeyDown()) {
+            textConsumer.accept(Component.translatable("message." + this.getDescriptionId()).withStyle(ChatFormatting.DARK_AQUA));
         } else
-            list.add(Component.translatable("tinypipes.tooltip.press_shift").withStyle(ChatFormatting.DARK_GRAY));
+            textConsumer.accept(Component.translatable("tinypipes.tooltip.press_shift").withStyle(ChatFormatting.DARK_GRAY));
+    }
+
+    private static boolean isShiftKeyDown() {
+        var window = Minecraft.getInstance().getWindow();
+        return InputConstants.isKeyDown(window, GLFW.GLFW_KEY_LEFT_SHIFT)
+                || InputConstants.isKeyDown(window, GLFW.GLFW_KEY_RIGHT_SHIFT);
     }
 }

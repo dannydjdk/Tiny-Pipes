@@ -5,12 +5,8 @@
     " b "
   ],
   "key": {
-    "i": {
-      "item": "minecraft:iron_ingot"
-    },
-    "b": {
-      "item": "minecraft:bucket"
-    }
+    "i": "minecraft:iron_ingot",
+    "b": "minecraft:bucket"
   },
   "result": {
     "id": "tinypipes:full_fluid_pipe",

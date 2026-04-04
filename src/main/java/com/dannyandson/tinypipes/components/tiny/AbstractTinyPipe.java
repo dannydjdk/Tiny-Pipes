@@ -6,11 +6,11 @@ import com.dannyandson.tinypipes.gui.TinyPipeConfigGUI;
 import com.dannyandson.tinypipes.setup.ClientSetup;
 import com.dannyandson.tinyredstone.api.IPanelCell;
 import com.dannyandson.tinyredstone.blocks.*;
-import com.dannyandson.tinyredstone.setup.Registration;
+import com.dannyandson.tinyredstone.setup.ModRegistration;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -54,7 +54,7 @@ public abstract class AbstractTinyPipe implements IPanelCell, IPipe {
     public void render(PoseStack poseStack, MultiBufferSource buffer, int combinedLight, int combinedOverlay, float alpha) {
 
         sprite = getSprite();
-        VertexConsumer builder = buffer.getBuffer((alpha==1.0)? RenderType.solid():RenderType.translucent());
+        VertexConsumer builder = buffer.getBuffer((alpha==1.0)? Sheets.cutoutBlockSheet():Sheets.translucentBlockSheet());
         int color = getColor();
 
         com.dannyandson.tinypipes.components.RenderHelper.drawCube(poseStack,builder,sprite,c1,c2,c1,c2,c1,c2,combinedLight,color,alpha);
@@ -114,12 +114,12 @@ public abstract class AbstractTinyPipe implements IPanelCell, IPipe {
 
     @Override
     public boolean onBlockActivated(PanelCellPos cellPos, PanelCellSegment segmentClicked, Player player) {
-        if (player.getMainHandItem().getItem() == Registration.REDSTONE_WRENCH.get()) {
+        if (player.getMainHandItem().getItem() == ModRegistration.REDSTONE_WRENCH.get()) {
             Side sideOfCell = getClickedSide(cellPos, player);
             if (sideOfCell != null) {
                 toggleSideConnection(cellPos, sideOfCell);
             }
-        } else if (player.level().isClientSide){
+        } else if (player.level().isClientSide()){
             TinyPipeConfigGUI.open(cellPos,this);
         }
         return false;
@@ -264,7 +264,7 @@ public abstract class AbstractTinyPipe implements IPanelCell, IPipe {
     @Override
     public boolean hasActivation(Player player) {
         Item heldItem = player.getMainHandItem().getItem();
-        return heldItem == Registration.REDSTONE_WRENCH.get() || heldItem == Items.AIR;
+        return heldItem == ModRegistration.REDSTONE_WRENCH.get() || heldItem == Items.AIR;
     }
 
     @Override
@@ -286,18 +286,14 @@ public abstract class AbstractTinyPipe implements IPanelCell, IPipe {
     public CompoundTag writeNBT() {
         CompoundTag nbt = new CompoundTag();
         if (!connectedSides.isEmpty()) {
-            List<Integer> sides = new ArrayList<>();
-            for (Side side : connectedSides)
-                if (side != null)
-                    sides.add(side.ordinal());
-            nbt.putIntArray("connectedSides",sides);
+            nbt.putIntArray("connectedSides", connectedSides.stream()
+                    .filter(java.util.Objects::nonNull)
+                    .mapToInt(Side::ordinal).toArray());
         }
         if (!pullSides.isEmpty()) {
-            List<Integer> sides = new ArrayList<>();
-            for (Side side : pullSides)
-                if (side != null)
-                    sides.add(side.ordinal());
-            nbt.putIntArray("pullSides",sides);
+            nbt.putIntArray("pullSides", pullSides.stream()
+                    .filter(java.util.Objects::nonNull)
+                    .mapToInt(Side::ordinal).toArray());
         }
         return nbt;
     }
@@ -305,11 +301,11 @@ public abstract class AbstractTinyPipe implements IPanelCell, IPipe {
     @Override
     public void readNBT(CompoundTag compoundTag) {
         if (compoundTag.contains("connectedSides")){
-            for (int i : compoundTag.getIntArray("connectedSides"))
+            for (int i : compoundTag.getIntArray("connectedSides").orElse(new int[0]))
                 connectedSides.add(Side.values()[i]);
         }
         if (compoundTag.contains("pullSides")){
-            for (int i : compoundTag.getIntArray("pullSides"))
+            for (int i : compoundTag.getIntArray("pullSides").orElse(new int[0]))
                 pullSides.add(Side.values()[i]);
         }
     }

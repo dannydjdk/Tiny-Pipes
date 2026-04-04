@@ -4,12 +4,8 @@
     "psp"
   ],
   "key": {
-    "p": {
-      "item": "tinypipes:full_fluid_pipe"
-    },
-    "s": {
-      "tag": "c:silicon"
-    }
+    "p": "tinypipes:full_fluid_pipe",
+    "s": "#c:silicon"
   },
   "result": {
     "id": "tinypipes:fluid_pipe",

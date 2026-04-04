@@ -6,15 +6,9 @@
     "c c"
   ],
   "key": {
-    "c": {
-      "item": "minecraft:copper_ingot"
-    },
-    "i": {
-      "item": "minecraft:iron_ingot"
-    },
-    "r": {
-      "item": "minecraft:redstone"
-    }
+    "c": "minecraft:copper_ingot",
+    "i": "minecraft:iron_ingot",
+    "r": "minecraft:redstone"
   },
   "result": {
     "id": "tinypipes:full_energy_pipe",

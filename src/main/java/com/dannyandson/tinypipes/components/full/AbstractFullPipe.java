@@ -4,6 +4,7 @@ import com.dannyandson.tinypipes.TinyPipes;
 import com.dannyandson.tinypipes.blocks.PipeBlockEntity;
 import com.dannyandson.tinypipes.blocks.PipeConnectionState;
 import com.dannyandson.tinypipes.components.IPipe;
+import com.dannyandson.tinypipes.components.RenderHelper;
 import com.dannyandson.tinypipes.gui.PipeConfigGUI;
 import com.dannyandson.tinypipes.setup.ClientSetup;
 
@@ -15,7 +16,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -34,7 +35,7 @@ public abstract class AbstractFullPipe implements IPipe {
     private static TextureAtlasSprite sprite = null;
     public TextureAtlasSprite getSprite(){
         if (sprite==null)
-            sprite = com.dannyandson.tinypipes.components.RenderHelper.getSprite(ClientSetup.PIPE_TEXTURE);
+            sprite = RenderHelper.getSprite(ClientSetup.PIPE_TEXTURE);
         return sprite;
     }
 
@@ -126,7 +127,7 @@ public abstract class AbstractFullPipe implements IPipe {
     }
 
     public void openGUI(PipeBlockEntity pipeBlockEntity,Player player){
-        if (player.level().isClientSide){
+        if (player.level().isClientSide()){
             PipeConfigGUI.open(pipeBlockEntity,this);
         }
     }
@@ -200,7 +201,7 @@ public abstract class AbstractFullPipe implements IPipe {
             boolean change = neighborChanged(pipeBlockEntity, null);
             pipeBlockEntity.sync();
             if (change){
-                pipeBlockEntity.getLevel().blockUpdated(pipeBlockEntity.getBlockPos(),pipeBlockEntity.getBlockState().getBlock());
+                pipeBlockEntity.getLevel().updateNeighborsAt(pipeBlockEntity.getBlockPos(),pipeBlockEntity.getBlockState().getBlock());
             }
             pipeBlockEntity.getLevel().updateNeighborsAt(pipeBlockEntity.getBlockPos(),pipeBlockEntity.getBlockState().getBlock());
             return change;
@@ -238,20 +239,23 @@ public abstract class AbstractFullPipe implements IPipe {
     public void readNBT(CompoundTag compoundTag) {
         try {
             if (compoundTag.contains("sideStatus")) {
-                for (String key : compoundTag.getCompound("sideStatus").getAllKeys()) {
+                CompoundTag sideStatusTag = compoundTag.getCompound("sideStatus").orElseGet(CompoundTag::new);
+                for (String key : sideStatusTag.keySet()) {
                     Direction direction = Direction.valueOf(key);
-                    PipeConnectionState status = PipeConnectionState.valueOf(compoundTag.getCompound("sideStatus").getString(key));
+                    PipeConnectionState status = PipeConnectionState.valueOf(sideStatusTag.getStringOr(key, "DISABLED"));
                     sideStatusMap.put(direction, status);
                 }
             }
             if (compoundTag.contains("neighborIsPipeCluster")){
-                for (String side : compoundTag.getCompound("neighborIsPipeCluster").getAllKeys()) {
-                    neighborIsPipeCluster.put(Direction.valueOf(side), compoundTag.getCompound("neighborIsPipeCluster").getBoolean(side));
+                CompoundTag neighborTag = compoundTag.getCompound("neighborIsPipeCluster").orElseGet(CompoundTag::new);
+                for (String side : neighborTag.keySet()) {
+                    neighborIsPipeCluster.put(Direction.valueOf(side), neighborTag.getBooleanOr(side, false));
                 }
             }
             if (compoundTag.contains("neighborHasSamePipeType")){
-                for (String side : compoundTag.getCompound("neighborHasSamePipeType").getAllKeys()) {
-                    neighborHasSamePipeType.put(Direction.valueOf(side), compoundTag.getCompound("neighborHasSamePipeType").getBoolean(side));
+                CompoundTag neighborTag = compoundTag.getCompound("neighborHasSamePipeType").orElseGet(CompoundTag::new);
+                for (String side : neighborTag.keySet()) {
+                    neighborHasSamePipeType.put(Direction.valueOf(side), neighborTag.getBooleanOr(side, false));
                 }
             }
 

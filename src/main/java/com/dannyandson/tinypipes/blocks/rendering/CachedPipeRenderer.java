@@ -3,7 +3,7 @@ package com.dannyandson.tinypipes.blocks.rendering;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.Sheets;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -78,7 +78,7 @@ public class CachedPipeRenderer {
         // Run the full render logic against our capturing buffer
         renderAction.render(capturePoseStack, captureSource);
 
-        // Flush the last vertex (1.21.1 contract: no endVertex, last vertex needs explicit flush)
+        // Flush the last vertex
         captureSource.getConsumer().flush();
 
         // Store the captured vertices
@@ -93,22 +93,23 @@ public class CachedPipeRenderer {
      * we apply the real PoseStack's transform matrix during replay to place them in world space.
      *
      * @param poseStack the current PoseStack from the render call (contains block-to-world transform)
-     * @param buffer the real MultiBufferSource to render into
+     * @param bufferSource the real MultiBufferSource to render into
      * @param combinedLight current light value (used for light UV override if light changed,
      *                      but we rebuild on light change so this is just for consistency)
      */
-    public void replay(PoseStack poseStack, MultiBufferSource buffer, int combinedLight) {
+    public void replay(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, int combinedLight) {
         if (cachedVertices.isEmpty()) {
             return;
         }
 
-        VertexConsumer builder = buffer.getBuffer(RenderType.solid());
+        VertexConsumer builder = bufferSource.getBuffer(Sheets.cutoutBlockSheet());
         org.joml.Matrix4f matrix = poseStack.last().pose();
 
         for (CachedVertex v : cachedVertices) {
             builder.addVertex(matrix, v.x, v.y, v.z)
                     .setColor(v.r, v.g, v.b, v.a)
                     .setUv(v.u, v.v)
+                    .setUv1(v.overlayU, v.overlayV)
                     .setUv2(v.lightU, v.lightV)
                     .setNormal(v.normalX, v.normalY, v.normalZ);
         }

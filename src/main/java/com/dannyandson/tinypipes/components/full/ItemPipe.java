@@ -12,7 +12,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.items.IItemHandler;
 
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import static com.dannyandson.tinypipes.components.RenderHelper.ITEM_PIPE_TEXTURE;
 

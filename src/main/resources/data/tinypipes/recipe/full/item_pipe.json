@@ -6,12 +6,8 @@
     " i "
   ],
   "key": {
-    "i": {
-      "item": "minecraft:iron_ingot"
-    },
-    "c": {
-      "item": "minecraft:chest"
-    }
+    "i": "minecraft:iron_ingot",
+    "c": "minecraft:chest"
   },
   "result": {
     "id": "tinypipes:full_item_pipe",

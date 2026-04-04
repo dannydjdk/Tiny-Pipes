@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "tinypipes:item/full_fluid_filter_pipe"
+  }
+}

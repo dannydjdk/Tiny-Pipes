@@ -8,7 +8,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
@@ -16,7 +16,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 public record PushItemFilterFlags(BlockPos pos, int index, boolean blacklist) implements CustomPacketPayload {
 
     public static final Type<PushItemFilterFlags> TYPE =
-            new Type<>(ResourceLocation.fromNamespaceAndPath(TinyPipes.MODID, "push_item_filter_flags"));
+            new Type<>(Identifier.fromNamespaceAndPath(TinyPipes.MODID, "push_item_filter_flags"));
 
     public static final StreamCodec<FriendlyByteBuf, PushItemFilterFlags> STREAM_CODEC =
             StreamCodec.composite(

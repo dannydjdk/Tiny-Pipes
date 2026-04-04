@@ -1,7 +1,7 @@
 package com.dannyandson.tinypipes.gui;
 
 import com.dannyandson.tinypipes.components.IFilterPipe;
-import com.dannyandson.tinypipes.setup.Registration;
+import com.dannyandson.tinypipes.setup.ModRegistration;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.Container;
 import net.minecraft.world.MenuProvider;
@@ -9,7 +9,7 @@ import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.BucketItem;
@@ -17,9 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.MobBucketItem;
 import net.minecraft.world.level.material.Fluids;
-
-import javax.annotation.CheckForNull;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public class ItemFilterContainerMenu extends AbstractContainerMenu {
 
@@ -34,7 +32,7 @@ public class ItemFilterContainerMenu extends AbstractContainerMenu {
     private final Container container;
 
     protected ItemFilterContainerMenu(int containerId, Inventory playerInventory, Container container) {
-        this(containerId,playerInventory,container,Registration.ITEM_FILTER_MENU_TYPE.get());
+        this(containerId,playerInventory,container, ModRegistration.ITEM_FILTER_MENU_TYPE.get());
 
     }
 
@@ -75,7 +73,7 @@ public class ItemFilterContainerMenu extends AbstractContainerMenu {
         return this.container.stillValid(p_38874_);
     }
 
-    @CheckForNull
+    @Nullable
     public IFilterPipe getIFilterPipe(){
         if (this.container instanceof IFilterPipe iFilterPipe)
             return iFilterPipe;
@@ -84,7 +82,7 @@ public class ItemFilterContainerMenu extends AbstractContainerMenu {
 
 
     @Override
-    public void clicked(int slot, int button, ClickType clickType, Player player) {
+    public void clicked(int slot, int button, ContainerInput containerInput, Player player) {
         if (slot>=0 && slot<container.getContainerSize()) {
             ItemStack carriedStack = getCarried();
             if (!carriedStack.getItem().equals(Items.AIR) && !carriedStack.equals(ItemStack.EMPTY) &&
@@ -110,7 +108,7 @@ public class ItemFilterContainerMenu extends AbstractContainerMenu {
                 container.removeItemNoUpdate(slot);
             }
         } else {
-            super.clicked(slot, button, clickType, player);
+            super.clicked(slot, button, containerInput, player);
         }
     }
 

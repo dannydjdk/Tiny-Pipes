@@ -10,7 +10,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
@@ -18,7 +18,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 public record PushPipeConnection(BlockPos pos, int index, int sideOrdinal, int stateOrdinal) implements CustomPacketPayload {
 
     public static final Type<PushPipeConnection> TYPE =
-            new Type<>(ResourceLocation.fromNamespaceAndPath(TinyPipes.MODID, "push_pipe_connection"));
+            new Type<>(Identifier.fromNamespaceAndPath(TinyPipes.MODID, "push_pipe_connection"));
 
     public static final StreamCodec<FriendlyByteBuf, PushPipeConnection> STREAM_CODEC =
             StreamCodec.composite(

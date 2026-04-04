@@ -1,6 +1,6 @@
 package com.dannyandson.tinypipes.gui;
 
-import com.dannyandson.tinypipes.setup.Registration;
+import com.dannyandson.tinypipes.setup.ModRegistration;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.Container;
 import net.minecraft.world.MenuProvider;
@@ -8,8 +8,7 @@ import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public class FluidFilterContainerMenu extends ItemFilterContainerMenu{
     public static FluidFilterContainerMenu createFluidMenu(int containerId, Inventory playerInventory) {
@@ -20,7 +19,7 @@ public class FluidFilterContainerMenu extends ItemFilterContainerMenu{
     }
 
     protected FluidFilterContainerMenu(int containerId, Inventory playerInventory, Container container) {
-        super(containerId, playerInventory, container, Registration.FLUID_FILTER_MENU_TYPE.get());
+        super(containerId, playerInventory, container, ModRegistration.FLUID_FILTER_MENU_TYPE.get());
     }
 
     public static class Provider implements MenuProvider {

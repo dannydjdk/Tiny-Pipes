@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "tinypipes:block/pipe_block"
+    }
+  }
+}

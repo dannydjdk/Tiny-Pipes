@@ -6,12 +6,8 @@
     " r "
   ],
   "key": {
-    "r": {
-      "item": "minecraft:redstone"
-    },
-    "s": {
-      "item": "minecraft:copper_ingot"
-    }
+    "r": "minecraft:redstone",
+    "s": "minecraft:copper_ingot"
   },
   "result": {
     "id": "tinypipes:full_redstone_pipe",

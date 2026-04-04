@@ -4,12 +4,8 @@
     "psp"
   ],
   "key": {
-    "p": {
-      "item": "tinypipes:full_redstone_pipe"
-    },
-    "s": {
-      "tag": "c:silicon"
-    }
+    "p": "tinypipes:full_redstone_pipe",
+    "s": "#c:silicon"
   },
   "result": {
     "id": "tinypipes:redstone_pipe",

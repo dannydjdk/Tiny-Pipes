@@ -3,7 +3,7 @@ package com.dannyandson.tinypipes;
 import com.dannyandson.tinypipes.api.Registry;
 import com.dannyandson.tinypipes.blocks.PipeBlock;
 import com.dannyandson.tinypipes.blocks.PipeBlockEntity;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.ItemTags;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -13,7 +13,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 public class CommonBinding {
 
     private static final net.minecraft.tags.TagKey<net.minecraft.world.item.Item> WRENCH_TAG =
-            ItemTags.create(ResourceLocation.fromNamespaceAndPath("c", "tools/wrench"));
+            ItemTags.create(Identifier.fromNamespaceAndPath("c", "tools/wrench"));
 
     @SubscribeEvent
     public static void onLeftClickBlock(PlayerInteractEvent.LeftClickBlock event) {

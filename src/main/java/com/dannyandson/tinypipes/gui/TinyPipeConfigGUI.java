@@ -7,16 +7,15 @@ import com.dannyandson.tinypipes.network.ModNetworkHandler;
 import com.dannyandson.tinypipes.network.PushPipeConnection;
 import com.dannyandson.tinyredstone.blocks.PanelCellPos;
 import com.dannyandson.tinyredstone.blocks.Side;
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -32,7 +31,7 @@ public class TinyPipeConfigGUI extends Screen {
     private Map<Side,Integer> xLocations = new HashMap<>();
     private Map<Side,Integer> yLocations = new HashMap<>();
 
-    private static final ResourceLocation GUI = ResourceLocation.fromNamespaceAndPath(TinyPipes.MODID, "textures/gui/transparent.png");
+    private static final Identifier GUI = Identifier.fromNamespaceAndPath(TinyPipes.MODID, "textures/gui/transparent.png");
 
     protected TinyPipeConfigGUI(PanelCellPos cellPos, AbstractTinyPipe tinyPipe) {
         super(Component.translatable("tinypipes:pipeconfiggui"));
@@ -45,10 +44,13 @@ public class TinyPipeConfigGUI extends Screen {
         int relX = (this.width - WIDTH) / 2;
         int relY = (this.height - HEIGHT) / 2;
 
-        addRenderableWidget(new ModWidget(relX-1, relY-1, WIDTH+2, HEIGHT+2, 0xAA000000));
-        addRenderableWidget(new ModWidget(relX, relY, WIDTH, HEIGHT, 0x88EEEEEE));
+        // Background panels — render only, no input dispatch
+        addRenderableOnly(new ModWidget(relX-1, relY-1, WIDTH+2, HEIGHT+2, 0xAA000000));
+        addRenderableOnly(new ModWidget(relX, relY, WIDTH, HEIGHT, 0x88EEEEEE));
 
-        addRenderableWidget(new ModWidget(relX,relY+2,WIDTH-2,40,Component.translatable("tinypipes.gui.pipe_config")).setTextHAlignment(ModWidget.HAlignment.CENTER));
+        // Title label — render only
+        addRenderableOnly(new ModWidget(relX,relY+2,WIDTH-2,40,Component.translatable("tinypipes.gui.pipe_config"))
+                .setTextHAlignment(ModWidget.HAlignment.CENTER));
 
         for (Direction direction : Direction.values()) {
             int dRelX = relX + ((direction == Direction.UP) ? 2 : (direction == Direction.DOWN) ? 2 : (direction == Direction.NORTH) ? 122 : (direction == Direction.WEST) ? 62 : (direction == Direction.EAST) ? 182 : 122);
@@ -58,23 +60,23 @@ public class TinyPipeConfigGUI extends Screen {
             xLocations.put(side, dRelX);
             yLocations.put(side, dRelY);
 
-            //label
-            addRenderableWidget(new ModWidget(dRelX, dRelY, 60, 20, Component.nullToEmpty(direction.name())).setTextHAlignment(ModWidget.HAlignment.CENTER));
+            // Direction label — render only
+            addRenderableOnly(new ModWidget(dRelX, dRelY, 60, 20, Component.nullToEmpty(direction.name()))
+                    .setTextHAlignment(ModWidget.HAlignment.CENTER));
 
-            //side toggle button
+            // Side toggle button — interactive
             Button toggleButton = ModWidget.buildButton(dRelX, dRelY + 10, 60, 20, Component.nullToEmpty(tinyPipe.getSideConnection(side).name()), button -> toggleConnection(side));
             sideButtons.put(side, toggleButton);
             addRenderableWidget(toggleButton);
         }
 
+        // Info labels — render only
+        addRenderableOnly(new ModWidget(relX+2,relY+100,WIDTH-2,40,Component.translatable("tinypipes.gui.pipe_config.msg.enabled")));
+        addRenderableOnly(new ModWidget(relX+2,relY+110,WIDTH-2,40,Component.translatable("tinypipes.gui.pipe_config.msg.disabled")));
+        addRenderableOnly(new ModWidget(relX+2,relY+120,WIDTH-2,40,Component.translatable("tinypipes.gui.pipe_config.msg.pulling")));
 
-        addRenderableWidget(new ModWidget(relX+2,relY+100,WIDTH-2,40,Component.translatable("tinypipes.gui.pipe_config.msg.enabled")));
-        addRenderableWidget(new ModWidget(relX+2,relY+110,WIDTH-2,40,Component.translatable("tinypipes.gui.pipe_config.msg.disabled")));
-        addRenderableWidget(new ModWidget(relX+2,relY+120,WIDTH-2,40,Component.translatable("tinypipes.gui.pipe_config.msg.pulling")));
-
+        // Close button — interactive
         addRenderableWidget(ModWidget.buildButton(relX + 82, relY + 135, 80, 20, Component.translatable("tinyredstone.close"), button -> close()));
-
-
     }
 
     private void close() {
@@ -106,15 +108,12 @@ public class TinyPipeConfigGUI extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        RenderSystem.setShaderTexture(0, GUI);
+    public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTicks) {
         int relX = (this.width - WIDTH) / 2;
         int relY = (this.height - HEIGHT) / 2;
-        guiGraphics.blit(GUI, relX, relY, 0, 0, WIDTH, HEIGHT);
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, GUI, relX, relY, 0, 0, WIDTH, HEIGHT, 256, 256);
 
-        super.render(guiGraphics,mouseX, mouseY, partialTicks);
+        super.extractRenderState(guiGraphics, mouseX, mouseY, partialTicks);
     }
 
 

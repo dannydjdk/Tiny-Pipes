@@ -10,11 +10,11 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
-import javax.annotation.CheckForNull;
+import org.jspecify.annotations.Nullable;
 
 public class TinyPipeNetworkHelper {
 
-    @CheckForNull
+    @Nullable
     public static IPipe getPipe(BlockGetter level, BlockPos pos, int index) {
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof PanelTile panelTile) {

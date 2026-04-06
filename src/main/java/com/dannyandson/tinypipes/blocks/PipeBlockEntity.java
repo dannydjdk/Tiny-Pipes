@@ -293,6 +293,7 @@ public class PipeBlockEntity extends BlockEntity {
     }
 
     public void tick() {
+        if (level.isClientSide) return;
         boolean update = false;
         for (AbstractFullPipe pipe : pipes.values())
             if (pipe.tick(this)) update = true;

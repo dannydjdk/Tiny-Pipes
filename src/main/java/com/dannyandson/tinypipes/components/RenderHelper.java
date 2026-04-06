@@ -74,20 +74,20 @@ public class RenderHelper {
     }
 
     public static void drawRectangle(VertexConsumer builder, PoseStack matrixStack, float x1, float x2, float y1, float y2, float u0, float u1, float v0, float v1, int combinedLight , int color, float alpha){
-        // Compute the local face normal from the quad's winding order.
-        // Vertices are emitted in order (x1,y1), (x2,y1), (x2,y2), (x1,y2) in the XY plane at z=0.
-        // The cross product of edge1 × edge2 gives (0, 0, (x2-x1)*(y2-y1)), so the local normal
-        // is +Z or -Z depending on whether the parameters are ascending or descending.
+        // Compute the world-space face normal to determine the correct directional shade.
         float localNz = Math.signum((x2 - x1) * (y2 - y1));
         Vector3f normal = matrixStack.last().normal().transform(new Vector3f(0, 0, localNz));
         normal.normalize();
 
+        // Bake directional shade into the vertex color.  Pass UP (0,1,0) as the
+        // vertex normal so that Sodium's shader (which also applies diffuse shading
+        // from normals) multiplies by 1.0 and doesn't double-darken the faces.
         int shadedColor = applyShade(color, getShadeFromNormal(normal.x, normal.y, normal.z));
         Matrix4f matrix4f = matrixStack.last().pose();
-        add(builder, matrix4f, x1, y1, 0, u0, v0, combinedLight, shadedColor, alpha, normal.x, normal.y, normal.z);
-        add(builder, matrix4f, x2, y1, 0, u1, v0, combinedLight, shadedColor, alpha, normal.x, normal.y, normal.z);
-        add(builder, matrix4f, x2, y2, 0, u1, v1, combinedLight, shadedColor, alpha, normal.x, normal.y, normal.z);
-        add(builder, matrix4f, x1, y2, 0, u0, v1, combinedLight, shadedColor, alpha, normal.x, normal.y, normal.z);
+        add(builder, matrix4f, x1, y1, 0, u0, v0, combinedLight, shadedColor, alpha, 0, 1, 0);
+        add(builder, matrix4f, x2, y1, 0, u1, v0, combinedLight, shadedColor, alpha, 0, 1, 0);
+        add(builder, matrix4f, x2, y2, 0, u1, v1, combinedLight, shadedColor, alpha, 0, 1, 0);
+        add(builder, matrix4f, x1, y2, 0, u0, v1, combinedLight, shadedColor, alpha, 0, 1, 0);
     }
 
     public static void drawRectangle2(VertexConsumer builder, PoseStack matrixStack, float x1, float x2, float y1, float y2, TextureAtlasSprite sprite, int combinedLight , int color, float alpha){
@@ -97,10 +97,10 @@ public class RenderHelper {
 
         int shadedColor = applyShade(color, getShadeFromNormal(normal.x, normal.y, normal.z));
         Matrix4f matrix4f = matrixStack.last().pose();
-        add(builder, matrix4f, x1, y1, 0, sprite.getU0(), sprite.getV1(), combinedLight, shadedColor, alpha, normal.x, normal.y, normal.z);
-        add(builder, matrix4f, x2, y1, 0, sprite.getU1(), sprite.getV1(), combinedLight, shadedColor, alpha, normal.x, normal.y, normal.z);
-        add(builder, matrix4f, x2, y2, 0, sprite.getU1(), sprite.getV0(), combinedLight, shadedColor, alpha, normal.x, normal.y, normal.z);
-        add(builder, matrix4f, x1, y2, 0, sprite.getU0(), sprite.getV0(), combinedLight, shadedColor, alpha, normal.x, normal.y, normal.z);
+        add(builder, matrix4f, x1, y1, 0, sprite.getU0(), sprite.getV1(), combinedLight, shadedColor, alpha, 0, 1, 0);
+        add(builder, matrix4f, x2, y1, 0, sprite.getU1(), sprite.getV1(), combinedLight, shadedColor, alpha, 0, 1, 0);
+        add(builder, matrix4f, x2, y2, 0, sprite.getU1(), sprite.getV0(), combinedLight, shadedColor, alpha, 0, 1, 0);
+        add(builder, matrix4f, x1, y2, 0, sprite.getU0(), sprite.getV0(), combinedLight, shadedColor, alpha, 0, 1, 0);
     }
 
 

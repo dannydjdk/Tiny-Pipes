@@ -18,6 +18,13 @@ import org.joml.Vector3f;
 
 public class RenderHelper {
 
+    /**
+     * When true, drawRectangle/drawRectangle2 skip applyShade and use the raw color.
+     * Set by PiP renderers where the pose stack's normal matrix includes view-space
+     * rotations that corrupt the model-space face shading.
+     */
+    public static boolean disableDirectionalShading = false;
+
     public static final Identifier REDSTONE_PIPE_TEXTURE = Identifier.fromNamespaceAndPath(TinyPipes.MODID, "block/redstone_pipe");
     public static final Identifier ENERGY_PIPE_TEXTURE = Identifier.fromNamespaceAndPath(TinyPipes.MODID, "block/energy_pipe");
     public static final Identifier FLUID_FILTER_PIPE_TEXTURE = Identifier.fromNamespaceAndPath(TinyPipes.MODID, "block/fluid_filter_pipe");
@@ -72,30 +79,41 @@ public class RenderHelper {
     }
 
     public static void drawRectangle(VertexConsumer builder, PoseStack matrixStack, float x1, float x2, float y1, float y2, float u0, float u1, float v0, float v1, int combinedLight , int color, float alpha){
-        // Compute the local face normal from the quad's winding order.
-        float localNz = Math.signum((x2 - x1) * (y2 - y1));
-        Vector3f normal = matrixStack.last().normal().transform(new Vector3f(0, 0, localNz));
-        normal.normalize();
-
-        int shadedColor = applyShade(color, getShadeFromNormal(normal.x, normal.y, normal.z));
+        int shadedColor;
+        if (disableDirectionalShading) {
+            shadedColor = color;
+        } else {
+            // Compute the local face normal from the quad's winding order.
+            float localNz = Math.signum((x2 - x1) * (y2 - y1));
+            Vector3f normal = matrixStack.last().normal().transform(new Vector3f(0, 0, localNz));
+            normal.normalize();
+            shadedColor = applyShade(color, getShadeFromNormal(normal.x, normal.y, normal.z));
+        }
         Matrix4f matrix4f = matrixStack.last().pose();
-        add(builder, matrix4f, x1, y1, 0, u0, v0, combinedLight, shadedColor, alpha, normal.x, normal.y, normal.z);
-        add(builder, matrix4f, x2, y1, 0, u1, v0, combinedLight, shadedColor, alpha, normal.x, normal.y, normal.z);
-        add(builder, matrix4f, x2, y2, 0, u1, v1, combinedLight, shadedColor, alpha, normal.x, normal.y, normal.z);
-        add(builder, matrix4f, x1, y2, 0, u0, v1, combinedLight, shadedColor, alpha, normal.x, normal.y, normal.z);
+        // Pass UP normal (0,1,0) so the shader shade factor is 1.0 —
+        // vertex colors already have directional shading baked in via applyShade().
+        add(builder, matrix4f, x1, y1, 0, u0, v0, combinedLight, shadedColor, alpha, 0f, 1f, 0f);
+        add(builder, matrix4f, x2, y1, 0, u1, v0, combinedLight, shadedColor, alpha, 0f, 1f, 0f);
+        add(builder, matrix4f, x2, y2, 0, u1, v1, combinedLight, shadedColor, alpha, 0f, 1f, 0f);
+        add(builder, matrix4f, x1, y2, 0, u0, v1, combinedLight, shadedColor, alpha, 0f, 1f, 0f);
     }
 
     public static void drawRectangle2(VertexConsumer builder, PoseStack matrixStack, float x1, float x2, float y1, float y2, TextureAtlasSprite sprite, int combinedLight , int color, float alpha){
-        float localNz = Math.signum((x2 - x1) * (y2 - y1));
-        Vector3f normal = matrixStack.last().normal().transform(new Vector3f(0, 0, localNz));
-        normal.normalize();
-
-        int shadedColor = applyShade(color, getShadeFromNormal(normal.x, normal.y, normal.z));
+        int shadedColor;
+        if (disableDirectionalShading) {
+            shadedColor = color;
+        } else {
+            float localNz = Math.signum((x2 - x1) * (y2 - y1));
+            Vector3f normal = matrixStack.last().normal().transform(new Vector3f(0, 0, localNz));
+            normal.normalize();
+            shadedColor = applyShade(color, getShadeFromNormal(normal.x, normal.y, normal.z));
+        }
         Matrix4f matrix4f = matrixStack.last().pose();
-        add(builder, matrix4f, x1, y1, 0, sprite.getU0(), sprite.getV1(), combinedLight, shadedColor, alpha, normal.x, normal.y, normal.z);
-        add(builder, matrix4f, x2, y1, 0, sprite.getU1(), sprite.getV1(), combinedLight, shadedColor, alpha, normal.x, normal.y, normal.z);
-        add(builder, matrix4f, x2, y2, 0, sprite.getU1(), sprite.getV0(), combinedLight, shadedColor, alpha, normal.x, normal.y, normal.z);
-        add(builder, matrix4f, x1, y2, 0, sprite.getU0(), sprite.getV0(), combinedLight, shadedColor, alpha, normal.x, normal.y, normal.z);
+        // Pass UP normal (0,1,0) — same double-shading fix as drawRectangle().
+        add(builder, matrix4f, x1, y1, 0, sprite.getU0(), sprite.getV1(), combinedLight, shadedColor, alpha, 0f, 1f, 0f);
+        add(builder, matrix4f, x2, y1, 0, sprite.getU1(), sprite.getV1(), combinedLight, shadedColor, alpha, 0f, 1f, 0f);
+        add(builder, matrix4f, x2, y2, 0, sprite.getU1(), sprite.getV0(), combinedLight, shadedColor, alpha, 0f, 1f, 0f);
+        add(builder, matrix4f, x1, y2, 0, sprite.getU0(), sprite.getV0(), combinedLight, shadedColor, alpha, 0f, 1f, 0f);
     }
 
 
@@ -139,14 +157,4 @@ public class RenderHelper {
         return Minecraft.getInstance().getAtlasManager().get(new SpriteId(TextureAtlas.LOCATION_BLOCKS, resourceLocation));
     }
 
-    /**
-     * Get a sprite for a block state's face.
-     * TODO: In 26.1, BlockStateModel doesn't expose particleIcon() directly.
-     * IDE-check what method is available on BlockStateModel for the particle sprite.
-     * For now, falls back to missing texture — camouflage sprite lookup needs IDE verification.
-     */
-    public static TextureAtlasSprite getSprite(BlockState state, Direction direction){
-        // Fallback: use the missing texture sprite until the correct BlockStateModel API is identified
-        return getSprite(TextureManager.INTENTIONAL_MISSING_TEXTURE);
-    }
 }

@@ -52,7 +52,6 @@ public class PipeConfigGUI extends Screen {
     // Currently hovered face (null if none)
     private Direction hoveredFace = null;
     private Button closeButton;
-    private static boolean pipDiagRun = false; // DIAGNOSTIC — remove later
 
     protected PipeConfigGUI(PipeBlockEntity pipeBlockEntity, AbstractFullPipe pipe) {
         super(Component.translatable("tinypipes:pipeconfiggui"));
@@ -103,7 +102,6 @@ public class PipeConfigGUI extends Screen {
         extractBackground(guiGraphics, mouseX, mouseY, partialTicks);
 
         // Dark panel behind the 3D scene for contrast
-        // DIAGNOSTIC — disabled to rule out layering over PiP
         int panelSize = (int)(SCALE * 3.5f);
         int panelX = width / 2 - panelSize / 2;
         int panelY = height / 2 - 8 - panelSize / 2;
@@ -123,54 +121,6 @@ public class PipeConfigGUI extends Screen {
         hoveredFace = hitTestIndicators(mvMatrix, mouseX, mouseY);
 
         // ── Submit the 3D scene via Picture-in-Picture ──
-        // DIAGNOSTIC — reflective pool check, runs once
-        if (!pipDiagRun) {
-            pipDiagRun = true;
-            try {
-                var gr = Minecraft.getInstance().gameRenderer;
-                // Find guiRenderer field on GameRenderer
-                java.lang.reflect.Field guiRendererField = null;
-                for (var f : gr.getClass().getDeclaredFields()) {
-                    if (f.getType().getName().contains("GuiRenderer")) {
-                        guiRendererField = f;
-                        break;
-                    }
-                }
-                if (guiRendererField != null) {
-                    guiRendererField.setAccessible(true);
-                    Object guiRenderer = guiRendererField.get(gr);
-                    // Find pictureInPictureRendererPools field
-                    java.lang.reflect.Field poolsField = null;
-                    for (var f : guiRenderer.getClass().getDeclaredFields()) {
-                        if (f.getName().contains("pictureInPicture") || f.getName().contains("pip")) {
-                            poolsField = f;
-                            System.out.println("[TinyPipes PiP DIAG] Found field: " + f.getName() + " type: " + f.getType().getName());
-                        }
-                    }
-                    if (poolsField != null) {
-                        poolsField.setAccessible(true);
-                        java.util.Map<?, ?> pools = (java.util.Map<?, ?>) poolsField.get(guiRenderer);
-                        System.out.println("[TinyPipes PiP DIAG] Pool map size: " + pools.size());
-                        System.out.println("[TinyPipes PiP DIAG] Pool map keys: " + pools.keySet());
-                        System.out.println("[TinyPipes PiP DIAG] Our state class: " + PipeConfigPipRenderState.class);
-                        System.out.println("[TinyPipes PiP DIAG] Pool contains our class: " + pools.containsKey(PipeConfigPipRenderState.class));
-                    } else {
-                        System.out.println("[TinyPipes PiP DIAG] Could not find pools field. Fields:");
-                        for (var f : guiRenderer.getClass().getDeclaredFields()) {
-                            System.out.println("  " + f.getName() + " : " + f.getType().getSimpleName());
-                        }
-                    }
-                } else {
-                    System.out.println("[TinyPipes PiP DIAG] Could not find guiRenderer field. Fields:");
-                    for (var f : gr.getClass().getDeclaredFields()) {
-                        System.out.println("  " + f.getName() + " : " + f.getType().getSimpleName());
-                    }
-                }
-            } catch (Exception e) {
-                System.out.println("[TinyPipes PiP DIAG] Reflection failed: " + e);
-            }
-        }
-        // END DIAGNOSTIC
         guiGraphics.submitPictureInPictureRenderState(
                 new PipeConfigPipRenderState(
                         pipeBlockEntity, slotPos,
@@ -182,10 +132,10 @@ public class PipeConfigGUI extends Screen {
         guiGraphics.nextStratum();
         guiGraphics.centeredText(font,
                 Component.translatable("tinypipes.gui.full_pipe_config", pipeName),
-                width / 2, 10, 0xFFFFFF);
+                width / 2, 10, 0xFFFFFFFF);
         guiGraphics.centeredText(font,
                 Component.translatable("tinypipes.gui.pipe_config.hint"),
-                width / 2, 22, 0x888888);
+                width / 2, 22, 0xFF888888);
         renderLegend(guiGraphics);
     }
 
@@ -261,15 +211,15 @@ public class PipeConfigGUI extends Screen {
         int textGap = boxSize + 4;
 
         guiGraphics.fill(legendX, legendY, legendX + boxSize, legendY + boxSize, COLOR_ENABLED);
-        guiGraphics.text(font, Component.translatable("tinypipes.gui.pipe_config.msg.enabled"), legendX + textGap, legendY, 0xFFFFFF);
+        guiGraphics.text(font, Component.translatable("tinypipes.gui.pipe_config.msg.enabled"), legendX + textGap, legendY, 0xFFFFFFFF);
 
         legendY += 12;
         guiGraphics.fill(legendX, legendY, legendX + boxSize, legendY + boxSize, COLOR_DISABLED);
-        guiGraphics.text(font, Component.translatable("tinypipes.gui.pipe_config.msg.disabled"), legendX + textGap, legendY, 0xFFFFFF);
+        guiGraphics.text(font, Component.translatable("tinypipes.gui.pipe_config.msg.disabled"), legendX + textGap, legendY, 0xFFFFFFFF);
 
         legendY += 12;
         guiGraphics.fill(legendX, legendY, legendX + boxSize, legendY + boxSize, COLOR_PULLING);
-        guiGraphics.text(font, Component.translatable("tinypipes.gui.pipe_config.msg.pulling"), legendX + textGap, legendY, 0xFFFFFF);
+        guiGraphics.text(font, Component.translatable("tinypipes.gui.pipe_config.msg.pulling"), legendX + textGap, legendY, 0xFFFFFFFF);
     }
 
     // ── Mouse interaction ───────────────────────────────────────────────────────

@@ -33,8 +33,6 @@ public class ClientSetup {
 
     @SubscribeEvent
     public static void onRegisterPipRenderers(RegisterPictureInPictureRenderersEvent event) {
-        System.out.println("[TinyPipes] RegisterPictureInPictureRenderersEvent FIRED");
         event.register(PipeConfigPipRenderState.class, PipeConfigPipRenderer::new);
-        System.out.println("[TinyPipes] PiP renderer registered for PipeConfigPipRenderState");
     }
 }

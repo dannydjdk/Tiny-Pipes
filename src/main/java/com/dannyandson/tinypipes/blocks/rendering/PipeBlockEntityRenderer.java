@@ -14,6 +14,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.client.model.geom.builders.UVPair;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.block.BlockAndTintGetter;
@@ -28,11 +29,18 @@ import net.minecraft.util.ARGB;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
+import org.joml.Matrix4f;
 import org.joml.Vector3fc;
 
 public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEntity, PipeBlockEntityRenderState> {
 
     private static ModelBlockRenderer cachedModelRenderer;
+
+    /**
+     * When non-null, renderGeometry uses this RenderType instead of Sheets.cutoutBlockSheet().
+     * Set by PiP renderers to bypass the lightmap.
+     */
+    public static RenderType overrideRenderType = null;
 
     public PipeBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
     }
@@ -86,11 +94,12 @@ public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEnt
     }
 
     public static void renderGeometry(PipeBlockEntity pipeBlockEntity, PoseStack poseStack, MultiBufferSource buffer, int combinedLight, int combinedOverlay, float alpha) {
-        VertexConsumer builder = buffer.getBuffer(Sheets.cutoutBlockSheet());
+        RenderType rt = overrideRenderType != null ? overrideRenderType : Sheets.cutoutBlockSheet();
+        VertexConsumer builder = buffer.getBuffer(rt);
 
         if (pipeBlockEntity.getCamouflageBlockState() != null) {
             BlockState camouflageState = pipeBlockEntity.getCamouflageBlockState();
-            renderCamouflageBlock(pipeBlockEntity, camouflageState, builder);
+            renderCamouflageBlock(pipeBlockEntity, camouflageState, builder, poseStack, alpha);
             return;
         }
 
@@ -142,8 +151,10 @@ public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEnt
      * Renders a camouflage block using the tesselateBlock adapter pattern.
      * Uses UP normals to prevent the Sheets shader from double-applying face shading,
      * since tesselateBlock already bakes shading into vertex colors.
+     * PoseStack transform is applied to each vertex for PiP compatibility.
      */
-    private static void renderCamouflageBlock(PipeBlockEntity tile, BlockState camoState, VertexConsumer builder) {
+    private static void renderCamouflageBlock(PipeBlockEntity tile, BlockState camoState,
+                                              VertexConsumer builder, PoseStack poseStack, float alpha) {
         if (tile.getLevel() == null) return;
 
         var modelSet = Minecraft.getInstance().getModelManager().getBlockStateModelSet();
@@ -151,6 +162,8 @@ public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEnt
         if (model == null) return;
 
         ModelBlockRenderer modelRenderer = getOrCreateModelRenderer();
+        Matrix4f matrix = poseStack.last().pose();
+        int alphaInt = (int)(alpha * 255f);
 
         modelRenderer.tesselateBlock(
                 (var x, var y, var z, var quad, var instance) -> {
@@ -161,13 +174,20 @@ public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEnt
                         int vertexColor = ARGB.multiply(
                                 instance.getColor(vertex),
                                 quad.bakedColors().color(vertex));
+                        // Apply alpha
+                        vertexColor = ARGB.color(alphaInt,
+                                ARGB.red(vertexColor), ARGB.green(vertexColor), ARGB.blue(vertexColor));
                         int light = instance.getLightCoordsWithEmission(vertex, lightEmission);
                         float u = UVPair.unpackU(packedUv);
                         float v = UVPair.unpackV(packedUv);
-                        // Normal = UP (0,1,0) → shader shade factor 1.0
-                        builder.addVertex(pos.x() + x, pos.y() + y, pos.z() + z,
-                                vertexColor, u, v, instance.overlayCoords(), light,
-                                0f, 1f, 0f);
+                        // Transform through PoseStack; UP normal prevents double-shading
+                        int overlay = instance.overlayCoords();
+                        builder.addVertex(matrix, pos.x() + x, pos.y() + y, pos.z() + z)
+                                .setColor(vertexColor)
+                                .setUv(u, v)
+                                .setUv1(overlay & 0xFFFF, (overlay >> 16) & 0xFFFF)
+                                .setUv2(light & 0xFFFF, (light >> 16) & 0xFFFF)
+                                .setNormal(0f, 1f, 0f);
                     }
                 },
                 0f, 0f, 0f,

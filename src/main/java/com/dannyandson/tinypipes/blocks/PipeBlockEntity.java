@@ -251,15 +251,6 @@ public class PipeBlockEntity extends BlockEntity {
         return this.centerSprite;
     }
 
-    public TextureAtlasSprite getCamouflageSprite(Direction direction){
-        if (camouflageBlockState==null)
-            return null;
-
-        if(camouflageSprites.get(direction)==null)
-            camouflageSprites.put(direction,RenderHelper.getSprite(camouflageBlockState,direction));
-        return camouflageSprites.get(direction);
-    }
-
     private static TextureAtlasSprite whitePipeSprite;
     public static TextureAtlasSprite getWhitePipeSprite() {
         if (whitePipeSprite==null)

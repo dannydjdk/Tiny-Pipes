@@ -47,7 +47,7 @@ repositories {
 }
 
 dependencies {
-    implementation "curse.maven:tiny-redstone-453746:7868234"
+    implementation "curse.maven:tiny-redstone-453746:7942270"
 }
 
 def resourceTargets = ['META-INF/neoforge.mods.toml', 'pack.mcmeta']

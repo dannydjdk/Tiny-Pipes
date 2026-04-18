@@ -41,7 +41,7 @@ public class ModRegistration {
 
     public static final DeferredBlock<PipeBlock> PIPE_BLOCK = BLOCKS.registerBlock("pipe_block",
             PipeBlock::new,
-            BlockBehaviour.Properties.of().sound(SoundType.STONE).strength(1.0f).dynamicShape());
+            props -> props.sound(SoundType.STONE).strength(1.0f).dynamicShape());
 
     public static final Supplier<BlockEntityType<PipeBlockEntity>> PIPE_BLOCK_ENTITY =
             BLOCK_ENTITY_TYPES.register("pipe_block", () -> new BlockEntityType<>(PipeBlockEntity::new, PIPE_BLOCK.get()));

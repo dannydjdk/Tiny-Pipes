@@ -24,6 +24,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
@@ -193,6 +194,18 @@ public class PipeBlockEntity extends BlockEntity {
         // Invalidate render cache on NBT load (world load or server->client sync)
         this.centerSprite = null;
         markRenderDirty();
+
+        // Rotation consumption
+        if (level != null && !level.isClientSide) {
+            Rotation pendingRotation = PipeBlock.PENDING_ROTATION.get();
+            if (pendingRotation != null) {
+                PipeBlock.PENDING_ROTATION.remove();
+                if (pendingRotation != Rotation.NONE) {
+                    rotate(pendingRotation);
+                    sync();
+                }
+            }
+        }
     }
 
     @Override
@@ -324,5 +337,27 @@ public class PipeBlockEntity extends BlockEntity {
     public void onNeighborChange(@Nullable Direction direction) {
         for (AbstractFullPipe pipe : pipes.values())
             pipe.neighborChanged(this, direction);
+    }
+
+    /**
+     * Apply a rotation to this block entity's direction-keyed internal state.
+     * Rotates each contained pipe's per-side data, the camouflage {@link BlockState}
+     * (if any), and invalidates render caches.
+     *
+     * <p>Called from {@link #loadAdditional} when a Sable assembly that contained
+     * this block is disassembled at a different orientation than it was assembled at.
+     * See {@link PipeBlock#PENDING_ROTATION} for the full flow.
+     */
+    public void rotate(Rotation rotation) {
+        if (rotation == Rotation.NONE) return;
+        for (AbstractFullPipe pipe : pipes.values()) {
+            pipe.rotate(rotation);
+        }
+        if (camouflageBlockState != null) {
+            camouflageBlockState = camouflageBlockState.rotate(rotation);
+            camouflageSprites.clear();
+        }
+        this.centerSprite = null;
+        markRenderDirty();
     }
 }

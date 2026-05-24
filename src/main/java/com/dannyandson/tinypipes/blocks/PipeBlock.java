@@ -51,6 +51,7 @@ public class PipeBlock extends BaseEntityBlock {
                 .sound(SoundType.STONE)
                 .strength(1.0f)
                 .dynamicShape()
+                .forceSolidOn()
         );
     }
 

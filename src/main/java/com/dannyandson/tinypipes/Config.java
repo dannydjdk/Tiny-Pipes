@@ -51,7 +51,7 @@ public class Config {
         SPEED_UPGRADE_MAX = serverBuilder.comment("""
                         How many speed upgrades can be applied to a single pipe?
                         (default: 5 )""")
-                .defineInRange("speed_upgrade_max", 5, 1, 64);
+                .defineInRange("speed_upgrade_max", 8, 1, 64);
 
         serverBuilder.pop();
 

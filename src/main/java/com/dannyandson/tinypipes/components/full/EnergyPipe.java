@@ -9,6 +9,7 @@ import com.dannyandson.tinypipes.components.RenderHelper;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.energy.IEnergyStorage;
 
 import javax.annotation.Nullable;
@@ -34,6 +35,12 @@ public class EnergyPipe extends AbstractCapFullPipe<IEnergyStorage>{
     @Override
     protected boolean canAutoConnectTo(net.minecraft.world.level.Level level, BlockPos neighborPos, Direction direction) {
         return ModCapabilityManager.getIEnergyStorage(level, neighborPos, direction.getOpposite()) != null;
+    }
+
+    @Override
+    public Component getSpeedDescription() {
+        int rate = (int) (Config.ENERGY_THROUGHPUT.get() * getSpeedMultiplier());
+        return Component.translatable("tinypipes.gui.pipe_config.speed.energy", rate);
     }
 
     @Override
@@ -108,8 +115,8 @@ public class EnergyPipe extends AbstractCapFullPipe<IEnergyStorage>{
                 BlockPos pushToNeighbor = pipeBlockEntity.getBlockPos().relative(direction);
                 if (pipeBlockEntity.getLevel().getBlockEntity(pushToNeighbor) instanceof PipeBlockEntity pipeBlockEntity2) {
                     if (pipeBlockEntity2.getPipe(this.slotPos()) instanceof EnergyPipe neighborPipe)
-                    //check the next cell
-                    neighborPipe.populatePushWrapper(pipeBlockEntity2, direction.getOpposite(), pushWrapper, distance + 1);
+                        //check the next cell
+                        neighborPipe.populatePushWrapper(pipeBlockEntity2, direction.getOpposite(), pushWrapper, distance + 1);
                 } else  {
                     //edge of pipeline found, check for a neighboring tile entity
                     pushWrapper.addPushTarget(ModCapabilityManager.getIEnergyStorage(pipeBlockEntity.getLevel(), pushToNeighbor, direction.getOpposite()), this, distance);

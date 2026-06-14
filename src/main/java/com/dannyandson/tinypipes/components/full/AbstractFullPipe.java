@@ -15,6 +15,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Rotation;
 
 import org.jspecify.annotations.Nullable;
 import java.util.ArrayList;
@@ -112,6 +113,25 @@ public abstract class AbstractFullPipe implements IPipe {
 
     public void onRemoveNeighbor(PipeBlockEntity pipeBlockEntity, Direction direction) {
         this.neighborChanged(pipeBlockEntity, direction);
+    }
+
+    //Apply a rotation to this pipe's direction-keyed state.
+    public void rotate(Rotation rotation) {
+        if (rotation == Rotation.NONE) return;
+        rotateMap(sideStatusMap, rotation);
+        rotateMap(neighborIsPipeCluster, rotation);
+        rotateMap(neighborHasSamePipeType, rotation);
+    }
+
+    //Remap the keys by the given horizontal rotation.
+    protected static <V> void rotateMap(Map<Direction, V> map, Rotation rotation) {
+        if (map.isEmpty()) return;
+        Map<Direction, V> rotated = new HashMap<>();
+        for (Map.Entry<Direction, V> entry : map.entrySet()) {
+            rotated.put(rotation.rotate(entry.getKey()), entry.getValue());
+        }
+        map.clear();
+        map.putAll(rotated);
     }
 
     public Boolean getNeighborIsPipeCluster(Direction direction) {

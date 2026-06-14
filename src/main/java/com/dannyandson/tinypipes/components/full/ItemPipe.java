@@ -9,6 +9,7 @@ import com.dannyandson.tinypipes.components.RenderHelper;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.items.IItemHandler;
 
@@ -36,6 +37,12 @@ public class ItemPipe extends AbstractCapFullPipe<IItemHandler>{
     @Override
     protected boolean canAutoConnectTo(net.minecraft.world.level.Level level, BlockPos neighborPos, Direction direction) {
         return ModCapabilityManager.getItemHandler(level, neighborPos, direction.getOpposite()) != null;
+    }
+
+    @Override
+    public Component getSpeedDescription() {
+        int rate = (int) (Config.ITEM_THROUGHPUT.get() * getSpeedMultiplier());
+        return Component.translatable("tinypipes.gui.pipe_config.speed.item", rate);
     }
 
     @Override
@@ -127,8 +134,8 @@ public class ItemPipe extends AbstractCapFullPipe<IItemHandler>{
                 BlockPos pushToNeighbor = pipeBlockEntity.getBlockPos().relative(direction);
                 if (pipeBlockEntity.getLevel().getBlockEntity(pushToNeighbor) instanceof PipeBlockEntity pipeBlockEntity2) {
                     if (pipeBlockEntity2.getPipe(this.slotPos()) instanceof ItemPipe neighborPipe)
-                    //check the next cell
-                    neighborPipe.populatePushWrapper(pipeBlockEntity2, direction.getOpposite(), itemStack, pushWrapper, distance + 1);
+                        //check the next cell
+                        neighborPipe.populatePushWrapper(pipeBlockEntity2, direction.getOpposite(), itemStack, pushWrapper, distance + 1);
                 } else {
                     //edge of pipeline found, check for a neighboring tile entity
                     pushWrapper.addPushTarget(ModCapabilityManager.getItemHandler(pipeBlockEntity.getLevel(), pushToNeighbor, direction.getOpposite()), this, distance, priority);

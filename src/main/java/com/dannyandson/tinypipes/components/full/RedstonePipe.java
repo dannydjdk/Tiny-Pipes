@@ -11,6 +11,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
 
 import org.jspecify.annotations.Nullable;
@@ -155,6 +156,13 @@ public class RedstonePipe extends AbstractFullPipe{
             }
         }
         super.onRemoveNeighbor(pipeBlockEntity,direction);
+    }
+
+    @Override
+    public void rotate(Rotation rotation) {
+        super.rotate(rotation);
+        if (rotation == Rotation.NONE) return;
+        rotateMap(frequencies, rotation);
     }
 
     @Override

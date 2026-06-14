@@ -9,6 +9,7 @@ import com.dannyandson.tinypipes.components.RenderHelper;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
@@ -36,6 +37,13 @@ public class FluidPipe extends AbstractCapFullPipe<IFluidHandler>{
     @Override
     protected boolean canAutoConnectTo(net.minecraft.world.level.Level level, BlockPos neighborPos, Direction direction) {
         return ModCapabilityManager.getIFluidHandler(level, neighborPos, direction.getOpposite()) != null;
+    }
+
+    @Override
+    public Component getSpeedDescription() {
+        // tick() moves THROUGHPUT*mult/4 mB roughly 4x/sec, so the per-second rate is THROUGHPUT*mult
+        int rate = (int) (Config.FLUID_THROUGHPUT.get() * getSpeedMultiplier());
+        return Component.translatable("tinypipes.gui.pipe_config.speed.fluid", rate);
     }
 
     @Override
@@ -124,8 +132,8 @@ public class FluidPipe extends AbstractCapFullPipe<IFluidHandler>{
                 BlockPos pushToNeighbor = pipeBlockEntity.getBlockPos().relative(direction);
                 if (pipeBlockEntity.getLevel().getBlockEntity(pushToNeighbor) instanceof PipeBlockEntity pipeBlockEntity2) {
                     if (pipeBlockEntity2.getPipe(this.slotPos()) instanceof FluidPipe neighborPipe)
-                    //check the next cell
-                    neighborPipe.populatePushWrapper(pipeBlockEntity2, direction.getOpposite(), fluidStack, pushWrapper, distance + 1);
+                        //check the next cell
+                        neighborPipe.populatePushWrapper(pipeBlockEntity2, direction.getOpposite(), fluidStack, pushWrapper, distance + 1);
                 } else {
                     //edge of pipeline found, check for a neighboring tile entity
                     pushWrapper.addPushTarget(ModCapabilityManager.getIFluidHandler(pipeBlockEntity.getLevel(),pushToNeighbor,direction.getOpposite()), this, distance, priority);

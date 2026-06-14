@@ -24,11 +24,13 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.SignalGetter;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -53,6 +55,27 @@ public class PipeBlock extends BaseEntityBlock {
     @Override
     protected MapCodec<? extends BaseEntityBlock> codec() {
         return CODEC;
+    }
+
+    /**
+     * Stashes the rotation requested by a {@code Block.rotate} call so that
+     * {@link PipeBlockEntity#loadAdditional} can apply and consume.
+     * Block#rotate has no BlockEntity access, so we hand the rotation off to
+     * the BE's NBT-load on the same thread (the pattern Sable sub-level disassembly uses).
+     */
+    public static final ThreadLocal<Rotation> PENDING_ROTATION = new ThreadLocal<>();
+
+    @Override
+    public BlockState rotate(BlockState state, LevelAccessor level, BlockPos pos, Rotation rotation) {
+        if (rotation != Rotation.NONE) PENDING_ROTATION.set(rotation);
+        return state;
+    }
+
+    @Override
+    @SuppressWarnings("deprecation")
+    public BlockState rotate(BlockState state, Rotation rotation) {
+        if (rotation != Rotation.NONE) PENDING_ROTATION.set(rotation);
+        return state;
     }
 
     @Nullable

@@ -3,9 +3,11 @@ package com.dannyandson.tinypipes.gui;
 import com.dannyandson.tinypipes.api.Registry;
 import com.dannyandson.tinypipes.blocks.PipeBlockEntity;
 import com.dannyandson.tinypipes.blocks.PipeConnectionState;
+import com.dannyandson.tinypipes.components.full.AbstractCapFullPipe;
 import com.dannyandson.tinypipes.components.full.AbstractFullPipe;
 import com.dannyandson.tinypipes.network.ModNetworkHandler;
 import com.dannyandson.tinypipes.network.PushPipeConnection;
+import com.dannyandson.tinypipes.setup.ModRegistration;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
@@ -16,6 +18,7 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import org.joml.Matrix4f;
 import org.joml.Vector4f;
 
@@ -80,6 +83,21 @@ public class PipeConfigGUI extends Screen {
         return pipeBlockEntity.getPipe(slotPos);
     }
 
+    /**
+     * True if the pipe has at least one active (non-disabled) side whose neighbor
+     * is not a same-type pipe — i.e. a side where transfer rate is actually
+     * meaningful (potentially facing an inventory/tank/machine rather than just relaying).
+     */
+    private static boolean hasActiveNonPipeSide(AbstractFullPipe pipe) {
+        for (Direction d : Direction.values()) {
+            if (pipe.getPipeSideStatus(d) != PipeConnectionState.DISABLED
+                    && !pipe.getNeighborHasSamePipeType(d)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     protected void init() {
         closeButton = ModWidget.buildButton(
@@ -101,17 +119,19 @@ public class PipeConfigGUI extends Screen {
     public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTicks) {
         extractBackground(guiGraphics, mouseX, mouseY, partialTicks);
 
-        // Dark panel behind the 3D scene for contrast
-        int panelSize = (int)(SCALE * 3.5f);
+        // Dark panel behind the 3D scene for contrast.
+        // The vertical center offset (-15) must match centerY used for hit testing below,
+        // so the rendered scene and the clickable face regions stay aligned.
+        int panelSize = (int)(SCALE * 3.6f);
         int panelX = width / 2 - panelSize / 2;
-        int panelY = height / 2 - 8 - panelSize / 2;
+        int panelY = height / 2 - 15 - panelSize / 2;
         guiGraphics.fill(panelX - 1, panelY - 1, panelX + panelSize + 1, panelY + panelSize + 1, 0xFF000000);
         guiGraphics.fill(panelX, panelY, panelX + panelSize, panelY + panelSize, 0xE0222222);
 
         // ── Hit testing (same transform math as the PiP renderer, no draw calls) ──
         PoseStack hitPose = new PoseStack();
         float centerX = width / 2f;
-        float centerY = height / 2f - 8;
+        float centerY = height / 2f - 15; // keep in sync with panelY's vertical offset above
         hitPose.translate(centerX, centerY, 150);
         hitPose.scale(SCALE, -SCALE, SCALE);
         hitPose.mulPose(Axis.XP.rotationDegrees(-rotationX));
@@ -132,10 +152,38 @@ public class PipeConfigGUI extends Screen {
         guiGraphics.nextStratum();
         guiGraphics.centeredText(font,
                 Component.translatable("tinypipes.gui.full_pipe_config", pipeName),
-                width / 2, 10, 0xFFFFFFFF);
+                width / 2, 17, 0xFFFFFFFF);
         guiGraphics.centeredText(font,
                 Component.translatable("tinypipes.gui.pipe_config.hint"),
-                width / 2, 22, 0xFF888888);
+                width / 2, 29, 0xFF888888);
+
+        // Speed description and upgrade indicator for AbstractCapFullPipe.
+        // Only shown when an active side faces a non-pipe neighbor or
+        // when any speed upgrades are installed.
+        AbstractFullPipe pipe = getPipe();
+        if (pipe instanceof AbstractCapFullPipe<?> capPipe) {
+            int upgrades = capPipe.getSpeedUpgradeCount();
+            if (upgrades > 0 || hasActiveNonPipeSide(capPipe)) {
+                ItemStack icon = ModRegistration.SPEED_UPGRADE_ITEM.get().getDefaultInstance();
+                Component countText = Component.literal("x" + upgrades);
+
+                final int iconSize = 16;
+                final int gap = 2;
+                int iconX = panelX + 2;
+                int iconY = panelY + 2;
+                int textY = iconY + (iconSize - font.lineHeight) / 2;
+
+                guiGraphics.item(icon, iconX, iconY);
+                guiGraphics.text(font, countText, iconX + iconSize + gap, textY, 0xFFFFFFFF);
+
+                Component rate = capPipe.getSpeedDescription();
+                // Right-align to the panel's right edge, but never overlap the count.
+                int minX = iconX + iconSize + gap + font.width(countText) + 6;
+                int rateX = Math.max(minX, panelX + panelSize - 2 - font.width(rate));
+                guiGraphics.text(font, rate, rateX, textY, 0xFFCCCCCC);
+            }
+        }
+
         renderLegend(guiGraphics);
     }
 

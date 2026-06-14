@@ -6,6 +6,7 @@ import com.dannyandson.tinypipes.caphandlers.PushWrapper;
 import com.dannyandson.tinypipes.components.ICapPipe;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 
 import org.jspecify.annotations.Nullable;
 
@@ -17,6 +18,12 @@ public abstract class AbstractCapFullPipe<CapType> extends AbstractFullPipe impl
     protected boolean disabled = false;
 
     public abstract int canAccept(int amount);
+
+    /**
+     * A short, localized description of this pipe's current transfer rate,
+     * (via {@link #getSpeedMultiplier()}).
+     */
+    public abstract Component getSpeedDescription();
 
     public void didPush(int amount) {
         amountPushed+=amount;

@@ -79,8 +79,12 @@ public class ItemPipe extends AbstractCapFullPipe<IItemHandler>{
                             //see if there's a place to put it
                             ItemStack itemStack2 = itemStack.copy();
                             PushWrapper<IItemHandler> pushWrapper = getPushWrapper(pipeBlockEntity, itemStack);
+                            //track how many items this pulling pipe is still allowed to move this operation
+                            //so leftover capacity spills into the next-closest target instead of stopping
+                            int remaining = itemStack2.getCount();
                             for (PushWrapper.PushTarget<IItemHandler> pushTarget : pushWrapper.getSortedTargets()) {
-                                int pushLimit = pushTarget.getPipe().canAccept(itemStack2.getCount());
+                                if (remaining <= 0) break;
+                                int pushLimit = pushTarget.getPipe().canAccept(remaining);
                                 if (pushLimit > 0) {
                                     //grab capabilities and push
                                     IItemHandler iItemHandler2 = pushTarget.getTarget();
@@ -94,8 +98,8 @@ public class ItemPipe extends AbstractCapFullPipe<IItemHandler>{
                                         if (pushed > 0) {
                                             iItemHandler.extractItem(slot, pushed, false);
                                             pushTarget.getPipe().didPush(pushed);
+                                            remaining -= pushed;
                                             itemMoved = true;
-                                            break;
                                         }
                                     }
                                 }

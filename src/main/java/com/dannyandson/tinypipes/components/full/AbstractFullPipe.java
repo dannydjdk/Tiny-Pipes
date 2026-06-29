@@ -44,6 +44,15 @@ public abstract class AbstractFullPipe implements IPipe {
         return false;
     }
 
+    /** Called when this pipe is removed from its block (e.g. wrenched out); the block itself may remain. Default: no-op. */
+    public void onRemove(PipeBlockEntity pipeBlockEntity) { }
+
+    /** Called when this pipe's block entity enters the world (placement or chunk load). Default: no-op. */
+    public void onLoad(PipeBlockEntity pipeBlockEntity) { }
+
+    /** Called when this pipe's block entity leaves the world (block removed or chunk unloaded). Default: no-op. */
+    public void onUnload(PipeBlockEntity pipeBlockEntity) { }
+
     /**
      * Called on pipe placement to automatically enable sides facing compatible neighbors.
      * Connects to adjacent PipeBlocks that contain the same pipe type (and enables the neighbor's side too),

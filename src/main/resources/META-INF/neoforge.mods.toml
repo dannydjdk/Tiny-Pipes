@@ -32,3 +32,10 @@ description='''${mod_description}'''
     versionRange="[26.1-7.0.3,)"
     ordering="AFTER"
     side="BOTH"
+
+[[dependencies.tinypipes]]
+    modId="refinedstorage"
+    type="optional"
+    versionRange="[3.0.0,)"
+    ordering="AFTER"
+    side="BOTH"

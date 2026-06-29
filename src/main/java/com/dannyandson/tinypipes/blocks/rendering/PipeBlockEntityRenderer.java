@@ -7,6 +7,7 @@ import com.dannyandson.tinypipes.components.RenderHelper;
 import com.dannyandson.tinypipes.components.full.AbstractCapFullPipe;
 import com.dannyandson.tinypipes.components.full.AbstractFullPipe;
 import com.dannyandson.tinypipes.components.full.RedstonePipe;
+import com.dannyandson.tinypipes.components.full.RefinedStorageCablePipe;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
@@ -116,6 +117,11 @@ public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEnt
             RenderHelper.drawCube(poseStack, builder, sprite, 0.3125f, 0.6875f, 0.3125f, 0.6875f, 0.3125f, 0.6875f, combinedLight, 0xFFFFFFFF, alpha);
 
         for (AbstractFullPipe pipe : pipes) {
+            if (pipe instanceof RefinedStorageCablePipe cable) {
+                // RS cable renders as a small center core with nubs toward connected sides, not 2x2 quadrants.
+                drawRsCable(poseStack, builder, cable, combinedLight, alpha);
+                continue;
+            }
             RedstonePipe rsPipe = (pipe instanceof RedstonePipe) ? (RedstonePipe) pipe : null;
             int color = pipe.getColor();
             int upgrades = (pipe instanceof AbstractCapFullPipe) ? ((AbstractCapFullPipe<?>) pipe).getSpeedUpgradeCount() : 0;
@@ -145,6 +151,37 @@ public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEnt
         }
 
         poseStack.popPose();
+    }
+
+    /**
+     * Renders the Refined Storage cable: a small center core plus a thin nub toward each connected side.
+     * Drawn in block-local space using the outer PoseStack (no per-pipe push/pop, like the center cube).
+     */
+    private static void drawRsCable(PoseStack poseStack, VertexConsumer builder, RefinedStorageCablePipe cable, int combinedLight, float alpha) {
+        TextureAtlasSprite white = PipeBlockEntity.getWhitePipeSprite();
+        int color = cable.getColor();
+        float lo = 0.45f, hi = 0.55f;
+
+        // center core
+        RenderHelper.drawCube(poseStack, builder, white, lo, hi, lo, hi, lo, hi, combinedLight, color, alpha);
+
+        // Thin nub from the core out to the face for each connected side.
+        // drawCube's parameters are NOT world-aligned: its x-param maps to (1 - worldX), its y-param
+        // maps to world Z (depth), and its z-param maps to world Y (height). Map each world Direction
+        // onto the correct drawCube parameter accordingly.
+        for (Direction d : Direction.values()) {
+            if (!cable.isConnected(d)) continue;
+            float x0 = lo, x1 = hi, y0 = lo, y1 = hi, z0 = lo, z1 = hi;
+            switch (d) {
+                case EAST  -> { x0 = 0f; x1 = lo; }   // world +X (x-param is flipped)
+                case WEST  -> { x0 = hi; x1 = 1f; }   // world -X
+                case UP    -> { z0 = hi; z1 = 1f; }   // world +Y (z-param is height)
+                case DOWN  -> { z0 = 0f; z1 = lo; }   // world -Y
+                case SOUTH -> { y0 = hi; y1 = 1f; }   // world +Z (y-param is depth)
+                case NORTH -> { y0 = 0f; y1 = lo; }   // world -Z
+            }
+            RenderHelper.drawCube(poseStack, builder, white, x0, x1, y0, y1, z0, z1, combinedLight, color, alpha);
+        }
     }
 
     /**

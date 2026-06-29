@@ -17,6 +17,8 @@
   "item.tinypipes.full_energy_pipe": "Energy Pipe",
   "item.tinypipes.energy_pipe": "Tiny Energy Pipe",
   "message.item.tinypipes.energy_pipe": "Transfers forge energy from source to receiver.\nRight click with a wrench to change input and output sides.\nRight click with an empty hand for a GUI.",
+  "item.tinypipes.full_rs_cable": "Refined Storage Cable",
+  "message.item.tinypipes.rs_cable": "Extends a Refined Storage network through the center of the pipe block.\nConnects automatically to adjacent Refined Storage cables and devices.\nRequires Refined Storage to be installed.",
   "item.tinypipes.full_redstone_pipe": "Redstone Pipe",
   "item.tinypipes.redstone_pipe": "Tiny Redstone Pipe",
   "message.item.tinypipes.redstone_pipe": "Transfers multiple redstone signals with no signal loss.\nRight click connection with a Dye to change frequency.\nOutput will only output signals from matching colored inputs.\nRight click with a wrench to change input and output sides.\nRight click with an empty hand for a GUI.",

@@ -57,6 +57,10 @@ public class ModRegistration {
     public static final DeferredItem<Item> PIPE_WRENCH_ITEM = ITEMS.registerItem("pipe_wrench", PipeWrenchItem::new);
     public static final DeferredItem<Item> SPEED_UPGRADE_ITEM = ITEMS.registerItem("speed_upgrade", SpeedUpgradeItem::new);
 
+    // Refined Storage cable item — registered only when RS is present (see registerRefinedStorageItems()).
+    @org.jspecify.annotations.Nullable
+    public static DeferredItem<Item> RS_CABLE_ITEM = null;
+
     public static final Supplier<MenuType<ItemFilterContainerMenu>> ITEM_FILTER_MENU_TYPE = MENU_TYPES.register("item_filter", () -> new MenuType<>(ItemFilterContainerMenu::createMenu, FeatureFlags.DEFAULT_FLAGS));
     public static final Supplier<MenuType<FluidFilterContainerMenu>> FLUID_FILTER_MENU_TYPE = MENU_TYPES.register("fluid_filter", () -> new MenuType<>(FluidFilterContainerMenu::createFluidMenu, FeatureFlags.DEFAULT_FLAGS));
 
@@ -79,6 +83,12 @@ public class ModRegistration {
         TAB.register(modEventBus);
     }
 
+    //called from main mod constructor, only when Refined Storage is loaded.
+    //Must run BEFORE register() so the deferred item is included when ITEMS fires.
+    public static void registerRefinedStorageItems() {
+        RS_CABLE_ITEM = ITEMS.registerItem("full_rs_cable", FullPipeItem::new);
+    }
+
     public static void registerFullPipeItems() {
         Registry.registerFullPipeItem(ItemPipe.class, ITEM_PIPE_ITEM.get());
         Registry.registerFullPipeItem(ItemFilterPipe.class, ITEM_FILTER_PIPE_ITEM.get());
@@ -86,5 +96,7 @@ public class ModRegistration {
         Registry.registerFullPipeItem(FluidPipe.class, FLUID_PIPE_ITEM.get());
         Registry.registerFullPipeItem(FluidFilterPipe.class, FLUID_FILTER_PIPE_ITEM.get());
         Registry.registerFullPipeItem(EnergyPipe.class, ENERGY_PIPE_ITEM.get());
+        if (RS_CABLE_ITEM != null)
+            Registry.registerFullPipeItem(RefinedStorageCablePipe.class, RS_CABLE_ITEM.get());
     }
 }

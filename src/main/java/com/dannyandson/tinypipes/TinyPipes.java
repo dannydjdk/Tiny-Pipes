@@ -22,6 +22,9 @@ public class TinyPipes
     public static final String MODID = "tinypipes";
     public static final Logger LOGGER = LogManager.getLogger();
 
+    /** True when Refined Storage is present; gates all RS cable integration (optional dependency). */
+    public static boolean RS_LOADED = false;
+
     // The default frequency for the pipes, used for redstone pipes
     public static final int defaultFrequency = 0x810E0C;
     // list of frequencies that can be used in the pipe : [0x810E0C,0,1,2,3,4,5,6,7,8,9,10,11,12,13,15]
@@ -39,6 +42,16 @@ public class TinyPipes
         modEventBus.addListener(this::setup);
 
         modContainer.registerConfig(ModConfig.Type.SERVER, Config.SERVER_CONFIG);
+
+        // Refined Storage is an optional dependency. When present, register the cable item (before the
+        // item DeferredRegister fires in register() below) and hook the capability event. The guard keeps
+        // the RS integration class from loading at all when RS is absent.
+        RS_LOADED = ModList.get().isLoaded("refinedstorage");
+        if (RS_LOADED) {
+            ModRegistration.registerRefinedStorageItems();
+            modEventBus.addListener(com.dannyandson.tinypipes.setup.RefinedStorageIntegration::registerCapabilities);
+        }
+
         ModRegistration.register(modEventBus);
         if (ModList.get().isLoaded("tinyredstone"))
             RegistrationTinyRedstone.register();

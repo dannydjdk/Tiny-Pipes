@@ -6,6 +6,7 @@ import com.dannyandson.tinypipes.blocks.rendering.CachedPipeRenderer;
 import com.dannyandson.tinypipes.components.RenderHelper;
 import com.dannyandson.tinypipes.components.full.AbstractFullPipe;
 import com.dannyandson.tinypipes.components.full.PipeSide;
+import com.dannyandson.tinypipes.components.full.RefinedStorageCablePipe;
 import com.dannyandson.tinypipes.setup.ClientSetup;
 import com.dannyandson.tinypipes.setup.ModRegistration;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
@@ -126,6 +127,8 @@ public class PipeBlockEntity extends BlockEntity {
 
     public boolean removePipe(AbstractFullPipe pipe){
         if(pipes.remove(pipe.slotPos())!=null){
+            // Notify the pipe it is being removed while its state is still valid (before any block removal below).
+            pipe.onRemove(this);
             this.centerSprite=null;
             markRenderDirty();
             if (pipes.size()==0)
@@ -302,6 +305,16 @@ public class PipeBlockEntity extends BlockEntity {
                                             (y < 0.32) ? Direction.DOWN :
                                                     (z > 0.68) ? Direction.SOUTH :
                                                             Direction.NORTH;
+            // Refined Storage cable runs through the center of each face. If the ray lands on the
+            // center band (and a cable is present), select it instead of a 2x2 quadrant slot.
+            if (slotUsed(RefinedStorageCablePipe.SLOT)) {
+                double a, b;
+                if (dir.getAxis() == Direction.Axis.X) { a = y; b = z; }
+                else if (dir.getAxis() == Direction.Axis.Y) { a = x; b = z; }
+                else { a = x; b = y; }
+                if (a > 0.4296875 && a < 0.5703125 && b > 0.4296875 && b < 0.5703125)
+                    return new PipeSide(this, getPipe(RefinedStorageCablePipe.SLOT), dir);
+            }
             int slot = -1;
             if (dir == Direction.NORTH || dir == Direction.SOUTH) {
                 slot = (y > .5) ? (x > .5) ? 1 : 0 : (x > .5) ? 3 : 2;
@@ -338,8 +351,19 @@ public class PipeBlockEntity extends BlockEntity {
     }
 
     @Override
+    public void clearRemoved() {
+        super.clearRemoved();
+        // Notify each pipe its block entity has entered the world (placement or chunk load).
+        for (AbstractFullPipe pipe : pipes.values())
+            pipe.onLoad(this);
+    }
+
+    @Override
     public void setRemoved() {
         super.setRemoved();
+        // Notify each pipe its block entity has left the world (block removed or chunk unload).
+        for (AbstractFullPipe pipe : pipes.values())
+            pipe.onUnload(this);
         if (cachedRenderer != null) {
             ((CachedPipeRenderer) cachedRenderer).clear();
             cachedRenderer = null;

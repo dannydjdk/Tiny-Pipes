@@ -50,6 +50,9 @@ public class Registration {
     public static final Supplier<Item> PIPE_WRENCH_ITEM = Registration.ITEMS.register("pipe_wrench", PipeWrenchItem::new);
     public static final Supplier<Item> SPEED_UPGRADE_ITEM = Registration.ITEMS.register("speed_upgrade", SpeedUpgradeItem::new);
 
+    // Refined Storage cable item. Null unless RS is installed; registered via registerRefinedStorageItems().
+    public static Supplier<Item> RS_CABLE_ITEM = null;
+
     public static final Supplier<MenuType<ItemFilterContainerMenu>> ITEM_FILTER_MENU_TYPE = MENU_TYPES.register("item_filter", () -> new MenuType<>(ItemFilterContainerMenu::createMenu, FeatureFlags.DEFAULT_FLAGS));
     public static final Supplier<MenuType<FluidFilterContainerMenu>> FLUID_FILTER_MENU_TYPE = MENU_TYPES.register("fluid_filter", () -> new MenuType<>(FluidFilterContainerMenu::createFluidMenu, FeatureFlags.DEFAULT_FLAGS));
 
@@ -79,5 +82,15 @@ public class Registration {
         Registry.registerFullPipeItem(FluidPipe.class,FLUID_PIPE_ITEM.get());
         Registry.registerFullPipeItem(FluidFilterPipe.class,FLUID_FILTER_PIPE_ITEM.get());
         Registry.registerFullPipeItem(EnergyPipe.class,ENERGY_PIPE_ITEM.get());
+        if (RS_CABLE_ITEM != null)
+            Registry.registerFullPipeItem(com.dannyandson.tinypipes.components.full.RefinedStorageCablePipe.class, RS_CABLE_ITEM.get());
+    }
+
+    /**
+     * Registers the Refined Storage cable item. Called from the TinyPipes constructor (before the
+     * deferred item register fires) only when Refined Storage is installed.
+     */
+    public static void registerRefinedStorageItems(){
+        RS_CABLE_ITEM = ITEMS.register("full_rs_cable", FullPipeItem::new);
     }
 }

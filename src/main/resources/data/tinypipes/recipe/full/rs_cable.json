@@ -1,0 +1,24 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "refinedstorage"
+    }
+  ],
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "ps"
+  ],
+  "key": {
+    "p": {
+      "item": "refinedstorage:cable"
+    },
+    "s": {
+      "tag": "c:silicon"
+    }
+  },
+  "result": {
+    "id": "tinypipes:full_rs_cable",
+    "count": 4
+  }
+}

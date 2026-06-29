@@ -102,21 +102,26 @@ public class FluidPipe  extends AbstractCapPipe<IFluidHandler> {
                             FluidStack fluidStack2 = fluidStack.copy();
                             fluidStack2.setAmount(Math.min(fluidStack2.getAmount(), Config.FLUID_THROUGHPUT.get()/4));
                             PushWrapper<IFluidHandler> pushWrapper = getPushWrapper(cellPos, fluidStack2);
+                            //track how much fluid this pulling pipe is still allowed to move this operation
+                            //so leftover capacity spills into the next-closest target instead of stopping
+                            int remaining = fluidStack2.getAmount();
                             for (PushWrapper.PushTarget<IFluidHandler> pushTarget : pushWrapper.getSortedTargets()) {
+                                if (remaining <= 0) break;
                                 //grab capabilities and push
                                 IFluidHandler iFluidHandler2 = pushTarget.getTarget();
                                 if (iFluidHandler2 != null && ! iFluidHandler2.equals(iFluidHandler)) {
-                                    int pushLimit = pushTarget.getPipe().canAccept(fluidStack.getAmount());
+                                    int pushLimit = pushTarget.getPipe().canAccept(remaining);
                                     if (pushLimit>0) {
                                         FluidStack fluidStack3 = fluidStack2.copy();
                                         fluidStack3.setAmount(pushLimit);
                                         int filled = iFluidHandler2.fill(fluidStack3, IFluidHandler.FluidAction.EXECUTE);
                                         if (filled > 0) {
                                             pushTarget.getPipe().didPush(filled);
-                                            fluidStack2.setAmount(filled);
-                                            iFluidHandler.drain(fluidStack2, IFluidHandler.FluidAction.EXECUTE);
+                                            FluidStack drainStack = fluidStack2.copy();
+                                            drainStack.setAmount(filled);
+                                            iFluidHandler.drain(drainStack, IFluidHandler.FluidAction.EXECUTE);
+                                            remaining -= filled;
                                             fluidMoved = true;
-                                            break;
                                         }
                                     }
                                 }

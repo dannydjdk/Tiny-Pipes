@@ -48,6 +48,9 @@ repositories {
 
 dependencies {
     implementation "curse.maven:tiny-redstone-453746:7942270"
+
+    implementation "curse.maven:evilcraft-74610:8334398"
+    implementation "curse.maven:cyclops-core-232758:8334427"
 }
 
 def resourceTargets = ['META-INF/neoforge.mods.toml', 'pack.mcmeta']

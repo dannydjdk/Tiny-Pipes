@@ -32,13 +32,18 @@ public class RenderHelper {
     public static final Identifier ITEM_FILTER_PIPE_TEXTURE = Identifier.fromNamespaceAndPath(TinyPipes.MODID, "block/item_filter_pipe");
     public static final Identifier ITEM_PIPE_TEXTURE = Identifier.fromNamespaceAndPath(TinyPipes.MODID, "block/item_pipe");
 
-    public static void drawCube(PoseStack poseStack, VertexConsumer builder, TextureAtlasSprite sprite, float x1, float x2, float y1, float y2, float z1, float z2, int combinedLight, int color, float alpha){
+    public static void drawCube(PoseStack poseStack, VertexConsumer builder, TextureAtlasSprite sprite, float x1, float x2, float y1, float y2, float z1, float z2, int combinedLight, int color, float alpha) {
+        drawCube(poseStack, builder, sprite, x1, x2, y1, y2, z1, z2, combinedLight, color, alpha, true);
+    }
+
+    public static void drawCube(PoseStack poseStack, VertexConsumer builder, TextureAtlasSprite sprite, float x1, float x2, float y1, float y2, float z1, float z2, int combinedLight, int color, float alpha, Boolean caps){
 
         poseStack.pushPose();
 
         //top
         poseStack.translate(0,0,y2);
-        drawRectangle(builder,poseStack,1-x2,1-x1,z1,z2,sprite,combinedLight,color,alpha);
+        if (caps)
+            drawRectangle(builder,poseStack,1-x2,1-x1,z1,z2,sprite,combinedLight,color,alpha);
         poseStack.translate(0,0,1.0-y2);
 
         //front
@@ -66,10 +71,12 @@ public class RenderHelper {
         poseStack.translate(0,0,1-x2);
 
         //bottom
-        poseStack.mulPose(Axis.XP.rotationDegrees(-90));
-        poseStack.mulPose(Axis.ZP.rotationDegrees(-90));
-        poseStack.translate(-1,0,1-y1);
-        drawRectangle(builder,poseStack,x1,x2,z1,z2,sprite,combinedLight,color,alpha);
+        if (caps) {
+            poseStack.mulPose(Axis.XP.rotationDegrees(-90));
+            poseStack.mulPose(Axis.ZP.rotationDegrees(-90));
+            poseStack.translate(-1, 0, 1 - y1);
+            drawRectangle(builder, poseStack, x1, x2, z1, z2, sprite, combinedLight, color, alpha);
+        }
 
         poseStack.popPose();
     }

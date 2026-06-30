@@ -19,6 +19,7 @@ public class ClientSetup {
     public static final Identifier PIPE_TEXTURE = Identifier.fromNamespaceAndPath(TinyPipes.MODID, "block/pipe");
     public static final Identifier PIPE_PULL_TEXTURE = Identifier.fromNamespaceAndPath(TinyPipes.MODID, "block/pipe_pull");
     public static final Identifier PIPE_BUNDLE_TEXTURE = Identifier.fromNamespaceAndPath(TinyPipes.MODID, "block/pipe_bundle");
+    public static final Identifier CHEVRON_TEXTURE = Identifier.fromNamespaceAndPath(TinyPipes.MODID, "block/chevron");
 
     @SubscribeEvent
     public static void registerMenuScreens(RegisterMenuScreensEvent event) {

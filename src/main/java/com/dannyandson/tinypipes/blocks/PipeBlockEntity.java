@@ -269,6 +269,13 @@ public class PipeBlockEntity extends BlockEntity {
         return pullSprite;
     }
 
+    private static TextureAtlasSprite chevronSprite;
+    public static TextureAtlasSprite getChevronSprite() {
+        if (chevronSprite==null)
+            chevronSprite=RenderHelper.getSprite(ClientSetup.CHEVRON_TEXTURE);
+        return chevronSprite;
+    }
+
     @CheckForNull
     public PipeSide getPipeAtHitVector(BlockHitResult hitResult) {
         Direction rayTraceDirection = hitResult.getDirection().getOpposite();

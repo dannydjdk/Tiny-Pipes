@@ -17,6 +17,7 @@ public class ClientSetup {
     public static final ResourceLocation PIPE_TEXTURE = ResourceLocation.fromNamespaceAndPath(TinyPipes.MODID, "block/pipe");
     public static final ResourceLocation PIPE_PULL_TEXTURE = ResourceLocation.fromNamespaceAndPath(TinyPipes.MODID, "block/pipe_pull");
     public static final ResourceLocation PIPE_BUNDLE_TEXTURE = ResourceLocation.fromNamespaceAndPath(TinyPipes.MODID, "block/pipe_bundle");
+    public static final ResourceLocation CHEVRON_TEXTURE = ResourceLocation.fromNamespaceAndPath(TinyPipes.MODID, "block/chevron");
 
     @SubscribeEvent
     public static void registerMenuScreens(RegisterMenuScreensEvent event) {

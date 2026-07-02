@@ -1,6 +1,7 @@
 package com.dannyandson.tinypipes.caphandlers;
 
 import com.dannyandson.tinypipes.components.ICapPipe;
+import net.minecraft.world.item.DyeColor;
 
 import java.util.Set;
 import java.util.SortedSet;
@@ -16,12 +17,20 @@ public class PushWrapper<T> {
         return id;
     }
 
+    // Default/unset channel for cap pipes; gray dye reverts a side to this channel.
+    // Targets added without an explicit channel (e.g. tiny pipes) use this value.
+    public static final int DEFAULT_FREQUENCY = DyeColor.GRAY.getId();
+
     public void addPushTarget(T target, ICapPipe<T> pipe, int distance) {
-        addPushTarget(target, pipe, distance, 0);
+        addPushTarget(target, pipe, distance, 0, DEFAULT_FREQUENCY);
     }
 
     public void addPushTarget(T target, ICapPipe<T> pipe, int distance, int priority) {
-        pushTargets.add(new PushTarget<>(target, pipe, distance, priority));
+        addPushTarget(target, pipe, distance, priority, DEFAULT_FREQUENCY);
+    }
+
+    public void addPushTarget(T target, ICapPipe<T> pipe, int distance, int priority, int frequency) {
+        pushTargets.add(new PushTarget<>(target, pipe, distance, priority, frequency));
     }
 
     public Set<PushTarget<T>> getSortedTargets() {
@@ -33,21 +42,28 @@ public class PushWrapper<T> {
         private final ICapPipe<T> pipe;
         private final int distance;
         private final int priority;
+        private final int frequency;
 
-        private PushTarget(T capability, ICapPipe<T> pipe, int distance, int priority){
+        private PushTarget(T capability, ICapPipe<T> pipe, int distance, int priority, int frequency){
             this.target =capability;
             this.pipe=pipe;
             this.distance=distance;
             this.priority=priority;
+            this.frequency=frequency;
         }
 
         public T getTarget()
         {
-             return target;
+            return target;
         }
 
         public ICapPipe<T> getPipe() {
             return pipe;
+        }
+
+        // Channel of the output side that registered this target; pulls only deliver to matching channels.
+        public int getFrequency() {
+            return frequency;
         }
 
         /**

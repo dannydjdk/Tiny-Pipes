@@ -245,6 +245,9 @@ public class PipeBlock extends BaseEntityBlock {
                     // update the pipe block regarding the new frequency signal in the pipe network
                     redstonePipe.neighborChanged(pipeBlockEntity, pipeSide.getDirection());
                     level.blockUpdated(pos,this);
+                } else if (pipeSide!=null && pipeSide.getPipe() instanceof AbstractCapFullPipe capPipe){
+                    // assign the side's channel; gray reverts it to the default channel
+                    capPipe.setColor(pipeBlockEntity, pipeSide.getDirection(), dyeItem.getDyeColor().getId());
                 }
                 return InteractionResult.CONSUME;
             } else if (heldStack.getItem() instanceof SpeedUpgradeItem) {

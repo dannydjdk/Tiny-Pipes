@@ -47,7 +47,13 @@ public class EnergyPipe extends AbstractCapPipe<IEnergyStorage> {
                 (topNeighbor != null && topNeighbor.getStrongRsOutput() > 0) ||
                 (bottomNeighbor != null && bottomNeighbor.getStrongRsOutput() > 0);
 
+        updateEdgeSides(cellPos);
         return false;
+    }
+
+    @Override
+    protected boolean isDisabled() {
+        return disabled;
     }
 
     @Override
@@ -80,10 +86,13 @@ public class EnergyPipe extends AbstractCapPipe<IEnergyStorage> {
                     int energy = iEnergyStorage.extractEnergy(toExtract, true);
                     if (energy > 0) {
                         int remainingEnergy = energy;
+                        //only deliver to output sides sharing this pull side's channel
+                        int pullFrequency = getFrequency(side);
                         //we found energy that can be extracted
                         //see if there's a place to put it
                         PushWrapper<IEnergyStorage> pushWrapper = getPushWrapper(cellPos);
                         for (PushWrapper.PushTarget<IEnergyStorage> pushTarget : pushWrapper.getSortedTargets()) {
+                            if (pushTarget.getFrequency() != pullFrequency) continue;
                             //grab capabilities and push
                             IEnergyStorage iEnergyStorage2 = pushTarget.getTarget();
                             if (iEnergyStorage2 != null && !iEnergyStorage2.equals(iEnergyStorage) && iEnergyStorage2.canReceive()) {
@@ -144,7 +153,7 @@ public class EnergyPipe extends AbstractCapPipe<IEnergyStorage> {
                                                     (neighborBlockPos.relative(Direction.WEST).equals(panelBlockPos)) ? Direction.WEST :
                                                             (neighborBlockPos.relative(Direction.UP).equals(panelBlockPos)) ? Direction.UP :
                                                                     Direction.DOWN;
-                    pushWrapper.addPushTarget(ModCapabilityManager.getIEnergyStorage(cellPos.getPanelTile().getLevel(), neighborBlockPos, neighborSide), this, distance);
+                    pushWrapper.addPushTarget(ModCapabilityManager.getIEnergyStorage(cellPos.getPanelTile().getLevel(), neighborBlockPos, neighborSide), this, distance, 0, getFrequency(connectedSide));
                 }
             }
         }

@@ -13,6 +13,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.DyeItem;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -84,7 +85,8 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe {
 
     @Override
     public boolean onBlockActivated(PanelCellPos cellPos, PanelCellSegment segmentClicked, Player player) {
-        if (player.getMainHandItem().getItem() == Registration.REDSTONE_WRENCH.get())
+        if (player.getMainHandItem().getItem() == Registration.REDSTONE_WRENCH.get()
+                || player.getMainHandItem().getItem() instanceof DyeItem)
             return super.onBlockActivated(cellPos, segmentClicked, player);
 
         if (player instanceof ServerPlayer serverPlayer) {

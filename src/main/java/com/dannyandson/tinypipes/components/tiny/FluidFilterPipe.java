@@ -14,6 +14,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BucketItem;
+import net.minecraft.world.item.DyeItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.MobBucketItem;
 import net.minecraft.world.level.material.Fluids;
@@ -92,7 +93,8 @@ public class FluidFilterPipe extends FluidPipe implements IFilterPipe {
 
     @Override
     public boolean onBlockActivated(PanelCellPos cellPos, PanelCellSegment segmentClicked, Player player) {
-        if (player.getMainHandItem().getItem() == Registration.REDSTONE_WRENCH.get())
+        if (player.getMainHandItem().getItem() == Registration.REDSTONE_WRENCH.get()
+                || player.getMainHandItem().getItem() instanceof DyeItem)
             return super.onBlockActivated(cellPos, segmentClicked, player);
 
         if (player instanceof ServerPlayer) {

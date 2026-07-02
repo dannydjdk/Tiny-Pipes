@@ -78,11 +78,14 @@ public class FluidPipe extends AbstractCapFullPipe<IFluidHandler>{
                             FluidStack fluidStack2 = fluidStack.copy();
                             fluidStack2.setAmount((int) Math.min(fluidStack2.getAmount(), Config.FLUID_THROUGHPUT.get()*getSpeedMultiplier()/4));
                             PushWrapper<IFluidHandler> pushWrapper = getPushWrapper(pipeBlockEntity, fluidStack2);
+                            //only deliver to output sides sharing this pull side's channel
+                            int pullFrequency = getFrequency(direction);
                             //track how much fluid this pulling pipe is still allowed to move this operation
                             //so leftover capacity spills into the next-closest target instead of stopping
                             int remaining = fluidStack2.getAmount();
                             for (PushWrapper.PushTarget<IFluidHandler> pushTarget : pushWrapper.getSortedTargets()) {
                                 if (remaining <= 0) break;
+                                if (pushTarget.getFrequency() != pullFrequency) continue;
                                 //grab capabilities and push
                                 IFluidHandler iFluidHandler2 = pushTarget.getTarget();
                                 if (iFluidHandler2 != null && ! iFluidHandler2.equals(iFluidHandler)) {
@@ -141,7 +144,7 @@ public class FluidPipe extends AbstractCapFullPipe<IFluidHandler>{
                         neighborPipe.populatePushWrapper(pipeBlockEntity2, direction.getOpposite(), fluidStack, pushWrapper, distance + 1);
                 } else {
                     //edge of pipeline found, check for a neighboring tile entity
-                    pushWrapper.addPushTarget(ModCapabilityManager.getIFluidHandler(pipeBlockEntity.getLevel(),pushToNeighbor,direction.getOpposite()), this, distance, priority);
+                    pushWrapper.addPushTarget(ModCapabilityManager.getIFluidHandler(pipeBlockEntity.getLevel(),pushToNeighbor,direction.getOpposite()), this, distance, priority, getFrequency(direction));
                 }
             }
         }

@@ -8,9 +8,8 @@ import com.dannyandson.tinyredstone.api.IPanelCell;
 import com.dannyandson.tinyredstone.blocks.*;
 import com.dannyandson.tinyredstone.setup.ModRegistration;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.dannyandson.tinyredstone.api.IRenderTarget;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -51,10 +50,10 @@ public abstract class AbstractTinyPipe implements IPanelCell, IPipe {
 
 
     @Override
-    public void render(PoseStack poseStack, MultiBufferSource buffer, int combinedLight, int combinedOverlay, float alpha) {
+    public void render(PoseStack poseStack, IRenderTarget target, int combinedLight, int combinedOverlay, float alpha) {
 
         sprite = getSprite();
-        VertexConsumer builder = buffer.getBuffer((alpha==1.0)? Sheets.cutoutBlockSheet():Sheets.translucentBlockSheet());
+        VertexConsumer builder = (alpha == 1.0) ? target.solid() : target.translucent();
         int color = getColor();
 
         com.dannyandson.tinypipes.components.RenderHelper.drawCube(poseStack,builder,sprite,c1,c2,c1,c2,c1,c2,combinedLight,color,alpha);

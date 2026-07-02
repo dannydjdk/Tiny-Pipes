@@ -1,15 +1,9 @@
 {
   "type": "minecraft:crafting_shapeless",
   "ingredients": [
-    {
-      "item": "tinypipes:fluid_pipe"
-    },
-    {
-      "tag": "c:silicon"
-    },
-    {
-      "item": "minecraft:paper"
-    }
+    "tinypipes:fluid_pipe",
+    "#c:silicon",
+    "minecraft:paper"
   ],
   "result": {
     "id": "tinypipes:fluid_filter_pipe",

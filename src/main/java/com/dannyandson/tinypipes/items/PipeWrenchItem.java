@@ -2,6 +2,7 @@ package com.dannyandson.tinypipes.items;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Style;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.*;
@@ -24,9 +25,9 @@ public class PipeWrenchItem extends Item {
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> textConsumer, TooltipFlag flags) {
         if (isShiftKeyDown()) {
-            textConsumer.accept(Component.translatable("message." + this.getDescriptionId()).withStyle(ChatFormatting.DARK_AQUA));
+            textConsumer.accept(Component.translatable("message." + this.getDescriptionId()).withStyle(Style.EMPTY.withColor(ChatFormatting.DARK_AQUA)));
         } else
-            textConsumer.accept(Component.translatable("tinypipes.tooltip.press_shift").withStyle(ChatFormatting.DARK_GRAY));
+            textConsumer.accept(Component.translatable("tinypipes.tooltip.press_shift").withStyle(Style.EMPTY.withColor(ChatFormatting.DARK_GRAY)));
     }
 
     private static boolean isShiftKeyDown() {

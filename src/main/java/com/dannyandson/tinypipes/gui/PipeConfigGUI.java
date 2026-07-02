@@ -103,7 +103,7 @@ public class PipeConfigGUI extends Screen {
         closeButton = ModWidget.buildButton(
                 width / 2 - 40, height - 28, 80, 20,
                 Component.translatable("tinypipes.close"),
-                button -> minecraft.setScreen(null)
+                button -> minecraft.gui.setScreen(null)
         );
         addRenderableWidget(closeButton);
     }
@@ -351,6 +351,6 @@ public class PipeConfigGUI extends Screen {
 
     public static void open(PipeBlockEntity pipeBlockEntity, AbstractFullPipe tinyPipe) {
         if (pipeBlockEntity != null && tinyPipe != null)
-            Minecraft.getInstance().setScreen(new PipeConfigGUI(pipeBlockEntity, tinyPipe));
+            Minecraft.getInstance().gui.setScreen(new PipeConfigGUI(pipeBlockEntity, tinyPipe));
     }
 }

@@ -3,6 +3,7 @@ package com.dannyandson.tinypipes.items;
 import com.dannyandson.tinypipes.Config;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Style;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
@@ -24,10 +25,10 @@ public class SpeedUpgradeItem extends Item {
         if (isShiftKeyDown()) {
             String message = Component.translatable("message." + this.getDescriptionId()).getString()
                     .replaceFirst("_speed_upgrade_multiplier_", Config.SPEED_UPGRADE_MULTIPLIER.get().toString())
-                            .replaceFirst("_speed_upgrade_max_",Config.SPEED_UPGRADE_MAX.get().toString());
-            textConsumer.accept(Component.translatable(message).withStyle(ChatFormatting.DARK_AQUA));
+                    .replaceFirst("_speed_upgrade_max_",Config.SPEED_UPGRADE_MAX.get().toString());
+            textConsumer.accept(Component.translatable(message).withStyle(Style.EMPTY.withColor(ChatFormatting.DARK_AQUA)));
         } else
-            textConsumer.accept(Component.translatable("tinypipes.tooltip.press_shift").withStyle(ChatFormatting.DARK_GRAY));
+            textConsumer.accept(Component.translatable("tinypipes.tooltip.press_shift").withStyle(Style.EMPTY.withColor(ChatFormatting.DARK_GRAY)));
     }
 
     private static boolean isShiftKeyDown() {

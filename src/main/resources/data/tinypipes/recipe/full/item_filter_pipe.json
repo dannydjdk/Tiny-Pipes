@@ -1,15 +1,9 @@
 {
   "type": "minecraft:crafting_shapeless",
   "ingredients": [
-    {
-      "item": "tinypipes:full_item_pipe"
-    },
-    {
-      "item": "minecraft:paper"
-    },
-    {
-      "item": "minecraft:paper"
-    }
+    "tinypipes:full_item_pipe",
+    "minecraft:paper",
+    "minecraft:paper"
   ],
   "result": {
     "id": "tinypipes:full_item_filter_pipe",

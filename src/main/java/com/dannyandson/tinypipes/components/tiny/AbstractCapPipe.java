@@ -8,9 +8,8 @@ import com.dannyandson.tinyredstone.blocks.PanelCellPos;
 import com.dannyandson.tinyredstone.blocks.PanelCellSegment;
 import com.dannyandson.tinyredstone.blocks.Side;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.dannyandson.tinyredstone.api.IRenderTarget;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
@@ -127,9 +126,9 @@ public abstract class AbstractCapPipe<CapType> extends AbstractTinyPipe implemen
      * channel color on the generic pipe sprite while every other arm keeps the type texture.
      */
     @Override
-    public void render(PoseStack poseStack, MultiBufferSource buffer, int combinedLight, int combinedOverlay, float alpha) {
+    public void render(PoseStack poseStack, IRenderTarget target, int combinedLight, int combinedOverlay, float alpha) {
         TextureAtlasSprite typeSprite = getSprite();
-        VertexConsumer builder = buffer.getBuffer((alpha == 1.0) ? Sheets.cutoutBlockSheet() : Sheets.translucentBlockSheet());
+        VertexConsumer builder = (alpha == 1.0) ? target.solid() : target.translucent();
         int color = getColor();
 
         //center cube keeps the pipe's type texture/color

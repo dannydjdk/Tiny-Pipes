@@ -1,7 +1,10 @@
 package com.dannyandson.tinypipes.gui;
 
+import com.dannyandson.tinypipes.blocks.PipeBlock;
 import com.dannyandson.tinypipes.blocks.PipeBlockEntity;
 import com.dannyandson.tinypipes.blocks.PipeConnectionState;
+import com.dannyandson.tinypipes.blocks.rendering.CachedVertex;
+import com.dannyandson.tinypipes.blocks.rendering.CapturingVertexConsumer;
 import com.dannyandson.tinypipes.blocks.rendering.PipeBlockEntityRenderer;
 import com.dannyandson.tinypipes.components.RenderHelper;
 import com.dannyandson.tinypipes.components.full.AbstractFullPipe;
@@ -13,23 +16,25 @@ import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.render.pip.PictureInPictureRenderer;
 import net.minecraft.client.model.geom.builders.UVPair;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.Sheets;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.block.BlockAndTintGetter;
 import net.minecraft.client.renderer.block.ModelBlockRenderer;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Style;
 import net.minecraft.util.ARGB;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import org.joml.Matrix4f;
 import org.joml.Vector3fc;
 
-import com.dannyandson.tinypipes.blocks.PipeBlock;
+import java.util.List;
 
 /**
  * PiP renderer for the 3D pipe configuration scene.
@@ -58,10 +63,6 @@ public class PipeConfigPipRenderer extends PictureInPictureRenderer<PipeConfigPi
 
     private static ModelBlockRenderer cachedModelRenderer;
 
-    public PipeConfigPipRenderer(MultiBufferSource.BufferSource bufferSource) {
-        super(bufferSource);
-    }
-
     @Override
     public Class<PipeConfigPipRenderState> getRenderStateClass() {
         return PipeConfigPipRenderState.class;
@@ -73,7 +74,7 @@ public class PipeConfigPipRenderer extends PictureInPictureRenderer<PipeConfigPi
     }
 
     @Override
-    protected void renderToTexture(PipeConfigPipRenderState state, PoseStack poseStack) {
+    protected void renderToTexture(PipeConfigPipRenderState state, PoseStack poseStack, SubmitNodeCollector collector) {
         PipeBlockEntity pbe = state.pipeBlockEntity();
 
         poseStack.pushPose();
@@ -91,52 +92,65 @@ public class PipeConfigPipRenderer extends PictureInPictureRenderer<PipeConfigPi
         poseStack.mulPose(Axis.YP.rotationDegrees(state.rotationY()));
         poseStack.translate(-0.5, -0.5, -0.5);
 
-        // ── Pipe geometry ──
-        // The PiP context doesn't bind the lightmap texture, so any render type
-        // with .useLightmap() renders dark. We work around this with two passes:
-        // Pass 1: cutoutBlockSheet — dark but writes depth correctly for occlusion.
-        // Pass 2: eyes() — no lightmap, renders bright at the same Z positions.
-        //         It passes the LEQUAL depth test but doesn't write depth itself.
+        // Each pass captures geometry into a consumer (transform baked per vertex),
+        // then submits it under its render type. The submit pipeline owns batching and
+        // orders opaque/translucent itself, so the old endBatch() ordering is gone —
+        // the layering below (depth pass, bright pass, translucent neighbors,
+        // indicators, labels) may need runtime tuning under the new pipeline.
         RenderHelper.disableDirectionalShading = true;
-        PipeBlockEntityRenderer.renderGeometry(pbe, poseStack, this.bufferSource, FULL_BRIGHT, 0);
-        this.bufferSource.endBatch();
 
-        PipeBlockEntityRenderer.overrideRenderType =
-                RenderTypes.eyes(TextureAtlas.LOCATION_BLOCKS);
-        PipeBlockEntityRenderer.renderGeometry(pbe, poseStack, this.bufferSource, FULL_BRIGHT, 0);
-        PipeBlockEntityRenderer.overrideRenderType = null;
-        this.bufferSource.endBatch();
+        // ── Pipe geometry ──
+        // The PiP context doesn't bind the lightmap texture, so any .useLightmap()
+        // render type renders dark. Two passes work around it: a cutout pass to write
+        // depth, and an eyes() pass (no lightmap) to render bright at the same depth.
+        CapturingVertexConsumer pipeGeo = new CapturingVertexConsumer();
+        PipeBlockEntityRenderer.renderGeometry(pbe, poseStack, pipeGeo, FULL_BRIGHT, 0);
+        pipeGeo.flush();
+        submitCaptured(collector, PipeBlockEntityRenderer.cutoutBlockRenderType(), pipeGeo);
+        submitCaptured(collector, RenderTypes.eyes(TextureAtlas.LOCATION_BLOCKS), pipeGeo);
 
         // ── Translucent adjacent blocks ──
-        // Use entityTranslucentEmissive: no depth WRITE so indicators/labels render
-        // on top regardless of viewing angle. No lightmap either, but at 0.3 alpha
-        // the PiP lightmap darkness is invisible. entityTranslucent wrote depth,
-        // which occluded U/D indicators and hid indicators seen through neighbors.
-        PipeBlockEntityRenderer.overrideRenderType =
-                RenderTypes.entityTranslucentEmissive(TextureAtlas.LOCATION_BLOCKS);
-        renderAdjacentBlocks(state, poseStack);
-        PipeBlockEntityRenderer.overrideRenderType = null;
+        // entityTranslucentEmissive: no depth WRITE so indicators/labels stay on top,
+        // and no lightmap (invisible at 0.3 alpha).
+        CapturingVertexConsumer adjacent = new CapturingVertexConsumer();
+        renderAdjacentBlocks(state, poseStack, adjacent);
+        adjacent.flush();
+        submitCaptured(collector, RenderTypes.entityTranslucentEmissive(TextureAtlas.LOCATION_BLOCKS), adjacent);
         RenderHelper.disableDirectionalShading = false;
-        // Flush adjacent blocks BEFORE indicators — translucent types flush after
-        // opaque within the same endBatch(), which would overdraw indicators.
-        this.bufferSource.endBatch();
 
-        // ── Face indicators (must render AFTER adjacent blocks to be visible) ──
-        renderFaceIndicators(state, poseStack);
-        this.bufferSource.endBatch();
+        // ── Face indicators ──
+        CapturingVertexConsumer indicators = new CapturingVertexConsumer();
+        renderFaceIndicators(state, poseStack, indicators);
+        indicators.flush();
+        submitCaptured(collector, PipeBlockEntityRenderer.cutoutBlockRenderType(), indicators);
 
-        // ── 3D direction labels AFTER indicators ──
-        // Labels must render last so they appear on top of the double-sided
-        // indicator quads (which would otherwise occlude inward U/D labels).
-        renderIndicatorLabels(state, poseStack);
-        this.bufferSource.endBatch();
+        // ── 3D direction labels ──
+        renderIndicatorLabels(state, poseStack, collector);
 
         poseStack.popPose();
     }
 
+    /** Submit captured (already-transformed) vertices under a render type via the submit pipeline. */
+    private static void submitCaptured(SubmitNodeCollector collector, RenderType renderType, CapturingVertexConsumer captured) {
+        List<CachedVertex> verts = captured.getVertices();
+        if (verts.isEmpty()) return;
+        // Vertices already carry the full PiP transform; submit under an identity pose.
+        collector.submitCustomGeometry(new PoseStack(), renderType, (pose, consumer) -> {
+            Matrix4f m = pose.pose();
+            for (CachedVertex v : verts) {
+                consumer.addVertex(m, v.x, v.y, v.z)
+                        .setColor(v.r, v.g, v.b, v.a)
+                        .setUv(v.u, v.v)
+                        .setUv1(v.overlayU, v.overlayV)
+                        .setUv2(v.lightU, v.lightV)
+                        .setNormal(v.normalX, v.normalY, v.normalZ);
+            }
+        });
+    }
+
     // ── Adjacent block previews ──────────────────────────────────────────────────
 
-    private void renderAdjacentBlocks(PipeConfigPipRenderState state, PoseStack poseStack) {
+    private void renderAdjacentBlocks(PipeConfigPipRenderState state, PoseStack poseStack, VertexConsumer builder) {
         PipeBlockEntity pbe = state.pipeBlockEntity();
         Level level = pbe.getLevel();
         if (level == null) return;
@@ -153,10 +167,8 @@ public class PipeConfigPipRenderer extends PictureInPictureRenderer<PipeConfigPi
 
             if (adjacent.getBlock() instanceof PipeBlock
                     && level.getBlockEntity(neighborPos) instanceof PipeBlockEntity adjacentPBE) {
-                PipeBlockEntityRenderer.renderGeometry(adjacentPBE, poseStack, this.bufferSource, FULL_BRIGHT, 0, 0.3f);
+                PipeBlockEntityRenderer.renderGeometry(adjacentPBE, poseStack, builder, FULL_BRIGHT, 0, 0.3f);
             } else if (adjacent.getBlock() instanceof ChestBlock) {
-                VertexConsumer builder = this.bufferSource.getBuffer(
-                        RenderTypes.entityTranslucentEmissive(TextureAtlas.LOCATION_BLOCKS));
                 TextureAtlasSprite whiteSprite = PipeBlockEntity.getWhitePipeSprite();
                 int chestBrown = 0xFF8B6914;
                 RenderHelper.drawCube(poseStack, builder, whiteSprite,
@@ -171,9 +183,7 @@ public class PipeConfigPipRenderer extends PictureInPictureRenderer<PipeConfigPi
             } else {
                 // Try rendering the block model. If empty (BER-only blocks like
                 // Tiny Redstone panels), fall back to a cube with the particle sprite.
-                if (!renderBlockModel(adjacent, neighborPos, level, poseStack, 0.3f)) {
-                    VertexConsumer builder = this.bufferSource.getBuffer(
-                            RenderTypes.entityTranslucentEmissive(TextureAtlas.LOCATION_BLOCKS));
+                if (!renderBlockModel(adjacent, neighborPos, level, poseStack, 0.3f, builder)) {
                     // Try to get the particle sprite from the block model — most blocks
                     // define one even if the model has no visible quads (BER-only blocks).
                     var model = Minecraft.getInstance().getModelManager()
@@ -199,13 +209,11 @@ public class PipeConfigPipRenderer extends PictureInPictureRenderer<PipeConfigPi
      * Returns true if any quads were emitted, false if the model was empty.
      */
     private boolean renderBlockModel(BlockState blockState, BlockPos blockPos, Level level,
-                                     PoseStack poseStack, float alpha) {
+                                     PoseStack poseStack, float alpha, VertexConsumer builder) {
         var modelSet = Minecraft.getInstance().getModelManager().getBlockStateModelSet();
         var model = modelSet.get(blockState);
         if (model == null) return false;
 
-        VertexConsumer builder = this.bufferSource.getBuffer(
-                RenderTypes.entityTranslucentEmissive(TextureAtlas.LOCATION_BLOCKS));
         Matrix4f matrix = poseStack.last().pose();
         int alphaInt = (int)(alpha * 255f);
         boolean[] emitted = {false};
@@ -253,11 +261,10 @@ public class PipeConfigPipRenderer extends PictureInPictureRenderer<PipeConfigPi
 
     // ── Face indicators (colored quads showing connection state) ─────────────────
 
-    private void renderFaceIndicators(PipeConfigPipRenderState state, PoseStack poseStack) {
+    private void renderFaceIndicators(PipeConfigPipRenderState state, PoseStack poseStack, VertexConsumer builder) {
         AbstractFullPipe pipe = state.pipeBlockEntity().getPipe(state.slotPos());
         if (pipe == null) return;
 
-        VertexConsumer builder = this.bufferSource.getBuffer(Sheets.cutoutBlockSheet());
         Matrix4f matrix = poseStack.last().pose();
         TextureAtlasSprite sprite = PipeBlockEntity.getWhitePipeSprite();
         float u0 = sprite.getU0(), u1 = sprite.getU1();
@@ -296,7 +303,7 @@ public class PipeConfigPipRenderer extends PictureInPictureRenderer<PipeConfigPi
 
     // ── 3D text labels (N/S/E/W/U/D) on indicator faces ─────────────────────────
 
-    private void renderIndicatorLabels(PipeConfigPipRenderState state, PoseStack poseStack) {
+    private void renderIndicatorLabels(PipeConfigPipRenderState state, PoseStack poseStack, SubmitNodeCollector collector) {
         Font font = Minecraft.getInstance().font;
         float ts = 0.018f;
         float offset = 0.01f;
@@ -361,9 +368,11 @@ public class PipeConfigPipRenderer extends PictureInPictureRenderer<PipeConfigPi
                 poseStack.scale(ts, -ts, ts);
                 poseStack.translate(-textWidth / 2.0, -font.lineHeight / 2.0, 0);
 
-                font.drawInBatch(label, 0, 0, 0xFFFFFFFF, true,
-                        poseStack.last().pose(), this.bufferSource, Font.DisplayMode.NORMAL,
-                        0, FULL_BRIGHT);
+                // submitText trailing ints: lightCoords, color, backgroundColor, outlineColor.
+                collector.submitText(poseStack, 0, 0,
+                        FormattedCharSequence.forward(label, Style.EMPTY),
+                        true, Font.DisplayMode.NORMAL,
+                        FULL_BRIGHT, 0xFFFFFFFF, 0, 0);
 
                 poseStack.popPose();
             }

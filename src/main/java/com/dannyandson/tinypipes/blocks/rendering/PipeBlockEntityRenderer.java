@@ -14,9 +14,8 @@ import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.client.model.geom.builders.UVPair;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.Sheets;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.block.BlockAndTintGetter;
 import net.minecraft.client.renderer.block.ModelBlockRenderer;
@@ -26,6 +25,7 @@ import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -37,11 +37,17 @@ public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEnt
 
     private static ModelBlockRenderer cachedModelRenderer;
 
+    private static final Identifier BLOCK_ATLAS =
+            Identifier.withDefaultNamespace("textures/atlas/blocks.png");
+
     /**
-     * When non-null, renderGeometry uses this RenderType instead of Sheets.cutoutBlockSheet().
-     * Set by PiP renderers to bypass the lightmap.
+     * Block/cell cutout lane. entityCutoutCull matches 26.1 cutoutBlockSheet (back-face
+     * culled) for both single-sided quads and closed cubes. Called in a method body, so
+     * the client-only factory never runs in a static initializer (dedicated-server safe).
      */
-    public static RenderType overrideRenderType = null;
+    public static RenderType cutoutBlockRenderType() {
+        return RenderTypes.entityCutoutCull(BLOCK_ATLAS);
+    }
 
     public PipeBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
     }
@@ -67,37 +73,29 @@ public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEnt
         CachedPipeRenderer cache = state.cachedRenderer;
         int combinedLight = state.lightCoords;
 
-        // Use the immediate buffer source for custom vertex rendering
-        MultiBufferSource.BufferSource bufferSource =
-                Minecraft.getInstance().renderBuffers().bufferSource();
-
-        // Check if we need to rebuild the cache
+        // Rebuild the block-local vertex cache when state or light changed.
         if (cache.isDirty() || cache.lightChanged(combinedLight)) {
             cache.rebuild(
-                    (capturePoseStack, captureBuffer) ->
-                            renderGeometry(pipeBlockEntity, capturePoseStack, captureBuffer, combinedLight, 0),
+                    (capturePoseStack, captureConsumer) ->
+                            renderGeometry(pipeBlockEntity, capturePoseStack, captureConsumer, combinedLight, 0),
                     combinedLight
             );
         }
 
-        // Replay cached vertices with the real PoseStack
-        cache.replay(poseStack, bufferSource, combinedLight);
-
-        // BER: No endBatch needed — the level renderer manages buffer lifecycle.
+        // Submit the cached geometry; the collector owns batching (no endBatch).
+        collector.submitCustomGeometry(poseStack, cutoutBlockRenderType(),
+                (pose, consumer) -> cache.replay(consumer, pose.pose()));
     }
 
     /**
-     * The actual geometry generation logic.
-     * Called during cache rebuild with a capture PoseStack (identity) and capture buffer.
+     * Geometry generation. Called during cache rebuild with a capture PoseStack
+     * (identity) and a capturing consumer; also called directly by the PiP renderer.
      */
-    public static void renderGeometry(PipeBlockEntity pipeBlockEntity, PoseStack poseStack, MultiBufferSource buffer, int combinedLight, int combinedOverlay) {
-        renderGeometry(pipeBlockEntity, poseStack, buffer, combinedLight, combinedOverlay, 1.0f);
+    public static void renderGeometry(PipeBlockEntity pipeBlockEntity, PoseStack poseStack, VertexConsumer builder, int combinedLight, int combinedOverlay) {
+        renderGeometry(pipeBlockEntity, poseStack, builder, combinedLight, combinedOverlay, 1.0f);
     }
 
-    public static void renderGeometry(PipeBlockEntity pipeBlockEntity, PoseStack poseStack, MultiBufferSource buffer, int combinedLight, int combinedOverlay, float alpha) {
-        RenderType rt = overrideRenderType != null ? overrideRenderType : Sheets.cutoutBlockSheet();
-        VertexConsumer builder = buffer.getBuffer(rt);
-
+    public static void renderGeometry(PipeBlockEntity pipeBlockEntity, PoseStack poseStack, VertexConsumer builder, int combinedLight, int combinedOverlay, float alpha) {
         if (pipeBlockEntity.getCamouflageBlockState() != null) {
             BlockState camouflageState = pipeBlockEntity.getCamouflageBlockState();
             renderCamouflageBlock(pipeBlockEntity, camouflageState, builder, poseStack, alpha);
@@ -189,7 +187,7 @@ public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEnt
 
     /**
      * Renders a camouflage block using the tesselateBlock adapter pattern.
-     * Uses UP normals to prevent the Sheets shader from double-applying face shading,
+     * Uses UP normals to prevent the render shader from double-applying face shading,
      * since tesselateBlock already bakes shading into vertex colors.
      * PoseStack transform is applied to each vertex for PiP compatibility.
      */

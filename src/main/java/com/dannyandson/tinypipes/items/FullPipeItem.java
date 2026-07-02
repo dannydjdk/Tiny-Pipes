@@ -4,6 +4,7 @@ import com.dannyandson.tinypipes.blocks.PipeBlockEntity;
 import com.dannyandson.tinypipes.setup.ModRegistration;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Style;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -39,15 +40,15 @@ public class FullPipeItem extends Item {
                 ModRegistration.PIPE_BLOCK.get().useWithoutItem(pipeBlockEntity.getBlockState(), context.getLevel(), pipeBlockEntity.getBlockPos(), context.getPlayer(), PipeBlockEntity.getPlayerCollisionHitResult(context.getPlayer(), context.getLevel()));
             }
         }
-         return super.useOn(context);
+        return super.useOn(context);
     }
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display, Consumer<Component> textConsumer, TooltipFlag flags) {
         if (isShiftKeyDown()) {
-            textConsumer.accept(Component.translatable("message." + this.getDescriptionId().replaceAll("full_","")).withStyle(ChatFormatting.DARK_AQUA));
+            textConsumer.accept(Component.translatable("message." + this.getDescriptionId().replaceAll("full_","")).withStyle(Style.EMPTY.withColor(ChatFormatting.DARK_AQUA)));
         } else
-            textConsumer.accept(Component.translatable("tinypipes.tooltip.press_shift").withStyle(ChatFormatting.DARK_GRAY));
+            textConsumer.accept(Component.translatable("tinypipes.tooltip.press_shift").withStyle(Style.EMPTY.withColor(ChatFormatting.DARK_GRAY)));
     }
 
     private static boolean isShiftKeyDown() {

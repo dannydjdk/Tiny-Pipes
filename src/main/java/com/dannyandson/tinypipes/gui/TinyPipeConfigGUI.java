@@ -80,7 +80,7 @@ public class TinyPipeConfigGUI extends Screen {
     }
 
     private void close() {
-        minecraft.setScreen(null);
+        minecraft.gui.setScreen(null);
     }
 
     private void toggleConnection(Side side)
@@ -119,7 +119,7 @@ public class TinyPipeConfigGUI extends Screen {
 
     public static void open(PanelCellPos cellPos, AbstractTinyPipe tinyPipe) {
         if(cellPos!=null && tinyPipe!=null)
-            Minecraft.getInstance().setScreen(new TinyPipeConfigGUI(cellPos,tinyPipe));
+            Minecraft.getInstance().gui.setScreen(new TinyPipeConfigGUI(cellPos,tinyPipe));
     }
 
 }

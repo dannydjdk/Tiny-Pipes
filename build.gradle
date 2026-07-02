@@ -47,15 +47,15 @@ repositories {
 }
 
 dependencies {
-    implementation "curse.maven:tiny-redstone-453746:7942270"
+    implementation "curse.maven:tiny-redstone-453746:8355742"
 
-    implementation "curse.maven:evilcraft-74610:8334398"
-    implementation "curse.maven:cyclops-core-232758:8334427"
+    implementation "curse.maven:evilcraft-74610:8334396"
+    implementation "curse.maven:cyclops-core-232758:8334402"
 
-    implementation "curse.maven:jei-238222:8292136"
-    implementation "curse.maven:jade-324717:8326300"
+    implementation "curse.maven:jei-238222:8352845"
+    implementation "curse.maven:jade-324717:8326243"
 
-    implementation "curse.maven:refined-storage-243076:8211383"
+//    implementation "curse.maven:refined-storage-243076:8211383"
 }
 
 def resourceTargets = ['META-INF/neoforge.mods.toml', 'pack.mcmeta']

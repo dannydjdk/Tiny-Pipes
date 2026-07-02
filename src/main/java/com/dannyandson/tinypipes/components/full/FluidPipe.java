@@ -80,9 +80,12 @@ public class FluidPipe extends AbstractCapFullPipe<IFluidHandler>{
                             PushWrapper<IFluidHandler> pushWrapper = getPushWrapper(pipeBlockEntity, fluidStack2);
                             //track how much fluid this pulling pipe is still allowed to move this operation
                             //so leftover capacity spills into the next-closest target instead of stopping
+                            //only deliver to output sides sharing this pull side's channel
+                            int pullFrequency = getFrequency(direction);
                             int remaining = fluidStack2.getAmount();
                             for (PushWrapper.PushTarget<IFluidHandler> pushTarget : pushWrapper.getSortedTargets()) {
                                 if (remaining <= 0) break;
+                                if (pushTarget.getFrequency() != pullFrequency) continue;
                                 //grab capabilities and push
                                 IFluidHandler iFluidHandler2 = pushTarget.getTarget();
                                 if (iFluidHandler2 != null && ! iFluidHandler2.equals(iFluidHandler)) {
@@ -141,7 +144,7 @@ public class FluidPipe extends AbstractCapFullPipe<IFluidHandler>{
                         neighborPipe.populatePushWrapper(pipeBlockEntity2, direction.getOpposite(), fluidStack, pushWrapper, distance + 1);
                 } else {
                     //edge of pipeline found, check for a neighboring tile entity
-                    pushWrapper.addPushTarget(ModCapabilityManager.getIFluidHandler(pipeBlockEntity.getLevel(),pushToNeighbor,direction.getOpposite()), this, distance, priority);
+                    pushWrapper.addPushTarget(ModCapabilityManager.getIFluidHandler(pipeBlockEntity.getLevel(),pushToNeighbor,direction.getOpposite()), this, distance, priority, getFrequency(direction));
                 }
             }
         }

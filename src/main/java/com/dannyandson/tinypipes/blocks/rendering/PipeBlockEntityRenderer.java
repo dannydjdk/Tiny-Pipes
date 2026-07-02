@@ -123,9 +123,10 @@ public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEnt
                 continue;
             }
             RedstonePipe rsPipe = (pipe instanceof RedstonePipe) ? (RedstonePipe) pipe : null;
+            AbstractCapFullPipe<?> capPipe = (pipe instanceof AbstractCapFullPipe) ? (AbstractCapFullPipe<?>) pipe : null;
             int color = pipe.getColor();
             int upgrades = (pipe instanceof AbstractCapFullPipe) ? ((AbstractCapFullPipe<?>) pipe).getSpeedUpgradeCount() : 0;
-            // Reserved for the upcoming channel feature.
+            // fallback channel band for any pipe type that doesn't expose per-side channels
             Integer channelColor = 0xFF222222;
             int[] chevronColors = computeChevronColors(upgrades);
             poseStack.pushPose();
@@ -133,18 +134,18 @@ public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEnt
             int slot = (single) ? -1 : pipe.slotPos();
             sprite = pipe.getSprite();
             for (Direction direction : new Direction[]{Direction.NORTH, Direction.WEST, Direction.SOUTH, Direction.EAST}) {
-                Integer connectionColor = (rsPipe != null) ? rsPipe.getColor(direction) : (!pipe.getNeighborHasSamePipeType(direction)) ? channelColor : null;
+                Integer connectionColor = connectionColorFor(rsPipe, capPipe, pipe, channelColor, direction);
                 drawSide(pipe.getPipeSideStatus(direction), slot, poseStack, builder, sprite, combinedLight, direction.getAxisDirection(), color, connectionColor, pipe.getNeighborIsPipeCluster(direction), chevronColors, alpha);
                 poseStack.translate(0, 0, 1);
                 poseStack.mulPose(Axis.YP.rotationDegrees(90));
             }
 
-            Integer connectionColor = (rsPipe != null) ? rsPipe.getColor(Direction.UP) : (!pipe.getNeighborHasSamePipeType(Direction.UP)) ? channelColor : null;
+            Integer connectionColor = connectionColorFor(rsPipe, capPipe, pipe, channelColor, Direction.UP);
             poseStack.mulPose(Axis.XP.rotationDegrees(90));
             poseStack.translate(0, 0, -1);
             drawSide(pipe.getPipeSideStatus(Direction.UP), slot, poseStack, builder, sprite, combinedLight, Direction.AxisDirection.POSITIVE, color, connectionColor, pipe.getNeighborIsPipeCluster(Direction.UP), chevronColors, alpha);
 
-            connectionColor = (rsPipe != null) ? rsPipe.getColor(Direction.DOWN) : (!pipe.getNeighborHasSamePipeType(Direction.DOWN)) ? channelColor : null;
+            connectionColor = connectionColorFor(rsPipe, capPipe, pipe, channelColor, Direction.DOWN);
             poseStack.mulPose(Axis.YP.rotationDegrees(180));
             poseStack.translate(-1, 0, -1);
             drawSide(pipe.getPipeSideStatus(Direction.DOWN), slot, poseStack, builder, sprite, combinedLight, Direction.AxisDirection.NEGATIVE, color, connectionColor, pipe.getNeighborIsPipeCluster(Direction.DOWN), chevronColors, alpha);
@@ -242,6 +243,17 @@ public class PipeBlockEntityRenderer implements BlockEntityRenderer<PipeBlockEnt
             cachedModelRenderer = new ModelBlockRenderer(true, false, blockColors);
         }
         return cachedModelRenderer;
+    }
+
+    /**
+     * Resolves the channel band color for a side. Redstone and cap pipes expose per-side
+     * channels via getColor(Direction); any other pipe type falls back to a plain band on
+     * sides facing a non-pipe neighbor (null = no band on pipe-to-pipe sides).
+     */
+    private static Integer connectionColorFor(RedstonePipe rsPipe, AbstractCapFullPipe<?> capPipe, AbstractFullPipe pipe, int channelColor, Direction direction) {
+        if (rsPipe != null) return rsPipe.getColor(direction);
+        if (capPipe != null) return capPipe.getColor(direction);
+        return (!pipe.getNeighborHasSamePipeType(direction)) ? channelColor : null;
     }
 
     private static void drawSide(PipeConnectionState sideStatus, int slot, PoseStack poseStack, VertexConsumer builder, TextureAtlasSprite sprite, int combinedLight, Direction.AxisDirection dir, int pipeColor, Integer connectionColor, Boolean clusterNeighbor, int[] chevronColors, float alpha) {

@@ -52,7 +52,13 @@ public class FluidPipe  extends AbstractCapPipe<IFluidHandler> {
                 (topNeighbor != null && topNeighbor.getStrongRsOutput() > 0) ||
                 (bottomNeighbor != null && bottomNeighbor.getStrongRsOutput() > 0);
 
+        updateEdgeSides(cellPos);
         return false;
+    }
+
+    @Override
+    protected boolean isDisabled() {
+        return disabled;
     }
 
     @Override
@@ -104,9 +110,12 @@ public class FluidPipe  extends AbstractCapPipe<IFluidHandler> {
                             PushWrapper<IFluidHandler> pushWrapper = getPushWrapper(cellPos, fluidStack2);
                             //track how much fluid this pulling pipe is still allowed to move this operation
                             //so leftover capacity spills into the next-closest target instead of stopping
+                            //only deliver to output sides sharing this pull side's channel
+                            int pullFrequency = getFrequency(side);
                             int remaining = fluidStack2.getAmount();
                             for (PushWrapper.PushTarget<IFluidHandler> pushTarget : pushWrapper.getSortedTargets()) {
                                 if (remaining <= 0) break;
+                                if (pushTarget.getFrequency() != pullFrequency) continue;
                                 //grab capabilities and push
                                 IFluidHandler iFluidHandler2 = pushTarget.getTarget();
                                 if (iFluidHandler2 != null && ! iFluidHandler2.equals(iFluidHandler)) {
@@ -174,7 +183,7 @@ public class FluidPipe  extends AbstractCapPipe<IFluidHandler> {
                                                             (neighborBlockPos.relative(Direction.UP).equals(panelBlockPos)) ? Direction.UP :
                                                                     Direction.DOWN;
 
-                    pushWrapper.addPushTarget(ModCapabilityManager.getIFluidHandler(cellPos.getPanelTile().getLevel(),neighborBlockPos,neighborSide), this, distance, priority);
+                    pushWrapper.addPushTarget(ModCapabilityManager.getIFluidHandler(cellPos.getPanelTile().getLevel(),neighborBlockPos,neighborSide), this, distance, priority, getFrequency(connectedSide));
                 }
             }
         }

@@ -49,7 +49,13 @@ public class ItemPipe extends AbstractCapPipe<IItemHandler> {
                 (topNeighbor != null && topNeighbor.getStrongRsOutput() > 0) ||
                 (bottomNeighbor != null && bottomNeighbor.getStrongRsOutput() > 0);
 
+        updateEdgeSides(cellPos);
         return false;
+    }
+
+    @Override
+    protected boolean isDisabled() {
+        return disabled;
     }
 
     @Override
@@ -101,9 +107,12 @@ public class ItemPipe extends AbstractCapPipe<IItemHandler> {
                             PushWrapper<IItemHandler> pushWrapper = getPushWrapper(cellPos, itemStack);
                             //track how many items this pulling pipe is still allowed to move this operation
                             //so leftover capacity spills into the next-closest target instead of stopping
+                            //only deliver to output sides sharing this pull side's channel
+                            int pullFrequency = getFrequency(side);
                             int remaining = itemStack2.getCount();
                             for (PushWrapper.PushTarget<IItemHandler> pushTarget : pushWrapper.getSortedTargets()) {
                                 if (remaining <= 0) break;
+                                if (pushTarget.getFrequency() != pullFrequency) continue;
                                 int pushLimit = pushTarget.getPipe().canAccept(remaining);
                                 if (pushLimit > 0) {
                                     //grab capabilities and push
@@ -171,7 +180,7 @@ public class ItemPipe extends AbstractCapPipe<IItemHandler> {
                                                             (neighborBlockPos.relative(Direction.UP).equals(panelBlockPos)) ? Direction.UP :
                                                                     Direction.DOWN;
 
-                    pushWrapper.addPushTarget(ModCapabilityManager.getItemHandler(cellPos.getPanelTile().getLevel(),neighborBlockPos,neighborSide), this, distance, priority);
+                    pushWrapper.addPushTarget(ModCapabilityManager.getItemHandler(cellPos.getPanelTile().getLevel(),neighborBlockPos,neighborSide), this, distance, priority, getFrequency(connectedSide));
                 }
             }
         }

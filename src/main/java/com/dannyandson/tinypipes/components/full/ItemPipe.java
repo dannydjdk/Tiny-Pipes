@@ -81,9 +81,12 @@ public class ItemPipe extends AbstractCapFullPipe<IItemHandler>{
                             PushWrapper<IItemHandler> pushWrapper = getPushWrapper(pipeBlockEntity, itemStack);
                             //track how many items this pulling pipe is still allowed to move this operation
                             //so leftover capacity spills into the next-closest target instead of stopping
+                            //only deliver to output sides sharing this pull side's channel
+                            int pullFrequency = getFrequency(direction);
                             int remaining = itemStack2.getCount();
                             for (PushWrapper.PushTarget<IItemHandler> pushTarget : pushWrapper.getSortedTargets()) {
                                 if (remaining <= 0) break;
+                                if (pushTarget.getFrequency() != pullFrequency) continue;
                                 int pushLimit = pushTarget.getPipe().canAccept(remaining);
                                 if (pushLimit > 0) {
                                     //grab capabilities and push
@@ -142,7 +145,7 @@ public class ItemPipe extends AbstractCapFullPipe<IItemHandler>{
                         neighborPipe.populatePushWrapper(pipeBlockEntity2, direction.getOpposite(), itemStack, pushWrapper, distance + 1);
                 } else {
                     //edge of pipeline found, check for a neighboring tile entity
-                    pushWrapper.addPushTarget(ModCapabilityManager.getItemHandler(pipeBlockEntity.getLevel(), pushToNeighbor, direction.getOpposite()), this, distance, priority);
+                    pushWrapper.addPushTarget(ModCapabilityManager.getItemHandler(pipeBlockEntity.getLevel(), pushToNeighbor, direction.getOpposite()), this, distance, priority, getFrequency(direction));
                 }
             }
         }

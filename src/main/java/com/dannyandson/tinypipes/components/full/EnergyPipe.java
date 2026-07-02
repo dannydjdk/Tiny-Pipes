@@ -63,10 +63,13 @@ public class EnergyPipe extends AbstractCapFullPipe<IEnergyStorage>{
                     int energy = iEnergyStorage.extractEnergy(toExtract, true);
                     if (energy > 0) {
                         int remainingEnergy = energy;
+                        //only deliver to output sides sharing this pull side's channel
+                        int pullFrequency = getFrequency(direction);
                         //we found energy that can be extracted
                         //see if there's a place to put it
                         PushWrapper<IEnergyStorage> pushWrapper = getPushWrapper(pipeBlockEntity);
                         for (PushWrapper.PushTarget<IEnergyStorage> pushTarget : pushWrapper.getSortedTargets()) {
+                            if (pushTarget.getFrequency() != pullFrequency) continue;
                             //grab capabilities and push
                             IEnergyStorage iEnergyStorage2 = pushTarget.getTarget();
                             if (iEnergyStorage2 != null && !iEnergyStorage2.equals(iEnergyStorage) && iEnergyStorage2.canReceive()) {
@@ -119,7 +122,7 @@ public class EnergyPipe extends AbstractCapFullPipe<IEnergyStorage>{
                         neighborPipe.populatePushWrapper(pipeBlockEntity2, direction.getOpposite(), pushWrapper, distance + 1);
                 } else  {
                     //edge of pipeline found, check for a neighboring tile entity
-                    pushWrapper.addPushTarget(ModCapabilityManager.getIEnergyStorage(pipeBlockEntity.getLevel(), pushToNeighbor, direction.getOpposite()), this, distance);
+                    pushWrapper.addPushTarget(ModCapabilityManager.getIEnergyStorage(pipeBlockEntity.getLevel(), pushToNeighbor, direction.getOpposite()), this, distance, 0, getFrequency(direction));
                 }
             }
         }

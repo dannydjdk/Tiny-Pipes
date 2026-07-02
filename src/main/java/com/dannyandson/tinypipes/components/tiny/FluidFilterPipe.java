@@ -8,6 +8,7 @@ import com.dannyandson.tinyredstone.blocks.PanelCellPos;
 import com.dannyandson.tinyredstone.blocks.PanelCellSegment;
 import com.dannyandson.tinyredstone.blocks.Side;
 import com.dannyandson.tinyredstone.setup.ModRegistration;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
@@ -92,7 +93,8 @@ public class FluidFilterPipe extends FluidPipe implements IFilterPipe {
 
     @Override
     public boolean onBlockActivated(PanelCellPos cellPos, PanelCellSegment segmentClicked, Player player) {
-        if (player.getMainHandItem().getItem() == ModRegistration.REDSTONE_WRENCH.get())
+        if (player.getMainHandItem().getItem() == ModRegistration.REDSTONE_WRENCH.get()
+                || player.getMainHandItem().has(DataComponents.DYE))
             return super.onBlockActivated(cellPos, segmentClicked, player);
 
         if (player instanceof ServerPlayer) {

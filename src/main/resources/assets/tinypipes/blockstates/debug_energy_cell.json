@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "tinypipes:block/debug_energy_cell"
+    }
+  }
+}

@@ -4,6 +4,8 @@ import com.dannyandson.tinypipes.TinyPipes;
 import com.dannyandson.tinypipes.api.Registry;
 import com.dannyandson.tinypipes.blocks.PipeBlock;
 import com.dannyandson.tinypipes.blocks.PipeBlockEntity;
+import com.dannyandson.tinypipes.blocks.debug.DebugEnergyCellBlock;
+import com.dannyandson.tinypipes.blocks.debug.DebugEnergyCellBlockEntity;
 import com.dannyandson.tinypipes.components.full.*;
 import com.dannyandson.tinypipes.gui.FluidFilterContainerMenu;
 import com.dannyandson.tinypipes.gui.ItemFilterContainerMenu;
@@ -18,6 +20,7 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
@@ -61,6 +64,12 @@ public class ModRegistration {
     @org.jspecify.annotations.Nullable
     public static DeferredItem<Item> RS_CABLE_ITEM = null;
 
+    // Debug energy cell — registered only when the tinypipes.debugEnergy flag is set (see registerDebugBlocks()).
+    @org.jspecify.annotations.Nullable
+    public static DeferredBlock<DebugEnergyCellBlock> DEBUG_ENERGY_CELL_BLOCK = null;
+    @org.jspecify.annotations.Nullable
+    public static Supplier<BlockEntityType<DebugEnergyCellBlockEntity>> DEBUG_ENERGY_CELL_BE = null;
+
     public static final Supplier<MenuType<ItemFilterContainerMenu>> ITEM_FILTER_MENU_TYPE = MENU_TYPES.register("item_filter", () -> new MenuType<>(ItemFilterContainerMenu::createMenu, FeatureFlags.DEFAULT_FLAGS));
     public static final Supplier<MenuType<FluidFilterContainerMenu>> FLUID_FILTER_MENU_TYPE = MENU_TYPES.register("fluid_filter", () -> new MenuType<>(FluidFilterContainerMenu::createFluidMenu, FeatureFlags.DEFAULT_FLAGS));
 
@@ -87,6 +96,18 @@ public class ModRegistration {
     //Must run BEFORE register() so the deferred item is included when ITEMS fires.
     public static void registerRefinedStorageItems() {
         RS_CABLE_ITEM = ITEMS.registerItem("full_rs_cable", FullPipeItem::new);
+    }
+
+    //called from main mod constructor, only when the tinypipes.debugEnergy flag is set.
+    //Must run BEFORE register() so the deferred entries are included when the registers fire.
+    public static void registerDebugBlocks() {
+        DEBUG_ENERGY_CELL_BLOCK = BLOCKS.registerBlock("debug_energy_cell",
+                DebugEnergyCellBlock::new,
+                props -> props.sound(SoundType.METAL).strength(1.0f));
+        DEBUG_ENERGY_CELL_BE = BLOCK_ENTITY_TYPES.register("debug_energy_cell",
+                () -> new BlockEntityType<>(DebugEnergyCellBlockEntity::new, DEBUG_ENERGY_CELL_BLOCK.get()));
+        ITEMS.registerItem("debug_energy_cell",
+                props -> new BlockItem(DEBUG_ENERGY_CELL_BLOCK.get(), props));
     }
 
     public static void registerFullPipeItems() {

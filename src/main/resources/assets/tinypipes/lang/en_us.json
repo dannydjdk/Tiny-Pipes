@@ -34,12 +34,13 @@
   "tinypipes.gui.full_pipe_config": "%s Connection Configuration",
   "tinypipes.gui.pipe_config.hint": "Click a side indicator to toggle \u2022 Drag to rotate",
   "tinypipes.gui.pipe_config.msg.enabled": "Enabled: outputs and connects to other pipes",
-  "tinypipes.gui.pipe_config.msg.pulling":"Pulling: allows input",
-  "tinypipes.gui.pipe_config.msg.disabled":"Disabled: no connection, no input/output",
+  "tinypipes.gui.pipe_config.msg.pulling": "Pulling: allows input",
+  "tinypipes.gui.pipe_config.msg.disabled": "Disabled: no connection, no input/output",
   "tinypipes.gui.pipe_config.speed.energy": "%s FE/tick",
   "tinypipes.gui.pipe_config.speed.item": "%s items/sec",
   "tinypipes.gui.pipe_config.speed.fluid": "%s mB/sec",
   "tinypipes.tooltip.press_shift": "-- Press Shift for More Info --",
   "message.item.tiny_pipe": "Can be placed on a Tiny Redstone Panel or in world with other tiny components.",
-  "tinypipes.close": "Close"
+  "tinypipes.close": "Close",
+  "block.tinypipes.debug_energy_cell": "Debug Energy Cell"
 }

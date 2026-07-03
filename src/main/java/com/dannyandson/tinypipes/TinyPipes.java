@@ -25,6 +25,9 @@ public class TinyPipes
     /** True when Refined Storage is present; gates all RS cable integration (optional dependency). */
     public static boolean RS_LOADED = false;
 
+    /** Debug flag: run with -Dtinypipes.debugEnergy=true to register the debug energy cell for transfer testing. Off in production. */
+    public static final boolean DEBUG_ENERGY = false;
+
     // The default frequency for the pipes, used for redstone pipes
     public static final int defaultFrequency = 0x810E0C;
     // list of frequencies that can be used in the pipe : [0x810E0C,0,1,2,3,4,5,6,7,8,9,10,11,12,13,15]
@@ -50,6 +53,12 @@ public class TinyPipes
         if (RS_LOADED) {
             ModRegistration.registerRefinedStorageItems();
             modEventBus.addListener(com.dannyandson.tinypipes.setup.RefinedStorageIntegration::registerCapabilities);
+        }
+
+        // Debug energy cell — flag-gated, dev-only. Must register before ModRegistration.register().
+        if (DEBUG_ENERGY) {
+            ModRegistration.registerDebugBlocks();
+            modEventBus.addListener(com.dannyandson.tinypipes.blocks.debug.DebugEnergyCellBlock::registerCapabilities);
         }
 
         ModRegistration.register(modEventBus);

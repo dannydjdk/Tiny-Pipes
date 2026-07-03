@@ -16,7 +16,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.MobBucketItem;
 import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
 import net.minecraft.core.registries.BuiltInRegistries;
 
 import org.jspecify.annotations.Nullable;
@@ -53,7 +54,7 @@ public class FluidFilterPipe extends FluidPipe implements IFilterPipe {
     }
 
     @Override
-    protected void populatePushWrapper(PipeBlockEntity pipeBlockEntity, @Nullable Direction side, FluidStack fluidStack, PushWrapper<IFluidHandler> pushWrapper, int distance) {
+    protected void populatePushWrapper(PipeBlockEntity pipeBlockEntity, @Nullable Direction side, FluidStack fluidStack, PushWrapper<ResourceHandler<FluidResource>> pushWrapper, int distance) {
         Identifier fluidReg = BuiltInRegistries.ITEM.getKey(fluidStack.getFluid().getBucket());
         boolean hasFluid = fluidReg != null && hasFluid(fluidReg.toString());
         if ((!blacklist && !hasFluid) || (blacklist && hasFluid)) {

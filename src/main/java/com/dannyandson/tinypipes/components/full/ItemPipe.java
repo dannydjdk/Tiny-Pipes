@@ -11,13 +11,15 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.item.ItemResource;
+import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 import org.jspecify.annotations.Nullable;
 
 import static com.dannyandson.tinypipes.components.RenderHelper.ITEM_PIPE_TEXTURE;
 
-public class ItemPipe extends AbstractCapFullPipe<IItemHandler>{
+public class ItemPipe extends AbstractCapFullPipe<ResourceHandler<ItemResource>>{
 
     private static TextureAtlasSprite sprite = null;
     private int priority = 0;//TODO
@@ -68,38 +70,46 @@ public class ItemPipe extends AbstractCapFullPipe<IItemHandler>{
                 //if set to pull, check for connected neighbor with item capabilities
                 BlockPos neighborBlockPos = pipeBlockEntity.getBlockPos().relative(direction);
 
-                IItemHandler iItemHandler = ModCapabilityManager.getItemHandler(pipeBlockEntity.getLevel(), neighborBlockPos, direction.getOpposite());
+                ResourceHandler<ItemResource> iItemHandler = ModCapabilityManager.getItemHandler(pipeBlockEntity.getLevel(), neighborBlockPos, direction.getOpposite());
                 if (iItemHandler != null) {
                     boolean itemMoved = false;
-                    for (int slot = 0; slot < iItemHandler.getSlots() && !itemMoved; slot++) {
-                        //if an item stack exists that can be pulled, ask connected ItemPipe neighbors if a destination exists
-                        ItemStack itemStack = iItemHandler.extractItem(slot, (itemThroughput < 4) ? 1 : (int) (itemThroughput / 4), true);
-                        if (!itemStack.isEmpty()) {
-                            //we found a stack that can be extracted
-                            //see if there's a place to put it
-                            ItemStack itemStack2 = itemStack.copy();
-                            PushWrapper<IItemHandler> pushWrapper = getPushWrapper(pipeBlockEntity, itemStack);
+                    int pullAmount = (itemThroughput < 4) ? 1 : (int) (itemThroughput / 4);
+                    for (int slot = 0; slot < iItemHandler.size() && !itemMoved; slot++) {
+                        ItemResource resource = iItemHandler.getResource(slot);
+                        if (resource.isEmpty()) continue;
+                        //simulate: how much of this slot can we actually pull?
+                        int pullable;
+                        try (Transaction sim = Transaction.openRoot()) {
+                            pullable = iItemHandler.extract(slot, resource, pullAmount, sim);
+                        }
+                        if (pullable > 0) {
+                            //an item that can be pulled exists; ask connected ItemPipe neighbors for a destination
+                            //(the stack is only used for filter matching downstream)
+                            ItemStack itemStack = resource.toStack(pullable);
+                            PushWrapper<ResourceHandler<ItemResource>> pushWrapper = getPushWrapper(pipeBlockEntity, itemStack);
                             //track how many items this pulling pipe is still allowed to move this operation
                             //so leftover capacity spills into the next-closest target instead of stopping
                             //only deliver to output sides sharing this pull side's channel
                             int pullFrequency = getFrequency(direction);
-                            int remaining = itemStack2.getCount();
-                            for (PushWrapper.PushTarget<IItemHandler> pushTarget : pushWrapper.getSortedTargets()) {
+                            int remaining = pullable;
+                            for (PushWrapper.PushTarget<ResourceHandler<ItemResource>> pushTarget : pushWrapper.getSortedTargets()) {
                                 if (remaining <= 0) break;
                                 if (pushTarget.getFrequency() != pullFrequency) continue;
                                 int pushLimit = pushTarget.getPipe().canAccept(remaining);
                                 if (pushLimit > 0) {
                                     //grab capabilities and push
-                                    IItemHandler iItemHandler2 = pushTarget.getTarget();
+                                    ResourceHandler<ItemResource> iItemHandler2 = pushTarget.getTarget();
                                     if (iItemHandler2 != null && !iItemHandler2.equals(iItemHandler)) {
-                                        ItemStack itemStack3 = itemStack2.copy();
-                                        itemStack3.setCount(pushLimit);
-                                        for (int pSlot = 0; pSlot < iItemHandler2.getSlots() && !itemStack3.isEmpty(); pSlot++) {
-                                            itemStack3 = iItemHandler2.insertItem(pSlot, itemStack3, false);
+                                        //insert into the target and extract the same amount from the source atomically
+                                        int pushed;
+                                        try (Transaction move = Transaction.openRoot()) {
+                                            pushed = iItemHandler2.insert(resource, pushLimit, move);
+                                            if (pushed > 0) {
+                                                iItemHandler.extract(slot, resource, pushed, move);
+                                                move.commit();
+                                            }
                                         }
-                                        int pushed = pushLimit - itemStack3.getCount();
                                         if (pushed > 0) {
-                                            iItemHandler.extractItem(slot, pushed, false);
                                             pushTarget.getPipe().didPush(pushed);
                                             remaining -= pushed;
                                             itemMoved = true;
@@ -116,13 +126,13 @@ public class ItemPipe extends AbstractCapFullPipe<IItemHandler>{
         return false;
     }
 
-    private PushWrapper<IItemHandler> getPushWrapper(PipeBlockEntity pipeBlockEntity, ItemStack itemStack) {
+    private PushWrapper<ResourceHandler<ItemResource>> getPushWrapper(PipeBlockEntity pipeBlockEntity, ItemStack itemStack) {
         this.pushWrapper = new PushWrapper<>();
         populatePushWrapper(pipeBlockEntity, null, itemStack, this.pushWrapper, 0);
         return pushWrapper;
     }
 
-    protected void populatePushWrapper(PipeBlockEntity pipeBlockEntity, @Nullable Direction side, ItemStack itemStack, PushWrapper<IItemHandler> pushWrapper, int distance) {
+    protected void populatePushWrapper(PipeBlockEntity pipeBlockEntity, @Nullable Direction side, ItemStack itemStack, PushWrapper<ResourceHandler<ItemResource>> pushWrapper, int distance) {
         //check if we've already played with this PushWrapper (to prevent infinite loops if there is a loop in the pipe network)
         if (disabled || pushIds.contains(pushWrapper.getId())) {
             //if so, return

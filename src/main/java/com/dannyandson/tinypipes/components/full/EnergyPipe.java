@@ -10,13 +10,14 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
-import net.neoforged.neoforge.energy.IEnergyStorage;
+import net.neoforged.neoforge.transfer.energy.EnergyHandler;
+import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 import org.jspecify.annotations.Nullable;
 
 import static com.dannyandson.tinypipes.components.RenderHelper.ENERGY_PIPE_TEXTURE;
 
-public class EnergyPipe extends AbstractCapFullPipe<IEnergyStorage>{
+public class EnergyPipe extends AbstractCapFullPipe<EnergyHandler>{
 
     private static TextureAtlasSprite sprite = null;
 
@@ -57,33 +58,45 @@ public class EnergyPipe extends AbstractCapFullPipe<IEnergyStorage>{
                 //if set to pull, check for connected neighbor with item capabilities
                 BlockPos neighborBlockPos = pipeBlockEntity.getBlockPos().relative(direction);
 
-                IEnergyStorage iEnergyStorage = ModCapabilityManager.getIEnergyStorage(pipeBlockEntity.getLevel(), neighborBlockPos, direction.getOpposite());
+                EnergyHandler iEnergyStorage = ModCapabilityManager.getIEnergyStorage(pipeBlockEntity.getLevel(), neighborBlockPos, direction.getOpposite());
                 if (iEnergyStorage != null) {
                     int toExtract = (int) (Config.ENERGY_THROUGHPUT.get()*getSpeedMultiplier());
-                    int energy = iEnergyStorage.extractEnergy(toExtract, true);
+                    //simulate: how much energy can we actually pull?
+                    int energy;
+                    try (Transaction sim = Transaction.openRoot()) {
+                        energy = iEnergyStorage.extract(toExtract, sim);
+                    }
                     if (energy > 0) {
                         int remainingEnergy = energy;
                         //only deliver to output sides sharing this pull side's channel
                         int pullFrequency = getFrequency(direction);
                         //we found energy that can be extracted
                         //see if there's a place to put it
-                        PushWrapper<IEnergyStorage> pushWrapper = getPushWrapper(pipeBlockEntity);
-                        for (PushWrapper.PushTarget<IEnergyStorage> pushTarget : pushWrapper.getSortedTargets()) {
+                        PushWrapper<EnergyHandler> pushWrapper = getPushWrapper(pipeBlockEntity);
+                        for (PushWrapper.PushTarget<EnergyHandler> pushTarget : pushWrapper.getSortedTargets()) {
                             if (pushTarget.getFrequency() != pullFrequency) continue;
                             //grab capabilities and push
-                            IEnergyStorage iEnergyStorage2 = pushTarget.getTarget();
-                            if (iEnergyStorage2 != null && !iEnergyStorage2.equals(iEnergyStorage) && iEnergyStorage2.canReceive()) {
+                            EnergyHandler iEnergyStorage2 = pushTarget.getTarget();
+                            if (iEnergyStorage2 != null && !iEnergyStorage2.equals(iEnergyStorage)) {
                                 int pushLimit = pushTarget.getPipe().canAccept(remainingEnergy);
                                 if (pushLimit>0) {
-                                    int energyReceived = iEnergyStorage2.receiveEnergy(pushLimit, false);
-                                    pushTarget.getPipe().didPush(energyReceived);
-                                    remainingEnergy -= energyReceived;
-                                    if (remainingEnergy == 0) break;
+                                    //insert into the target and extract the same amount from the source atomically
+                                    int energyReceived;
+                                    try (Transaction move = Transaction.openRoot()) {
+                                        energyReceived = iEnergyStorage2.insert(pushLimit, move);
+                                        if (energyReceived > 0) {
+                                            iEnergyStorage.extract(energyReceived, move);
+                                            move.commit();
+                                        }
+                                    }
+                                    if (energyReceived > 0) {
+                                        pushTarget.getPipe().didPush(energyReceived);
+                                        remainingEnergy -= energyReceived;
+                                        if (remainingEnergy == 0) break;
+                                    }
                                 }
                             }
                         }
-                        if (remainingEnergy < energy)
-                            iEnergyStorage.extractEnergy(energy - remainingEnergy, false);
                     }
                 }
             }
@@ -91,7 +104,7 @@ public class EnergyPipe extends AbstractCapFullPipe<IEnergyStorage>{
         return false;
     }
 
-    private PushWrapper<IEnergyStorage> getPushWrapper(PipeBlockEntity pipeBlockEntity) {
+    private PushWrapper<EnergyHandler> getPushWrapper(PipeBlockEntity pipeBlockEntity) {
         if (pushWrapper == null) {
             this.pushWrapper = new PushWrapper<>();
             populatePushWrapper(pipeBlockEntity, null, this.pushWrapper, 0);
@@ -99,7 +112,7 @@ public class EnergyPipe extends AbstractCapFullPipe<IEnergyStorage>{
         return pushWrapper;
     }
 
-    private void populatePushWrapper(PipeBlockEntity pipeBlockEntity, @Nullable Direction side, PushWrapper<IEnergyStorage> pushWrapper, int distance) {
+    private void populatePushWrapper(PipeBlockEntity pipeBlockEntity, @Nullable Direction side, PushWrapper<EnergyHandler> pushWrapper, int distance) {
         //check if we've already played with this PushWrapper (to prevent infinite loops if there is a loop in the pipe network)
         if (disabled || pushIds.contains(pushWrapper.getId())) {
             //if so, return

@@ -12,11 +12,13 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
+import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 import org.jspecify.annotations.Nullable;
 
-public class FluidPipe  extends AbstractCapPipe<IFluidHandler> {
+public class FluidPipe  extends AbstractCapPipe<ResourceHandler<FluidResource>> {
 
     private boolean disabled = false;
     private int priority = 0;//TODO
@@ -96,39 +98,43 @@ public class FluidPipe  extends AbstractCapPipe<IFluidHandler> {
                                                         (neighborBlockPos.relative(Direction.UP).equals(panelBlockPos)) ? Direction.UP :
                                                                 Direction.DOWN;
 
-                IFluidHandler iFluidHandler = ModCapabilityManager.getIFluidHandler(cellPos.getPanelTile().getLevel(), neighborBlockPos, neighborSide);
+                ResourceHandler<FluidResource> iFluidHandler = ModCapabilityManager.getIFluidHandler(cellPos.getPanelTile().getLevel(), neighborBlockPos, neighborSide);
                 if (iFluidHandler != null) {
                     boolean fluidMoved = false;
-                    for (int tank = 0; tank < iFluidHandler.getTanks() && !fluidMoved; tank++) {
-                        //if an item stack exists that can be pulled, ask connected ItemPipe neighbors if a destination exists
-                        FluidStack fluidStack = iFluidHandler.getFluidInTank(tank);
-                        if (!fluidStack.isEmpty()) {
-                            //we found a stack that can be extracted
-                            //see if there's a place to put it
-                            FluidStack fluidStack2 = fluidStack.copy();
-                            fluidStack2.setAmount(Math.min(fluidStack2.getAmount(), Config.FLUID_THROUGHPUT.get()/4));
-                            PushWrapper<IFluidHandler> pushWrapper = getPushWrapper(cellPos, fluidStack2);
+                    for (int tank = 0; tank < iFluidHandler.size() && !fluidMoved; tank++) {
+                        FluidResource resource = iFluidHandler.getResource(tank);
+                        if (resource.isEmpty()) continue;
+                        //cap this tick's pull at the per-tick throughput
+                        int pullAmount = Math.min(iFluidHandler.getAmountAsInt(tank), Config.FLUID_THROUGHPUT.get()/4);
+                        if (pullAmount > 0) {
+                            //a fluid that can be pulled exists; ask connected FluidPipe neighbors for a destination
+                            //(the stack is only used for filter matching downstream)
+                            FluidStack fluidStack = resource.toStack(pullAmount);
+                            PushWrapper<ResourceHandler<FluidResource>> pushWrapper = getPushWrapper(cellPos, fluidStack);
                             //track how much fluid this pulling pipe is still allowed to move this operation
                             //so leftover capacity spills into the next-closest target instead of stopping
                             //only deliver to output sides sharing this pull side's channel
                             int pullFrequency = getFrequency(side);
-                            int remaining = fluidStack2.getAmount();
-                            for (PushWrapper.PushTarget<IFluidHandler> pushTarget : pushWrapper.getSortedTargets()) {
+                            int remaining = pullAmount;
+                            for (PushWrapper.PushTarget<ResourceHandler<FluidResource>> pushTarget : pushWrapper.getSortedTargets()) {
                                 if (remaining <= 0) break;
                                 if (pushTarget.getFrequency() != pullFrequency) continue;
                                 //grab capabilities and push
-                                IFluidHandler iFluidHandler2 = pushTarget.getTarget();
+                                ResourceHandler<FluidResource> iFluidHandler2 = pushTarget.getTarget();
                                 if (iFluidHandler2 != null && ! iFluidHandler2.equals(iFluidHandler)) {
                                     int pushLimit = pushTarget.getPipe().canAccept(remaining);
                                     if (pushLimit>0) {
-                                        FluidStack fluidStack3 = fluidStack2.copy();
-                                        fluidStack3.setAmount(pushLimit);
-                                        int filled = iFluidHandler2.fill(fluidStack3, IFluidHandler.FluidAction.EXECUTE);
+                                        //fill the target and drain the same amount from the source atomically
+                                        int filled;
+                                        try (Transaction move = Transaction.openRoot()) {
+                                            filled = iFluidHandler2.insert(resource, pushLimit, move);
+                                            if (filled > 0) {
+                                                iFluidHandler.extract(tank, resource, filled, move);
+                                                move.commit();
+                                            }
+                                        }
                                         if (filled > 0) {
                                             pushTarget.getPipe().didPush(filled);
-                                            FluidStack drainStack = fluidStack2.copy();
-                                            drainStack.setAmount(filled);
-                                            iFluidHandler.drain(drainStack, IFluidHandler.FluidAction.EXECUTE);
                                             remaining -= filled;
                                             fluidMoved = true;
                                         }
@@ -145,13 +151,13 @@ public class FluidPipe  extends AbstractCapPipe<IFluidHandler> {
         return false;
     }
 
-    private PushWrapper<IFluidHandler> getPushWrapper(PanelCellPos cellPos, FluidStack fluidStack) {
+    private PushWrapper<ResourceHandler<FluidResource>> getPushWrapper(PanelCellPos cellPos, FluidStack fluidStack) {
         this.pushWrapper = new PushWrapper<>();
         populatePushWrapper(cellPos, null, fluidStack, this.pushWrapper, 0);
         return pushWrapper;
     }
 
-    protected void populatePushWrapper(PanelCellPos cellPos, @Nullable Side side, FluidStack fluidStack, PushWrapper<IFluidHandler> pushWrapper, int distance) {
+    protected void populatePushWrapper(PanelCellPos cellPos, @Nullable Side side, FluidStack fluidStack, PushWrapper<ResourceHandler<FluidResource>> pushWrapper, int distance) {
         //check if we've already played with this PushWrapper (to prevent infinite loops if there is a loop in the pipe network)
         if (disabled || pushIds.contains(pushWrapper.getId())) {
             //if so, return

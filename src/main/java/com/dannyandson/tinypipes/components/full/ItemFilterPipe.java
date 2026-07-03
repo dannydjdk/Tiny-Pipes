@@ -12,7 +12,8 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.minecraft.core.registries.BuiltInRegistries;
 
 import java.util.Arrays;
@@ -48,7 +49,7 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe {
     }
 
     @Override
-    protected void populatePushWrapper(PipeBlockEntity pipeBlockEntity, @org.jetbrains.annotations.Nullable Direction side, ItemStack itemStack, PushWrapper<IItemHandler> pushWrapper, int distance) {
+    protected void populatePushWrapper(PipeBlockEntity pipeBlockEntity, @org.jetbrains.annotations.Nullable Direction side, ItemStack itemStack, PushWrapper<ResourceHandler<ItemResource>> pushWrapper, int distance) {
         Identifier itemReg = BuiltInRegistries.ITEM.getKey(itemStack.getItem());
         boolean hasItem = itemReg != null && hasItem(itemReg.toString());
         if ((!blacklist && !hasItem) || (blacklist && hasItem)) {

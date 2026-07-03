@@ -1,3 +1,3 @@
 ## Tiny Pipes
 
-Add-On mod for Tiny Redstone (Forge mod for Minecraft) that adds tiny item, fluid, energy and redstone pipes that you can put on Tiny Redstone's panels or place in world for compact builds.
+Minecraft mod that adds item, fluid, energy, redstone pipes and Refined Storage cables (if installed) that can share block space and be camouflaged. Tiny versions can be placed on Tiny Redstone's panels (if installed) or placed in world for compact builds.

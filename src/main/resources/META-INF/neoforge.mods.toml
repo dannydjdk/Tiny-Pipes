@@ -13,29 +13,43 @@ authors="${mod_authors}"
 description='''${mod_description}'''
 
 [[dependencies.${mod_id}]]
-    modId="neoforge"
-    type="required"
-    versionRange="${neo_version_range}"
-    ordering="NONE"
-    side="BOTH"
+modId="neoforge"
+type="required"
+versionRange="${neo_version_range}"
+ordering="NONE"
+side="BOTH"
 
 [[dependencies.${mod_id}]]
-    modId="minecraft"
-    type="required"
-    versionRange="${minecraft_version_range}"
-    ordering="NONE"
-    side="BOTH"
+modId="minecraft"
+type="required"
+versionRange="${minecraft_version_range}"
+ordering="NONE"
+side="BOTH"
 
 [[dependencies.tinypipes]]
-    modId="tinyredstone"
-    type="optional"
-    versionRange="[1.21.1-6.0.0,)"
-    ordering="AFTER"
-    side="BOTH"
+modId="tinyredstone"
+type="optional"
+versionRange="[1.21.1-6.0.0,)"
+ordering="AFTER"
+side="BOTH"
 
 [[dependencies.tinypipes]]
-    modId="refinedstorage"
-    type="optional"
-    versionRange="[2.0.0,)"
-    ordering="AFTER"
-    side="BOTH"
+modId="refinedstorage"
+type="optional"
+versionRange="[2.0.0,)"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.tinypipes]]
+modId="theoneprobe"
+type="optional"
+versionRange="*"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.tinypipes]]
+modId="jade"
+type="optional"
+versionRange="*"
+ordering="AFTER"
+side="BOTH"

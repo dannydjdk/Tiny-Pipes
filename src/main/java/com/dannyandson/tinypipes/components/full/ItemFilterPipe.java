@@ -8,6 +8,7 @@ import com.dannyandson.tinypipes.gui.ItemFilterContainerMenu;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -16,6 +17,7 @@ import net.neoforged.neoforge.items.IItemHandler;
 import net.minecraft.core.registries.BuiltInRegistries;
 
 import java.util.Arrays;
+import java.util.List;
 
 public class ItemFilterPipe extends ItemPipe implements IFilterPipe {
 
@@ -55,6 +57,23 @@ public class ItemFilterPipe extends ItemPipe implements IFilterPipe {
             return;
         }
         super.populatePushWrapper(pipeBlockEntity, side, itemStack, pushWrapper, distance);
+    }
+
+    @Override
+    public void appendOverlayInfo(List<Component> lines, PipeBlockEntity pipeBlockEntity, Direction side) {
+        super.appendOverlayInfo(lines, pipeBlockEntity, side);
+        lines.add(Component.translatable("tinypipes.overlay.filter_mode",
+                Component.translatable(blacklist ? "tinypipes.blacklist" : "tinypipes.whitelist")));
+        lines.add(Component.translatable("tinypipes.overlay.filter_count", filterCount()));
+    }
+
+    // Count of non-empty filter entries currently configured.
+    private int filterCount() {
+        int count = 0;
+        for (String filter : filters)
+            if (filter != null && !filter.isEmpty() && !filter.equals("null"))
+                count++;
+        return count;
     }
 
     public boolean hasItem(String itemRegistryName){

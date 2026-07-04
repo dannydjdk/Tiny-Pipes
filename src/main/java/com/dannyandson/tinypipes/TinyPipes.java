@@ -54,6 +54,9 @@ public class TinyPipes
         Registration.register(modEventBus);
         if (ModList.get().isLoaded("tinyredstone"))
             RegistrationTinyRedstone.register();
+
+        // Optional overlay-mod integration (The One Probe via IMC; Jade self-registers via @WailaPlugin).
+        com.dannyandson.tinypipes.compat.CompatHandler.register();
     }
 
     private void setup(final FMLCommonSetupEvent event)

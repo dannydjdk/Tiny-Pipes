@@ -2,8 +2,10 @@ package com.dannyandson.tinypipes.components.full;
 
 import com.dannyandson.tinypipes.Config;
 import com.dannyandson.tinypipes.blocks.PipeBlockEntity;
+import com.dannyandson.tinypipes.blocks.PipeConnectionState;
 import com.dannyandson.tinypipes.caphandlers.PushWrapper;
 import com.dannyandson.tinypipes.components.ICapPipe;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -13,6 +15,7 @@ import net.minecraft.world.level.block.Rotation;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
@@ -67,6 +70,21 @@ public abstract class AbstractCapFullPipe<CapType> extends AbstractFullPipe impl
     public int getSpeedUpgradeCount()
     {
         return speedUpgrades;
+    }
+
+    @Override
+    public void appendOverlayInfo(List<Component> lines, PipeBlockEntity pipeBlockEntity, Direction side) {
+        super.appendOverlayInfo(lines, pipeBlockEntity, side);
+        // rate isn't relevant on a pipe-to-pipe connection or a disabled end
+        if (!isPipeToPipe(side) && getPipeSideStatus(side) != PipeConnectionState.DISABLED)
+            lines.add(Component.translatable("tinypipes.overlay.rate", getSpeedDescription()));
+        if (getSpeedUpgradeCount() > 0)
+            lines.add(Component.translatable("tinypipes.overlay.speed_upgrades", getSpeedUpgradeCount()));
+        // channel band only exists on I/O sides (getColor null on pipe-to-pipe); show only when dyed off default
+        if (getColor(side) != null && getFrequency(side) != DEFAULT_FREQUENCY)
+            lines.add(Component.translatable("tinypipes.overlay.channel", DyeColor.byId(getFrequency(side)).getName()));
+        if (disabled)
+            lines.add(Component.translatable("tinypipes.overlay.redstone_disabled").withStyle(ChatFormatting.DARK_RED));
     }
 
     @Override

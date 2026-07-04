@@ -7,11 +7,13 @@ import com.dannyandson.tinypipes.setup.ClientSetup;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Rotation;
 
 import org.jspecify.annotations.Nullable;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -81,6 +83,12 @@ public class RefinedStorageCablePipe extends AbstractFullPipe {
 
     public boolean isConnected(Direction direction) {
         return Boolean.TRUE.equals(connections.get(direction));
+    }
+
+    @Override
+    public void appendOverlayInfo(List<Component> lines, PipeBlockEntity pipeBlockEntity, Direction side) {
+        // RS cables track their own per-side connection set rather than the push/pull side state,
+        // so the generic state line doesn't apply; the type name in the header is enough here.
     }
 
     /**

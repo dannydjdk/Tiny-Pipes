@@ -8,6 +8,7 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -313,6 +314,21 @@ public class RedstonePipe extends AbstractFullPipe{
     //@Override
     public int getWeakRsOutput(Direction side) {
         return getStrongRsOutput(side);
+    }
+
+    @Override
+    public void appendOverlayInfo(List<Component> lines, PipeBlockEntity pipeBlockEntity, Direction side) {
+        super.appendOverlayInfo(lines, pipeBlockEntity, side);
+        // channel of the looked-at end, shown only on I/O sides dyed off the default (red)
+        if ((getNeighborHasSamePipeType(side) == null || !getNeighborHasSamePipeType(side)) && frequencies.containsKey(side))
+            lines.add(Component.translatable("tinypipes.overlay.channel", DyeColor.byId(frequencies.get(side)).getName()));
+        // per-frequency output signal carried by this pipe (mirrors the tiny redstone pipe overlay)
+        for (Map.Entry<Integer, Integer> entry : outputSignals.entrySet()) {
+            if (entry.getValue() > 0) {
+                String colorName = (entry.getKey() == TinyPipes.defaultFrequency) ? "red" : DyeColor.byId(entry.getKey()).getName();
+                lines.add(Component.translatable("tinypipes.overlay.power", colorName, entry.getValue()));
+            }
+        }
     }
 
     @Override

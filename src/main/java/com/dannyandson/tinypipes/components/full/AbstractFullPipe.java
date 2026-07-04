@@ -12,6 +12,7 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -153,6 +154,38 @@ public abstract class AbstractFullPipe implements IPipe {
 
     public int getColor() {
         return 0xFFFFFFFF;
+    }
+
+    /**
+     * Append human-readable lines describing this pipe and the end being looked at, for the Jade overlay.
+     * The base implementation reports the queried side's connection state, but only at an I/O end —
+     * between two pipes the state isn't relevant. Subclasses override to add type-specific details,
+     * calling {@code super} first.
+     */
+    public void appendOverlayInfo(List<Component> lines, PipeBlockEntity pipeBlockEntity, Direction side) {
+        if (!isPipeToPipe(side))
+            lines.add(Component.translatable("tinypipes.overlay.state", directionLabel(side), stateLabel(getPipeSideStatus(side))));
+    }
+
+    // True when this side faces another pipe of the same type (an interior pipe-to-pipe connection).
+    protected boolean isPipeToPipe(Direction side) {
+        return Boolean.TRUE.equals(getNeighborHasSamePipeType(side));
+    }
+
+    // Localized name of the end being looked at (e.g. North, Top, Bottom), so a disabled side reads as
+    // that side being off rather than the whole pipe.
+    protected static Component directionLabel(Direction side) {
+        return Component.translatable("tinypipes.overlay.direction." + side.getName());
+    }
+
+    // Map a connection state to its overlay label (ENABLED reads as "Pushing" since an enabled side outputs).
+    protected static Component stateLabel(PipeConnectionState state) {
+        String key = switch (state) {
+            case PULLING -> "tinypipes.overlay.state.pulling";
+            case ENABLED -> "tinypipes.overlay.state.pushing";
+            default -> "tinypipes.overlay.state.disabled";
+        };
+        return Component.translatable(key);
     }
 
     public void openGUI(PipeBlockEntity pipeBlockEntity,Player player){

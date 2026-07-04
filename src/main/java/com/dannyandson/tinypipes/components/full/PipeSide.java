@@ -26,6 +26,11 @@ public class PipeSide<T extends AbstractFullPipe> {
         return pipe;
     }
 
+    public PipeBlockEntity getPipeBlockEntity()
+    {
+        return pipeBlockEntity;
+    }
+
     public void toggleSideStatus(PipeBlockEntity pipeBlockEntity)
     {
         pipe.togglePipeSide(pipeBlockEntity, direction);
